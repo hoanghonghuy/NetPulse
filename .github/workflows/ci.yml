@@ -3,16 +3,24 @@ name: CI
 on:
   push:
     branches: [main, develop, feature/*]
+    tags:
+      - 'v*'
   pull_request:
     branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-and-test:
     runs-on: windows-latest
+    name: Build (${{ matrix.build_type }})
 
     strategy:
       matrix:
         build_type: [Debug, Release]
+      fail-fast: false
 
     steps:
       - name: Checkout repository
@@ -22,7 +30,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build
-          key: ${{ runner.os }}-cmake-${{ matrix.build_type }}-${{ hashFiles('CMakeLists.txt', 'tests/CMakeLists.txt') }}
+          key: ${{ runner.os }}-cmake-${{ matrix.build_type }}-${{ hashFiles('CMakeLists.txt', 'tests/CMakeLists.txt', 'src/**', 'include/**') }}
           restore-keys: |
             ${{ runner.os }}-cmake-${{ matrix.build_type }}-
 
@@ -33,9 +41,8 @@ jobs:
         run: cmake --build build --config ${{ matrix.build_type }}
 
       - name: Run tests
-        if: matrix.build_type == 'Debug'
         working-directory: build
-        run: ctest -C Debug --output-on-failure
+        run: ctest -C ${{ matrix.build_type }} --output-on-failure --verbose
 
       - name: Upload Release artifact
         if: matrix.build_type == 'Release'
@@ -44,3 +51,26 @@ jobs:
           name: NetworkMonitor-${{ github.sha }}
           path: build/Release/NetworkMonitor.exe
           retention-days: 30
+
+  # Automatic release when tag pushed
+  release:
+    needs: build-and-test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: NetworkMonitor-${{ github.sha }}
+          path: ./artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./artifacts/NetworkMonitor.exe
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref, '-') }}
