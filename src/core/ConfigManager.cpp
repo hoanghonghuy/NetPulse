@@ -36,8 +36,6 @@ bool ConfigManager::LoadConfig(AppConfig& config)
     // Load settings from registry
     config.updateInterval = ReadDWORD(hKey, L"UpdateInterval", DEFAULT_UPDATE_INTERVAL);
     config.displayUnit = static_cast<SpeedUnit>(ReadDWORD(hKey, L"DisplayUnit", static_cast<DWORD>(SpeedUnit::KiloBytesPerSecond)));
-    config.showUploadSpeed = ReadDWORD(hKey, L"ShowUploadSpeed", 1) != 0;
-    config.showDownloadSpeed = ReadDWORD(hKey, L"ShowDownloadSpeed", 1) != 0;
     config.enableLogging = ReadDWORD(hKey, L"EnableLogging", 1) != 0;
     config.debugLogging = ReadDWORD(hKey, L"DebugLogging", 0) != 0;
     
@@ -109,8 +107,6 @@ bool ConfigManager::SaveConfig(const AppConfig& config)
     bool success = true;
     success &= WriteDWORD(hKey, L"UpdateInterval", config.updateInterval);
     success &= WriteDWORD(hKey, L"DisplayUnit", static_cast<DWORD>(config.displayUnit));
-    success &= WriteDWORD(hKey, L"ShowUploadSpeed", config.showUploadSpeed ? 1 : 0);
-    success &= WriteDWORD(hKey, L"ShowDownloadSpeed", config.showDownloadSpeed ? 1 : 0);
     success &= WriteDWORD(hKey, L"EnableLogging", config.enableLogging ? 1 : 0);
     success &= WriteDWORD(hKey, L"DebugLogging", config.debugLogging ? 1 : 0);
     success &= WriteDWORD(hKey, L"DarkTheme", config.darkTheme ? 1 : 0);

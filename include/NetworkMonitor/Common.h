@@ -158,8 +158,6 @@ struct AppConfig
     UINT updateInterval;             // Update interval in milliseconds
     SpeedUnit displayUnit;           // Display unit for speed
     bool autoStart;                  // Auto-start with Windows
-    bool showUploadSpeed;            // Show upload speed
-    bool showDownloadSpeed;          // Show download speed
     bool enableLogging;              // Enable history logging
     bool debugLogging;               // Enable debug logging to file
     bool darkTheme;
@@ -180,8 +178,6 @@ struct AppConfig
         : updateInterval(DEFAULT_UPDATE_INTERVAL)
         , displayUnit(SpeedUnit::KiloBytesPerSecond)
         , autoStart(false)
-        , showUploadSpeed(true)
-        , showDownloadSpeed(true)
         , enableLogging(true)
         , debugLogging(false)
         , darkTheme(false)
@@ -203,17 +199,5 @@ struct AppConfig
 
 } // namespace NetworkMonitor
 
-// ============================================================================
-// HELPER MACROS (Outside namespace)
-// ============================================================================
-
-// Safe release for COM objects
-#define SAFE_RELEASE(p) { if(p) { (p)->Release(); (p) = nullptr; } }
-
-// Safe delete for pointers
-#define SAFE_DELETE(p) { if(p) { delete (p); (p) = nullptr; } }
-
-// Safe delete for arrays
-#define SAFE_DELETE_ARRAY(p) { if(p) { delete[] (p); (p) = nullptr; } }
-
 #endif // NETWORK_MONITOR_COMMON_H
+

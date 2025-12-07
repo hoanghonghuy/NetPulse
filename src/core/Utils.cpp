@@ -129,23 +129,6 @@ std::wstring FormatBytes(ULONG64 bytes)
     return oss.str();
 }
 
-std::wstring SpeedUnitToString(SpeedUnit unit)
-{
-    switch (unit)
-    {
-    case SpeedUnit::BytesPerSecond:
-        return L"B/s";
-    case SpeedUnit::KiloBytesPerSecond:
-        return L"KB/s";
-    case SpeedUnit::MegaBytesPerSecond:
-        return L"MB/s";
-    case SpeedUnit::MegaBitsPerSecond:
-        return L"Mbps";
-    default:
-        return L"KB/s";
-    }
-}
-
 std::wstring LoadStringResource(UINT resourceId)
 {
     wchar_t buffer[256] = {};

@@ -32,7 +32,6 @@ std::wstring FormatSpeed(double bytesPerSecond, SpeedUnit unit);
  */
 std::wstring FormatBytes(ULONG64 bytes);
 
-std::wstring SpeedUnitToString(SpeedUnit unit);
 std::wstring LoadStringResource(UINT resourceId);
 
 // ============================================================================
