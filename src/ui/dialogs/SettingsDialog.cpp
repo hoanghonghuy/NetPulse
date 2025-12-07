@@ -30,6 +30,82 @@ static LRESULT CALLBACK DarkTabProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
     return CallWindowProc(s_originalTabProc, hwnd, msg, wParam, lParam);
 }
 
+// ComboBox subclass procedure for dark dropdown button
+static const wchar_t* COMBOBOX_OLDPROC_PROP = L"DarkComboOldProc";
+static LRESULT CALLBACK DarkComboBoxProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    WNDPROC oldProc = reinterpret_cast<WNDPROC>(GetPropW(hwnd, COMBOBOX_OLDPROC_PROP));
+
+    if (msg == WM_PAINT)
+    {
+        // Let the default paint happen first
+        LRESULT result = CallWindowProcW(oldProc, hwnd, msg, wParam, lParam);
+
+        // Now draw over the dropdown button with dark theme
+        COMBOBOXINFO cbi = {0};
+        cbi.cbSize = sizeof(COMBOBOXINFO);
+        if (GetComboBoxInfo(hwnd, &cbi))
+        {
+            HDC hdc = GetDC(hwnd);
+            if (hdc)
+            {
+                RECT btnRect = cbi.rcButton;
+
+                // Draw dark button background
+                COLORREF btnBg = RGB(50, 50, 50);
+                COLORREF btnBorder = RGB(80, 80, 80);
+                COLORREF arrowColor = RGB(200, 200, 200);
+
+                HBRUSH hBrush = CreateSolidBrush(btnBg);
+                FillRect(hdc, &btnRect, hBrush);
+                DeleteObject(hBrush);
+
+                // Draw border
+                HBRUSH hBorder = CreateSolidBrush(btnBorder);
+                FrameRect(hdc, &btnRect, hBorder);
+                DeleteObject(hBorder);
+
+                // Draw dropdown arrow (triangle pointing down)
+                int cx = (btnRect.left + btnRect.right) / 2;
+                int cy = (btnRect.top + btnRect.bottom) / 2;
+
+                POINT arrow[3] = {
+                    {cx - 4, cy - 2},
+                    {cx + 4, cy - 2},
+                    {cx, cy + 3}
+                };
+
+                HBRUSH arrowBrush = CreateSolidBrush(arrowColor);
+                HPEN arrowPen = CreatePen(PS_SOLID, 1, arrowColor);
+                HBRUSH oldBrush = (HBRUSH)SelectObject(hdc, arrowBrush);
+                HPEN oldPen = (HPEN)SelectObject(hdc, arrowPen);
+
+                Polygon(hdc, arrow, 3);
+
+                SelectObject(hdc, oldBrush);
+                SelectObject(hdc, oldPen);
+                DeleteObject(arrowBrush);
+                DeleteObject(arrowPen);
+
+                ReleaseDC(hwnd, hdc);
+            }
+        }
+        return result;
+    }
+
+    if (msg == WM_NCDESTROY)
+    {
+        if (oldProc)
+        {
+            SetWindowLongPtrW(hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(oldProc));
+        }
+        RemovePropW(hwnd, COMBOBOX_OLDPROC_PROP);
+    }
+
+    return oldProc ? CallWindowProcW(oldProc, hwnd, msg, wParam, lParam)
+                   : DefWindowProcW(hwnd, msg, wParam, lParam);
+}
+
 // Shared color presets for overlay colors
 struct OverlayColorPreset { COLORREF down; COLORREF up; const wchar_t* label; };
 static const OverlayColorPreset s_overlayColorPresets[] = {
@@ -282,6 +358,21 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 makeOwnerDraw(GetDlgItem(hDlg, IDC_SETTINGS_BUTTON_APPLY));
                 makeOwnerDraw(GetDlgItem(hDlg, IDCANCEL));
 
+                // Make checkboxes owner-draw for dark theme
+                auto makeOwnerDrawCheckbox = [](HWND hCheck)
+                {
+                    if (!hCheck) return;
+                    LONG_PTR style = GetWindowLongPtrW(hCheck, GWL_STYLE);
+                    style |= BS_OWNERDRAW;
+                    SetWindowLongPtrW(hCheck, GWL_STYLE, style);
+                    InvalidateRect(hCheck, nullptr, TRUE);
+                };
+
+                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_AUTOSTART_CHECK));
+                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_ENABLE_LOGGING_CHECK));
+                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_DEBUG_LOGGING_CHECK));
+                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_CONNECTION_NOTIFY_CHECK));
+
                 // Clear default button to prevent the system from drawing an
                 // initial white default highlight before owner-draw kicks in.
                 SendMessageW(hDlg, DM_SETDEFID, 0, 0);
@@ -339,6 +430,26 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 case IDCANCEL:
                     EndDialog(hDlg, IDCANCEL);
                     return TRUE;
+
+                // Handle owner-draw checkbox clicks
+                case IDC_AUTOSTART_CHECK:
+                case IDC_ENABLE_LOGGING_CHECK:
+                case IDC_DEBUG_LOGGING_CHECK:
+                case IDC_CONNECTION_NOTIFY_CHECK:
+                {
+                    if (m_configCopy.darkTheme && HIWORD(wParam) == BN_CLICKED)
+                    {
+                        HWND hCheck = reinterpret_cast<HWND>(lParam);
+                        // Toggle check state
+                        LRESULT state = SendMessageW(hCheck, BM_GETCHECK, 0, 0);
+                        SendMessageW(hCheck, BM_SETCHECK, 
+                            (state == BST_CHECKED) ? BST_UNCHECKED : BST_CHECKED, 0);
+                        // Force redraw
+                        InvalidateRect(hCheck, nullptr, TRUE);
+                        return TRUE;
+                    }
+                    break;
+                }
             }
             break;
         }
@@ -512,6 +623,90 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                     SetBkMode(hdc, TRANSPARENT);
                     SetTextColor(hdc, textColor);
                     DrawTextW(hdc, text, -1, &rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
+                    return TRUE;
+                }
+                // Handle Checkbox owner-draw
+                UINT ctlId = pDrawItem->CtlID;
+                if (ctlId == IDC_AUTOSTART_CHECK || ctlId == IDC_ENABLE_LOGGING_CHECK ||
+                    ctlId == IDC_DEBUG_LOGGING_CHECK || ctlId == IDC_CONNECTION_NOTIFY_CHECK)
+                {
+                    HDC hdc = pDrawItem->hDC;
+                    RECT rc = pDrawItem->rcItem;
+                    bool checked = (pDrawItem->itemState & ODS_SELECTED) != 0;
+                    bool focused = (pDrawItem->itemState & ODS_FOCUS) != 0;
+                    bool disabled = (pDrawItem->itemState & ODS_DISABLED) != 0;
+
+                    // Get actual check state from button
+                    checked = (SendMessageW(pDrawItem->hwndItem, BM_GETCHECK, 0, 0) == BST_CHECKED);
+
+                    // Colors
+                    COLORREF bgColor = DialogThemeHelper::DARK_BACKGROUND;
+                    COLORREF boxBgColor = RGB(45, 45, 45);
+                    COLORREF boxBorderColor = RGB(100, 100, 100);
+                    COLORREF checkColor = disabled ? RGB(120, 120, 120) : RGB(0, 200, 255);
+                    COLORREF textColor = disabled ? RGB(120, 120, 120) : DialogThemeHelper::DARK_TEXT;
+
+                    // Fill background
+                    HBRUSH hBgBrush = CreateSolidBrush(bgColor);
+                    FillRect(hdc, &rc, hBgBrush);
+                    DeleteObject(hBgBrush);
+
+                    // Draw checkbox box (13x13 pixels)
+                    int boxSize = 13;
+                    int boxY = rc.top + (rc.bottom - rc.top - boxSize) / 2;
+                    RECT boxRect = {rc.left, boxY, rc.left + boxSize, boxY + boxSize};
+
+                    // Box background
+                    HBRUSH hBoxBrush = CreateSolidBrush(boxBgColor);
+                    FillRect(hdc, &boxRect, hBoxBrush);
+                    DeleteObject(hBoxBrush);
+
+                    // Box border
+                    HBRUSH hBorderBrush = CreateSolidBrush(boxBorderColor);
+                    FrameRect(hdc, &boxRect, hBorderBrush);
+                    DeleteObject(hBorderBrush);
+
+                    // Draw checkmark if checked
+                    if (checked)
+                    {
+                        HPEN hPen = CreatePen(PS_SOLID, 2, checkColor);
+                        HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
+
+                        // Draw checkmark (V shape)
+                        int cx = boxRect.left + boxSize / 2;
+                        int cy = boxRect.top + boxSize / 2;
+                        MoveToEx(hdc, cx - 3, cy, NULL);
+                        LineTo(hdc, cx - 1, cy + 3);
+                        LineTo(hdc, cx + 4, cy - 3);
+
+                        SelectObject(hdc, hOldPen);
+                        DeleteObject(hPen);
+                    }
+
+                    // Draw text
+                    wchar_t text[128] = {0};
+                    GetWindowTextW(pDrawItem->hwndItem, text, 128);
+
+                    RECT textRect = rc;
+                    textRect.left = boxRect.right + 6;
+
+                    SetBkMode(hdc, TRANSPARENT);
+                    SetTextColor(hdc, textColor);
+                    DrawTextW(hdc, text, -1, &textRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+
+                    // Focus rectangle
+                    if (focused)
+                    {
+                        RECT focusRect = textRect;
+                        focusRect.right = focusRect.left + 4;
+                        SIZE textSize;
+                        GetTextExtentPoint32W(hdc, text, (int)wcslen(text), &textSize);
+                        focusRect.right = focusRect.left + textSize.cx + 4;
+                        focusRect.top = (rc.top + rc.bottom - textSize.cy) / 2 - 1;
+                        focusRect.bottom = focusRect.top + textSize.cy + 2;
+                        DrawFocusRect(hdc, &focusRect);
+                    }
 
                     return TRUE;
                 }
@@ -927,8 +1122,7 @@ void SettingsDialog::PopulateDialog(HWND hDlg)
         SendMessageW(hOverlayColor, CB_SETCURSEL, selectedIndex, 0);
     }
 
-    // For dark theme, disable visual styles for comboboxes so our
-    // WM_CTLCOLOR* handlers can control background/text colors.
+    // Apply dark theme with dark dropdown lists to all comboboxes
     if (m_configCopy.darkTheme)
     {
         HWND hLangTheme   = GetDlgItem(hDlg, IDC_LANGUAGE_COMBO);
@@ -939,15 +1133,41 @@ void SettingsDialog::PopulateDialog(HWND hDlg)
         HWND hThemeModeCB = GetDlgItem(hDlg, IDC_THEME_MODE_COMBO);
         HWND hPingIntTheme = GetDlgItem(hDlg, IDC_PING_INTERVAL_COMBO);
         HWND hHotkeyTheme = GetDlgItem(hDlg, IDC_HOTKEY_COMBO);
+        HWND hFontSizeTheme = GetDlgItem(hDlg, IDC_OVERLAY_FONT_SIZE_COMBO);
+        HWND hOverlayColorTheme = GetDlgItem(hDlg, IDC_OVERLAY_COLOR_COMBO);
 
-        if (hLangTheme)    SetWindowTheme(hLangTheme,   L"", L"");
-        if (hIntTheme)     SetWindowTheme(hIntTheme,    L"", L"");
-        if (hUnitTheme)    SetWindowTheme(hUnitTheme,   L"", L"");
-        if (hIfaceTheme)   SetWindowTheme(hIfaceTheme,  L"", L"");
-        if (hTrimTheme)    SetWindowTheme(hTrimTheme,   L"", L"");
-        if (hThemeModeCB)  SetWindowTheme(hThemeModeCB, L"", L"");
-        if (hPingIntTheme) SetWindowTheme(hPingIntTheme, L"", L"");
-        if (hHotkeyTheme)  SetWindowTheme(hHotkeyTheme, L"", L"");
+        if (hLangTheme)    ThemeHelper::ApplyDarkThemeToControl(hLangTheme, true);
+        if (hIntTheme)     ThemeHelper::ApplyDarkThemeToControl(hIntTheme, true);
+        if (hUnitTheme)    ThemeHelper::ApplyDarkThemeToControl(hUnitTheme, true);
+        if (hIfaceTheme)   ThemeHelper::ApplyDarkThemeToControl(hIfaceTheme, true);
+        if (hTrimTheme)    ThemeHelper::ApplyDarkThemeToControl(hTrimTheme, true);
+        if (hThemeModeCB)  ThemeHelper::ApplyDarkThemeToControl(hThemeModeCB, true);
+        if (hPingIntTheme) ThemeHelper::ApplyDarkThemeToControl(hPingIntTheme, true);
+        if (hHotkeyTheme)  ThemeHelper::ApplyDarkThemeToControl(hHotkeyTheme, true);
+        if (hFontSizeTheme) ThemeHelper::ApplyDarkThemeToControl(hFontSizeTheme, true);
+        if (hOverlayColorTheme) ThemeHelper::ApplyDarkThemeToControl(hOverlayColorTheme, true);
+
+        // Subclass comboboxes to draw dark dropdown button
+        auto subclassComboBox = [](HWND hCombo)
+        {
+            if (!hCombo) return;
+            WNDPROC oldProc = reinterpret_cast<WNDPROC>(
+                GetWindowLongPtrW(hCombo, GWLP_WNDPROC));
+            SetPropW(hCombo, COMBOBOX_OLDPROC_PROP, reinterpret_cast<HANDLE>(oldProc));
+            SetWindowLongPtrW(hCombo, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(DarkComboBoxProc));
+            InvalidateRect(hCombo, nullptr, TRUE);
+        };
+
+        subclassComboBox(hLangTheme);
+        subclassComboBox(hIntTheme);
+        subclassComboBox(hUnitTheme);
+        subclassComboBox(hIfaceTheme);
+        subclassComboBox(hTrimTheme);
+        subclassComboBox(hThemeModeCB);
+        subclassComboBox(hPingIntTheme);
+        subclassComboBox(hHotkeyTheme);
+        subclassComboBox(hFontSizeTheme);
+        subclassComboBox(hOverlayColorTheme);
     }
 }
 

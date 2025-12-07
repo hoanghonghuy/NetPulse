@@ -21,12 +21,30 @@ public:
     static void AllowDarkModeForApp(bool enable);
 
     /**
+     * Allow dark mode for a specific window/control.
+     * Enables dark scrollbars and other dark-themed elements.
+     * Must be called BEFORE setting window theme.
+     * Requires Windows 10 1809+.
+     * @param hwnd Window handle
+     * @param enable true to enable dark mode
+     */
+    static void AllowDarkModeForWindow(HWND hwnd, bool enable);
+
+    /**
      * Apply dark mode to a specific window's title bar.
      * Must be called for each top-level window/dialog.
      * @param hwnd Window handle
      * @param enable true to enable dark title bar
      */
     static void ApplyDarkTitleBar(HWND hwnd, bool enable);
+
+    /**
+     * Apply dark theme to a control including dark scrollbars.
+     * Combines AllowDarkModeForWindow + SetWindowTheme.
+     * @param hwnd Control handle
+     * @param enable true to enable dark theme
+     */
+    static void ApplyDarkThemeToControl(HWND hwnd, bool enable);
 
     /**
      * Check if the system is currently using dark theme for apps.

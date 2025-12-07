@@ -211,8 +211,8 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                     ListView_SetTextBkColor(hList, RGB(24, 24, 24));
                     ListView_SetTextColor(hList, DialogThemeHelper::DARK_TEXT);
 
-                    // Disable visual styles on the list itself.
-                    SetWindowTheme(hList, L"", L"");
+                    // Apply dark theme with dark scrollbars
+                    ThemeHelper::ApplyDarkThemeToControl(hList, true);
 
                     // Subclass the list header so we can paint it fully dark.
                     HWND hHeader = ListView_GetHeader(hList);
@@ -228,8 +228,8 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                         SetWindowLongPtrW(hHeader, GWLP_WNDPROC,
                                           reinterpret_cast<LONG_PTR>(HeaderWndProc));
 
-                        // Also disable visual styles on the header itself.
-                        SetWindowTheme(hHeader, L"", L"");
+                        // Apply dark theme to header as well
+                        ThemeHelper::ApplyDarkThemeToControl(hHeader, true);
                     }
 
                 }

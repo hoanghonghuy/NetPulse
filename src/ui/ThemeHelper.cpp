@@ -21,6 +21,9 @@ enum class PreferredAppMode
 
 using fnSetPreferredAppMode = PreferredAppMode(WINAPI*)(PreferredAppMode appMode);
 using fnAllowDarkModeForApp = bool(WINAPI*)(bool allow);
+using fnAllowDarkModeForWindow = bool(WINAPI*)(HWND hwnd, bool allow);
+using fnRefreshImmersiveColorPolicyState = void(WINAPI*)();
+using fnFlushMenuThemes = void(WINAPI*)();
 
 // DWMWA_USE_IMMERSIVE_DARK_MODE values
 #ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
@@ -31,30 +34,50 @@ using fnAllowDarkModeForApp = bool(WINAPI*)(bool allow);
 #define DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1 19
 #endif
 
+// Static function pointers (initialized once)
+static bool s_initialized = false;
+static fnSetPreferredAppMode s_pSetPreferredAppMode = nullptr;
+static fnAllowDarkModeForApp s_pAllowDarkModeForApp = nullptr;
+static fnAllowDarkModeForWindow s_pAllowDarkModeForWindow = nullptr;
+static fnRefreshImmersiveColorPolicyState s_pRefreshImmersiveColorPolicyState = nullptr;
+static fnFlushMenuThemes s_pFlushMenuThemes = nullptr;
+
+static void EnsureInitialized()
+{
+    if (s_initialized)
+    {
+        return;
+    }
+
+    HMODULE hUxTheme = LoadLibraryExW(L"uxtheme.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+    if (hUxTheme)
+    {
+        // Ordinal 135 is SetPreferredAppMode (Win10 1903+)
+        s_pSetPreferredAppMode = reinterpret_cast<fnSetPreferredAppMode>(GetProcAddress(hUxTheme, MAKEINTRESOURCEA(135)));
+        
+        // Ordinal 132 is AllowDarkModeForApp (Win10 1809)
+        s_pAllowDarkModeForApp = reinterpret_cast<fnAllowDarkModeForApp>(GetProcAddress(hUxTheme, MAKEINTRESOURCEA(132)));
+
+        // Ordinal 133 is AllowDarkModeForWindow (Win10 1809+)
+        s_pAllowDarkModeForWindow = reinterpret_cast<fnAllowDarkModeForWindow>(GetProcAddress(hUxTheme, MAKEINTRESOURCEA(133)));
+
+        // Ordinal 104 is RefreshImmersiveColorPolicyState
+        s_pRefreshImmersiveColorPolicyState = reinterpret_cast<fnRefreshImmersiveColorPolicyState>(GetProcAddress(hUxTheme, MAKEINTRESOURCEA(104)));
+
+        // Ordinal 136 is FlushMenuThemes
+        s_pFlushMenuThemes = reinterpret_cast<fnFlushMenuThemes>(GetProcAddress(hUxTheme, MAKEINTRESOURCEA(136)));
+    }
+    s_initialized = true;
+}
+
 void ThemeHelper::Initialize()
 {
-    // No-op, initialization happens on demand
+    EnsureInitialized();
 }
 
 void ThemeHelper::AllowDarkModeForApp(bool enable)
 {
-    static bool s_initialized = false;
-    static fnSetPreferredAppMode s_pSetPreferredAppMode = nullptr;
-    static fnAllowDarkModeForApp s_pAllowDarkModeForApp = nullptr;
-
-    if (!s_initialized)
-    {
-        HMODULE hUxTheme = LoadLibraryExW(L"uxtheme.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
-        if (hUxTheme)
-        {
-            // Ordinal 135 is SetPreferredAppMode (Win10 1903+)
-            s_pSetPreferredAppMode = reinterpret_cast<fnSetPreferredAppMode>(GetProcAddress(hUxTheme, MAKEINTRESOURCEA(135)));
-            
-            // Ordinal 132 is AllowDarkModeForApp (Win10 1809)
-            s_pAllowDarkModeForApp = reinterpret_cast<fnAllowDarkModeForApp>(GetProcAddress(hUxTheme, MAKEINTRESOURCEA(132)));
-        }
-        s_initialized = true;
-    }
+    EnsureInitialized();
 
     if (s_pSetPreferredAppMode)
     {
@@ -64,6 +87,78 @@ void ThemeHelper::AllowDarkModeForApp(bool enable)
     {
         s_pAllowDarkModeForApp(enable);
     }
+
+    if (s_pRefreshImmersiveColorPolicyState)
+    {
+        s_pRefreshImmersiveColorPolicyState();
+    }
+
+    if (s_pFlushMenuThemes)
+    {
+        s_pFlushMenuThemes();
+    }
+}
+
+void ThemeHelper::AllowDarkModeForWindow(HWND hwnd, bool enable)
+{
+    if (!hwnd)
+    {
+        return;
+    }
+
+    EnsureInitialized();
+
+    if (s_pAllowDarkModeForWindow)
+    {
+        s_pAllowDarkModeForWindow(hwnd, enable);
+    }
+}
+
+void ThemeHelper::ApplyDarkThemeToControl(HWND hwnd, bool enable)
+{
+    if (!hwnd)
+    {
+        return;
+    }
+
+    // First allow dark mode for the window
+    AllowDarkModeForWindow(hwnd, enable);
+
+    // Check if this is a ComboBox - needs special handling for dropdown list
+    wchar_t className[64] = {0};
+    GetClassNameW(hwnd, className, 64);
+    bool isComboBox = (_wcsicmp(className, L"ComboBox") == 0);
+
+    if (isComboBox && enable)
+    {
+        // Apply CFD theme to the ComboBox itself for dark appearance
+        SetWindowTheme(hwnd, L"CFD", NULL);
+
+        // Get the dropdown list handle and apply dark theme to it
+        COMBOBOXINFO cbi = {0};
+        cbi.cbSize = sizeof(COMBOBOXINFO);
+        if (GetComboBoxInfo(hwnd, &cbi))
+        {
+            if (cbi.hwndList)
+            {
+                AllowDarkModeForWindow(cbi.hwndList, true);
+                SetWindowTheme(cbi.hwndList, L"DarkMode_Explorer", NULL);
+            }
+        }
+    }
+    else if (enable)
+    {
+        // Use DarkMode_Explorer for other controls (ListView, etc.)
+        SetWindowTheme(hwnd, L"DarkMode_Explorer", NULL);
+    }
+    else
+    {
+        // Reset to default theme
+        SetWindowTheme(hwnd, L"Explorer", NULL);
+    }
+
+    // Force redraw
+    InvalidateRect(hwnd, nullptr, TRUE);
 }
 
 void ThemeHelper::ApplyDarkTitleBar(HWND hwnd, bool enable)
@@ -121,3 +216,4 @@ bool ThemeHelper::IsSystemInDarkMode()
 }
 
 } // namespace NetworkMonitor
+
