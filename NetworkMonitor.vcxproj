@@ -213,6 +213,10 @@
     <ClCompile Include="src\ui\DialogThemeHelper.cpp" />
     <ClCompile Include="src\core\HistoryLogger.cpp" />
     <ClCompile Include="src\core\PingMonitor.cpp" />
+    <ClCompile Include="src\core\MenuHandler.cpp" />
+    <ClCompile Include="src\core\UpdateCoordinator.cpp" />
+    <ClCompile Include="src\core\LanguageManager.cpp" />
+    <ClCompile Include="src\ui\DialogManager.cpp" />
     <ClCompile Include="third_party\sqlite\sqlite3.c" />
   </ItemGroup>
   <!-- ====================================================================== -->
@@ -233,6 +237,11 @@
     <ClInclude Include="include\NetworkMonitor\ThemeHelper.h" />
     <ClInclude Include="include\NetworkMonitor\HistoryLogger.h" />
     <ClInclude Include="include\NetworkMonitor\PingMonitor.h" />
+    <ClInclude Include="include\NetworkMonitor\HotkeyManager.h" />
+    <ClInclude Include="include\NetworkMonitor\MenuHandler.h" />
+    <ClInclude Include="include\NetworkMonitor\UpdateCoordinator.h" />
+    <ClInclude Include="include\NetworkMonitor\DialogManager.h" />
+    <ClInclude Include="include\NetworkMonitor\LanguageManager.h" />
     <ClInclude Include="resources\resource.h" />
   </ItemGroup>
   <!-- ====================================================================== -->

@@ -15,10 +15,6 @@ namespace NetworkMonitor
 Application::Application()
     : m_hwnd(nullptr)
     , m_hInstance(nullptr)
-    , m_prevTotalBytesDown(0)
-    , m_prevTotalBytesUp(0)
-    , m_prevTotalsValid(false)
-    , m_wasConnected(true)
     , m_initialized(false)
 {
 }
@@ -159,6 +155,61 @@ bool Application::Initialize(HINSTANCE hInstance)
     m_pHotkeyManager->SetCallback([this](int id) { OnHotkey(id); });
     SetupHotkeys();
 
+    // Create and initialize MenuHandler
+    m_pMenuHandler = std::make_unique<MenuHandler>();
+    m_pMenuHandler->Initialize(&m_config, m_pConfigManager.get(), m_pTaskbarOverlay.get());
+    m_pMenuHandler->SetSaveConfigCallback([this]() { SaveConfig(); });
+    m_pMenuHandler->SetShowSettingsCallback([this]() { ShowSettingsDialog(); });
+    m_pMenuHandler->SetShowDashboardCallback([this]() { ShowDashboardDialog(); });
+    m_pMenuHandler->SetShowAboutCallback([this]() { ShowAboutDialog(); });
+    m_pMenuHandler->SetExitCallback([this]() { DestroyWindow(m_hwnd); });
+    m_pMenuHandler->SetUpdateTimerCallback([this](UINT intervalMs) {
+        KillTimer(m_hwnd, TIMER_UPDATE_NETWORK);
+        SetTimer(m_hwnd, TIMER_UPDATE_NETWORK, intervalMs, nullptr);
+    });
+
+    // Create and initialize UpdateCoordinator
+    m_pUpdateCoordinator = std::make_unique<UpdateCoordinator>();
+    m_pUpdateCoordinator->Initialize(
+        &m_config,
+        m_pNetworkMonitor.get(),
+        m_pTrayIcon.get(),
+        m_pTaskbarOverlay.get(),
+        m_pPingMonitor.get()
+    );
+    m_pUpdateCoordinator->SetLogHistoryCallback([this](unsigned long long bytesDown, unsigned long long bytesUp) {
+        // Get interface name for logging
+        std::wstring ifaceName = m_config.selectedInterface;
+        if (ifaceName.empty())
+        {
+            ifaceName = LoadStringResource(IDS_ALL_INTERFACES);
+            if (ifaceName.empty())
+            {
+                ifaceName = L"All Interfaces";
+            }
+        }
+        HistoryLogger::Instance().AppendSample(ifaceName, bytesDown, bytesUp);
+    });
+
+    // Create and initialize LanguageManager
+    m_pLanguageManager = std::make_unique<LanguageManager>();
+
+    // Create and initialize DialogManager
+    m_pDialogManager = std::make_unique<DialogManager>();
+    m_pDialogManager->Initialize(
+        m_hwnd,
+        &m_config,
+        m_pConfigManager.get(),
+        m_pNetworkMonitor.get(),
+        m_pUpdateCoordinator.get()
+    );
+    m_pDialogManager->SetConfigReloadCallback([this]() { return LoadConfig(); });
+    m_pDialogManager->SetLanguageApplyCallback([this]() { ApplyLanguageFromConfig(); });
+    m_pDialogManager->SetTimerUpdateCallback([this](UINT intervalMs) {
+        KillTimer(m_hwnd, TIMER_UPDATE_NETWORK);
+        SetTimer(m_hwnd, TIMER_UPDATE_NETWORK, intervalMs, nullptr);
+    });
+
     m_initialized = true;
     LogDebug(L"Application::Initialize: succeeded");
     return true;
@@ -259,163 +310,42 @@ bool Application::SaveConfig()
 
 void Application::ApplyLanguageFromConfig()
 {
-    LANGID langId = 0;
-
-    switch (m_config.language)
+    if (m_pLanguageManager)
     {
-    case AppLanguage::English:
-        langId = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
-        break;
-
-    case AppLanguage::Vietnamese:
-        langId = MAKELANGID(LANG_VIETNAMESE, SUBLANG_VIETNAMESE_VIETNAM);
-        break;
-
-    case AppLanguage::Japanese:
-        langId = MAKELANGID(LANG_JAPANESE, SUBLANG_JAPANESE_JAPAN);
-        break;
-
-    case AppLanguage::Korean:
-        langId = MAKELANGID(LANG_KOREAN, SUBLANG_KOREAN);
-        break;
-
-    case AppLanguage::ChineseSimplified:
-        langId = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED);
-        break;
-
-    case AppLanguage::SystemDefault:
-    default:
-        langId = GetUserDefaultUILanguage();
-        break;
-    }
-
-    if (langId != 0)
-    {
-        SetThreadUILanguage(langId);
+        m_pLanguageManager->ApplyLanguage(m_config.language);
     }
 }
 
 void Application::ShowSettingsDialog()
 {
-    if (!m_pConfigManager)
+    if (m_pDialogManager)
     {
-        return;
+        m_pDialogManager->ShowSettings();
     }
-
-    // Loop to handle dialog reopen (for theme/language changes)
-    INT_PTR dialogResult;
-    do
-    {
-        // Keep a copy of current config to detect changes after dialog
-        AppConfig oldConfig = m_config;
-
-        SettingsDialog dlg;
-
-        // Set up callback for Apply button - reload and apply settings immediately
-        dlg.SetSettingsChangedCallback([this, &oldConfig]()
-        {
-            // Reload config from registry
-            if (LoadConfig())
-            {
-                SetDebugLoggingEnabled(m_config.debugLogging);
-                ThemeHelper::AllowDarkModeForApp(ThemeHelper::IsSystemInDarkMode());
-
-                if (m_pTrayIcon)
-                {
-                    m_pTrayIcon->SetConfigSource(&m_config);
-                }
-
-                if (m_pTaskbarOverlay)
-                {
-                    m_pTaskbarOverlay->SetDarkTheme(m_config.darkTheme);
-                    m_pTaskbarOverlay->SetOverlayStyle(m_config.overlayFontSize,
-                                                       m_config.overlayDownloadColor,
-                                                       m_config.overlayUploadColor);
-                }
-
-                // Apply timer changes
-                if (m_config.updateInterval != oldConfig.updateInterval)
-                {
-                    KillTimer(m_hwnd, TIMER_UPDATE_NETWORK);
-                    SetTimer(m_hwnd, TIMER_UPDATE_NETWORK, m_config.updateInterval, nullptr);
-                }
-
-                if (m_config.historyAutoTrimDays != oldConfig.historyAutoTrimDays && 
-                    m_config.historyAutoTrimDays > 0)
-                {
-                    HistoryLogger::Instance().TrimToRecentDays(m_config.historyAutoTrimDays);
-                }
-
-                if (m_config.language != oldConfig.language)
-                {
-                    ApplyLanguageFromConfig();
-                }
-
-                // Update oldConfig for next comparison
-                oldConfig = m_config;
-
-                // Refresh UI
-                OnTimer();
-            }
-        });
-
-        dialogResult = dlg.Show(m_hwnd, m_pConfigManager.get(), m_pNetworkMonitor.get());
-
-        if (dialogResult == IDCANCEL)
-        {
-            // User cancelled - exit without further processing
-            return;
-        }
-
-    } while (dialogResult == IDAPPLY_REOPEN);
-
-    // dialogResult == IDOK at this point
-    // Settings were already applied via callback, just ensure final state
-    LoadConfig();
-    SetDebugLoggingEnabled(m_config.debugLogging);
-    OnTimer();
 }
 
 void Application::ShowDashboardDialog()
 {
-    DashboardDialog dlg;
-    dlg.Show(m_hwnd, m_pNetworkMonitor.get(), &m_config);
+    if (m_pDialogManager)
+    {
+        m_pDialogManager->ShowDashboard();
+    }
 }
 
 void Application::ShowHistoryDialog()
 {
-    HistoryDialog dlg;
-    dlg.Show(m_hwnd, &m_config);
+    if (m_pDialogManager)
+    {
+        m_pDialogManager->ShowHistory();
+    }
 }
 
 void Application::ShowAboutDialog()
 {
-    std::wstring title = LoadStringResource(IDS_ABOUT_TITLE);
-    if (title.empty())
+    if (m_pDialogManager)
     {
-        title = L"About NetworkMonitor";
+        m_pDialogManager->ShowAbout();
     }
-
-    std::wstring versionLabel = LoadStringResource(IDS_ABOUT_VERSION_LABEL);
-    if (versionLabel.empty())
-    {
-        versionLabel = L"Version: ";
-    }
-
-    std::wstring body = LoadStringResource(IDS_ABOUT_BODY);
-    if (body.empty())
-    {
-        body = L"A lightweight network traffic monitor for Windows.\nDisplays real-time download/upload speeds in the system tray and taskbar.";
-    }
-
-    std::wstring message = APP_NAME;
-    message += L"\n";
-    message += versionLabel;
-    message += APP_VERSION;
-    message += L"\n\n";
-    message += body;
-
-    ShowDarkMessageBox(m_hwnd, message, title, MB_OK | MB_ICONINFORMATION, m_config.darkTheme);
 }
 
 void Application::OnTaskbarOverlayRightClick()
@@ -429,181 +359,9 @@ void Application::OnTaskbarOverlayRightClick()
 
 void Application::OnMenuCommand(UINT menuId)
 {
-    switch (menuId)
+    if (m_pMenuHandler)
     {
-        case IDM_UPDATE_FAST:
-            m_config.updateInterval = UPDATE_INTERVAL_FAST;
-            SaveConfig();
-            KillTimer(m_hwnd, TIMER_UPDATE_NETWORK);
-            SetTimer(m_hwnd, TIMER_UPDATE_NETWORK, m_config.updateInterval, nullptr);
-            break;
-
-        case IDM_UPDATE_NORMAL:
-            m_config.updateInterval = UPDATE_INTERVAL_NORMAL;
-            SaveConfig();
-            KillTimer(m_hwnd, TIMER_UPDATE_NETWORK);
-            SetTimer(m_hwnd, TIMER_UPDATE_NETWORK, m_config.updateInterval, nullptr);
-            break;
-
-        case IDM_UPDATE_SLOW:
-            m_config.updateInterval = UPDATE_INTERVAL_SLOW;
-            SaveConfig();
-            KillTimer(m_hwnd, TIMER_UPDATE_NETWORK);
-            SetTimer(m_hwnd, TIMER_UPDATE_NETWORK, m_config.updateInterval, nullptr);
-            break;
-
-        case IDM_AUTOSTART:
-            m_config.autoStart = !m_config.autoStart;
-            SaveConfig();
-            break;
-
-        case IDM_SHOW_TASKBAR_OVERLAY:
-            if (m_pTaskbarOverlay)
-            {
-                bool isVisible = m_pTaskbarOverlay->IsVisible();
-                m_pTaskbarOverlay->Show(!isVisible);
-            }
-            break;
-
-        case IDM_SETTINGS:
-            ShowSettingsDialog();
-            break;
-
-        case IDM_DASHBOARD:
-            ShowDashboardDialog();
-            break;
-
-        case IDM_ABOUT:
-            ShowAboutDialog();
-            break;
-
-        case IDM_EXIT:
-            DestroyWindow(m_hwnd);
-            break;
-    }
-}
-
-void Application::OnTimer()
-{
-    if (!m_pNetworkMonitor)
-    {
-        return;
-    }
-
-    // Update network statistics
-    m_pNetworkMonitor->Update();
-
-    NetworkStats stats = GetCurrentStatsForConfig();
-
-    if (m_config.enableLogging)
-    {
-        // History logging: record per-interval usage into SQLite
-        LogHistorySample(stats);
-    }
-
-    // Update tray icon
-    UpdateTrayIcon(stats);
-
-    // Update taskbar overlay
-    UpdateTaskbarOverlay(stats);
-
-    // Check connection status for notifications
-    CheckConnectionStatus(stats.isActive);
-}
-
-NetworkStats Application::GetCurrentStatsForConfig()
-{
-    NetworkStats stats;
-    bool useSpecificInterface = !m_config.selectedInterface.empty();
-    if (useSpecificInterface)
-    {
-        NetworkStats selectedStats;
-        if (m_pNetworkMonitor->GetInterfaceStats(m_config.selectedInterface, selectedStats))
-        {
-            stats = selectedStats;
-        }
-        else
-        {
-            stats = m_pNetworkMonitor->GetAggregatedStats();
-        }
-    }
-    else
-    {
-        stats = m_pNetworkMonitor->GetAggregatedStats();
-    }
-
-    return stats;
-}
-
-void Application::LogHistorySample(const NetworkStats& stats)
-{
-    unsigned long long totalDown = static_cast<unsigned long long>(stats.bytesReceived);
-    unsigned long long totalUp = static_cast<unsigned long long>(stats.bytesSent);
-
-    if (!m_prevTotalsValid)
-    {
-        m_prevTotalBytesDown = totalDown;
-        m_prevTotalBytesUp = totalUp;
-        m_prevTotalsValid = true;
-        return;
-    }
-
-    unsigned long long deltaDown = 0;
-    unsigned long long deltaUp = 0;
-
-    if (totalDown >= m_prevTotalBytesDown)
-    {
-        deltaDown = totalDown - m_prevTotalBytesDown;
-    }
-    // else: counters decreased -> treat as reset, don't accumulate
-
-    if (totalUp >= m_prevTotalBytesUp)
-    {
-        deltaUp = totalUp - m_prevTotalBytesUp;
-    }
-    // else: counters decreased -> treat as reset
-
-    if (deltaDown > 0 || deltaUp > 0)
-    {
-        std::wstring ifaceName = stats.interfaceName;
-        if (ifaceName.empty())
-        {
-            ifaceName = LoadStringResource(IDS_ALL_INTERFACES);
-            if (ifaceName.empty())
-            {
-                ifaceName = L"All Interfaces";
-            }
-        }
-
-        HistoryLogger::Instance().AppendSample(
-            ifaceName,
-            deltaDown,
-            deltaUp
-        );
-    }
-
-    m_prevTotalBytesDown = totalDown;
-    m_prevTotalBytesUp = totalUp;
-}
-
-void Application::UpdateTrayIcon(const NetworkStats& stats)
-{
-    if (m_pTrayIcon)
-    {
-        m_pTrayIcon->UpdateTooltip(stats, m_config.displayUnit);
-        m_pTrayIcon->UpdateIcon(stats.currentDownloadSpeed, stats.currentUploadSpeed);
-    }
-}
-
-void Application::UpdateTaskbarOverlay(const NetworkStats& stats)
-{
-    if (m_pTaskbarOverlay && m_pTaskbarOverlay->IsVisible())
-    {
-        m_pTaskbarOverlay->UpdateSpeed(
-            stats.currentDownloadSpeed,
-            stats.currentUploadSpeed,
-            m_config.displayUnit
-        );
+        m_pMenuHandler->HandleCommand(menuId);
     }
 }
 
@@ -643,11 +401,17 @@ LRESULT CALLBACK Application::InstanceWindowProc(HWND hwnd, UINT message, WPARAM
         {
             if (wParam == TIMER_UPDATE_NETWORK)
             {
-                OnTimer();
+                if (m_pUpdateCoordinator)
+                {
+                    m_pUpdateCoordinator->OnNetworkUpdateTick();
+                }
             }
             else if (wParam == TIMER_PING)
             {
-                OnPingTimer();
+                if (m_pUpdateCoordinator)
+                {
+                    m_pUpdateCoordinator->OnPingTick();
+                }
             }
             return 0;
         }
@@ -738,11 +502,6 @@ bool Application::CreateMainWindow()
     return true;
 }
 
-void Application::CenterDialogOnScreen(HWND hDlg)
-{
-    CenterWindowOnScreen(hDlg);
-}
-
 void Application::SetupHotkeys()
 {
     if (!m_pHotkeyManager)
@@ -767,59 +526,6 @@ void Application::OnHotkey(int hotkeyId)
             LogDebug(L"Application::OnHotkey: Toggled overlay visibility");
         }
     }
-}
-
-void Application::OnPingTimer()
-{
-    if (m_pPingMonitor)
-    {
-        m_pPingMonitor->Update();
-
-        // Update overlay with ping info
-        if (m_pTaskbarOverlay && m_pTaskbarOverlay->IsVisible())
-        {
-            int latency = m_pPingMonitor->GetLatency();
-            m_pTaskbarOverlay->SetPingLatency(latency);
-        }
-    }
-}
-
-void Application::CheckConnectionStatus(bool hasActiveInterface)
-{
-    if (!m_config.enableConnectionNotification)
-    {
-        m_wasConnected = hasActiveInterface;
-        return;
-    }
-
-    if (m_wasConnected && !hasActiveInterface)
-    {
-        // Disconnected
-        if (m_pTrayIcon)
-        {
-            std::wstring title = LoadStringResource(IDS_NOTIFICATION_DISCONNECTED_TITLE);
-            std::wstring msg = LoadStringResource(IDS_NOTIFICATION_DISCONNECTED_MSG);
-            if (title.empty()) title = L"Network Disconnected";
-            if (msg.empty()) msg = L"No active network connection";
-            m_pTrayIcon->ShowBalloonNotification(title, msg);
-        }
-        LogDebug(L"Application::CheckConnectionStatus: Network disconnected");
-    }
-    else if (!m_wasConnected && hasActiveInterface)
-    {
-        // Reconnected
-        if (m_pTrayIcon)
-        {
-            std::wstring title = LoadStringResource(IDS_NOTIFICATION_CONNECTED_TITLE);
-            std::wstring msg = LoadStringResource(IDS_NOTIFICATION_CONNECTED_MSG);
-            if (title.empty()) title = L"Network Connected";
-            if (msg.empty()) msg = L"Network connection restored";
-            m_pTrayIcon->ShowBalloonNotification(title, msg);
-        }
-        LogDebug(L"Application::CheckConnectionStatus: Network connected");
-    }
-
-    m_wasConnected = hasActiveInterface;
 }
 
 } // namespace NetworkMonitor

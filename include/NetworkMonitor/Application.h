@@ -8,6 +8,10 @@
 #include "NetworkMonitor/TaskbarOverlay.h"
 #include "NetworkMonitor/PingMonitor.h"
 #include "NetworkMonitor/HotkeyManager.h"
+#include "NetworkMonitor/MenuHandler.h"
+#include "NetworkMonitor/UpdateCoordinator.h"
+#include "NetworkMonitor/DialogManager.h"
+#include "NetworkMonitor/LanguageManager.h"
 #include <windows.h>
 #include <memory>
 
@@ -40,19 +44,15 @@ public:
     bool SaveConfig();
     void ApplyLanguageFromConfig();
 
-    // UI operations
+    // UI operations (delegated to DialogManager)
     void ShowSettingsDialog();
     void ShowDashboardDialog();
     void ShowHistoryDialog();
     void ShowAboutDialog();
     void OnTaskbarOverlayRightClick();
 
-    // Menu command handling
+    // Menu command handling (delegated to MenuHandler)
     void OnMenuCommand(UINT menuId);
-
-    // Timer callbacks
-    void OnTimer();
-    void OnPingTimer();
 
     // Hotkey handling
     void OnHotkey(int hotkeyId);
@@ -66,12 +66,6 @@ private:
     bool RegisterWindowClass();
     bool CreateMainWindow();
     void SetupHotkeys();
-    void CenterDialogOnScreen(HWND hDlg);
-    NetworkStats GetCurrentStatsForConfig();
-    void LogHistorySample(const NetworkStats& stats);
-    void UpdateTrayIcon(const NetworkStats& stats);
-    void UpdateTaskbarOverlay(const NetworkStats& stats);
-    void CheckConnectionStatus(bool hasActiveInterface);
 
     // Component instances (using smart pointers for automatic cleanup)
     std::unique_ptr<ConfigManager> m_pConfigManager;
@@ -80,19 +74,15 @@ private:
     std::unique_ptr<TaskbarOverlay> m_pTaskbarOverlay;
     std::unique_ptr<PingMonitor> m_pPingMonitor;
     std::unique_ptr<HotkeyManager> m_pHotkeyManager;
+    std::unique_ptr<MenuHandler> m_pMenuHandler;
+    std::unique_ptr<UpdateCoordinator> m_pUpdateCoordinator;
+    std::unique_ptr<DialogManager> m_pDialogManager;
+    std::unique_ptr<LanguageManager> m_pLanguageManager;
 
     // Application state
     AppConfig m_config;
     HWND m_hwnd;
     HINSTANCE m_hInstance;
-
-    // Previous totals for logging per-interval usage
-    unsigned long long m_prevTotalBytesDown;
-    unsigned long long m_prevTotalBytesUp;
-    bool m_prevTotalsValid;
-
-    // Connection state tracking
-    bool m_wasConnected;
 
     // Initialization state
     bool m_initialized;

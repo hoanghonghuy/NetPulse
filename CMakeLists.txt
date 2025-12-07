@@ -69,6 +69,10 @@ set(HEADER_FILES
     include/NetworkMonitor/PingMonitor.h
     include/NetworkMonitor/HistoryLogger.h
     include/NetworkMonitor/HotkeyManager.h
+    include/NetworkMonitor/MenuHandler.h
+    include/NetworkMonitor/UpdateCoordinator.h
+    include/NetworkMonitor/DialogManager.h
+    include/NetworkMonitor/LanguageManager.h
     include/NetworkMonitor/Application.h
     include/NetworkMonitor/SettingsDialog.h
     include/NetworkMonitor/DashboardDialog.h
@@ -88,10 +92,14 @@ set(SOURCE_FILES
     src/core/ConfigManager.cpp
     src/core/PingMonitor.cpp
     src/core/HotkeyManager.cpp
+    src/core/MenuHandler.cpp
+    src/core/UpdateCoordinator.cpp
+    src/core/LanguageManager.cpp
     src/ui/TrayIcon.cpp
     src/ui/TaskbarOverlay.cpp
     src/ui/ThemeHelper.cpp
     src/ui/DialogThemeHelper.cpp
+    src/ui/DialogManager.cpp
     src/core/HistoryLogger.cpp
     third_party/sqlite/sqlite3.c
 )
