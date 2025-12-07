@@ -21,6 +21,7 @@ set(TEST_SOURCES
     ../src/ui/TrayIcon.cpp
     ../src/ui/TaskbarOverlay.cpp
     ../src/ui/ThemeHelper.cpp
+    ../src/ui/DialogThemeHelper.cpp
     ../third_party/sqlite/sqlite3.c
 )
 
