@@ -26,6 +26,9 @@ set(TEST_SOURCES
     ../src/core/UpdateCoordinator.cpp
     ../src/core/LanguageManager.cpp
     ../src/ui/DialogManager.cpp
+    ../src/ui/dialogs/SettingsDialog.cpp
+    ../src/ui/dialogs/DashboardDialog.cpp
+    ../src/ui/dialogs/HistoryDialog.cpp
     ../third_party/sqlite/sqlite3.c
 )
 
