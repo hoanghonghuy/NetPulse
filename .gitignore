@@ -1,14 +1,25 @@
 # Build outputs
 build/
+out/
+x64/
+Debug/
+Release/
 *.exe
 *.obj
 *.pdb
+*.idb
+*.ilk
+*.lib
+*.exp
 
 # Visual Studio files
 .vs/
 *.user
 *.suo
 *.aps
+*.opendb
+*.db
+*.ipch
 enc_temp_folder/
 
 # Temporary files

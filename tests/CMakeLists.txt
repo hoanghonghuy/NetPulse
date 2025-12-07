@@ -22,6 +22,10 @@ set(TEST_SOURCES
     ../src/ui/TaskbarOverlay.cpp
     ../src/ui/ThemeHelper.cpp
     ../src/ui/DialogThemeHelper.cpp
+    ../src/core/MenuHandler.cpp
+    ../src/core/UpdateCoordinator.cpp
+    ../src/core/LanguageManager.cpp
+    ../src/ui/DialogManager.cpp
     ../third_party/sqlite/sqlite3.c
 )
 
