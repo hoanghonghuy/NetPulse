@@ -1,9 +1,3 @@
-// ============================================================================
-// File: HotkeyManager.cpp
-// Description: Manages global hotkey registration and handling
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #define WIN32_LEAN_AND_MEAN
 #include "NetworkMonitor/HotkeyManager.h"
 #include "NetworkMonitor/Utils.h"

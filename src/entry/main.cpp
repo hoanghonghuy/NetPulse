@@ -1,9 +1,3 @@
-// ============================================================================
-// File: main.cpp
-// Description: Application entry point and main message loop
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #include "NetworkMonitor/Common.h"
 #include "NetworkMonitor/Utils.h"
 #include "NetworkMonitor/Application.h"

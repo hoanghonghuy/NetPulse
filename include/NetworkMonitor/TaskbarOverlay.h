@@ -1,9 +1,3 @@
-// ============================================================================
-// File: TaskbarOverlay.h
-// Description: Taskbar overlay window for displaying network speed
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #ifndef NETWORK_MONITOR_TASKBAROVERLAY_H
 #define NETWORK_MONITOR_TASKBAROVERLAY_H
 

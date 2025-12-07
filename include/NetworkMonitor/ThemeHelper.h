@@ -1,9 +1,3 @@
-// ============================================================================
-// File: ThemeHelper.h
-// Description: Helper class for Windows Dark Mode integration
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #ifndef NETWORK_MONITOR_THEMEHELPER_H
 #define NETWORK_MONITOR_THEMEHELPER_H
 

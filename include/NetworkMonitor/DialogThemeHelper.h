@@ -1,9 +1,3 @@
-// ============================================================================
-// File: DialogThemeHelper.h
-// Description: Helper for dark/light theme dialog styling
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #ifndef NETWORK_MONITOR_DIALOG_THEME_HELPER_H
 #define NETWORK_MONITOR_DIALOG_THEME_HELPER_H
 

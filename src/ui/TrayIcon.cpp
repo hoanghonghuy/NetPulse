@@ -1,9 +1,3 @@
-// ============================================================================
-// File: TrayIcon.cpp
-// Description: Implementation of system tray icon management
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #include "NetworkMonitor/TrayIcon.h"
 #include "NetworkMonitor/Utils.h"
 #include "NetworkMonitor/ThemeHelper.h"

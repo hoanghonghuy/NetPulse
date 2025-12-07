@@ -1,9 +1,3 @@
-// ============================================================================
-// File: DialogThemeHelper.cpp
-// Description: Helper for dark/light theme dialog styling
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #include "NetworkMonitor/DialogThemeHelper.h"
 #include <uxtheme.h>
 

@@ -1,9 +1,3 @@
-// ============================================================================
-// File: HotkeyManager.h
-// Description: Manages global hotkey registration and handling
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #ifndef NETWORK_MONITOR_HOTKEY_MANAGER_H
 #define NETWORK_MONITOR_HOTKEY_MANAGER_H
 

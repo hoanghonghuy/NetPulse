@@ -1,9 +1,3 @@
-// ============================================================================
-// File: HistoryLogger.cpp
-// Description: Implementation of network usage history logger using SQLite
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #include "NetworkMonitor/HistoryLogger.h"
 #include "NetworkMonitor/Utils.h"
 

@@ -1,9 +1,3 @@
-// ============================================================================
-// File: Utils.cpp
-// Description: Implementation of utility functions
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #include "NetworkMonitor/Utils.h"
 #include "NetworkMonitor/DialogThemeHelper.h"
 #include "NetworkMonitor/ThemeHelper.h"

@@ -1,9 +1,3 @@
-// ============================================================================
-// File: NetworkMonitor.cpp
-// Description: Implementation of network interface monitoring
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #include "NetworkMonitor/NetworkMonitor.h"
 #include "NetworkMonitor/Utils.h"
 

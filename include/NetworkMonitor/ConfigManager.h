@@ -1,9 +1,3 @@
-// ============================================================================
-// File: ConfigManager.h
-// Description: Configuration manager for saving/loading application settings
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #ifndef NETWORK_MONITOR_CONFIGMANAGER_H
 #define NETWORK_MONITOR_CONFIGMANAGER_H
 

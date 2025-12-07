@@ -1,9 +1,3 @@
-// ============================================================================
-// File: PingMonitor.h
-// Description: Lightweight ICMP ping monitor using Windows API
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #ifndef NETWORK_MONITOR_PING_MONITOR_H
 #define NETWORK_MONITOR_PING_MONITOR_H
 

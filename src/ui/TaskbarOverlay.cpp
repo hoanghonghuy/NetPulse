@@ -1,9 +1,3 @@
-// ============================================================================
-// File: TaskbarOverlay.cpp
-// Description: Implementation of taskbar overlay window
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #include "NetworkMonitor/TaskbarOverlay.h"
 #include "NetworkMonitor/Utils.h"
 #include "../../resources/resource.h"

@@ -1,9 +1,3 @@
-// ============================================================================
-// File: IConfigProvider.h
-// Description: Interface for configuration provider (Dependency Inversion)
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #ifndef NETWORK_MONITOR_ICONFIG_PROVIDER_H
 #define NETWORK_MONITOR_ICONFIG_PROVIDER_H
 

@@ -1,9 +1,3 @@
-// ============================================================================
-// File: NetworkMonitor.h
-// Description: Network interface monitoring and data collection
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #ifndef NETWORK_MONITOR_NETWORKMONITOR_H
 #define NETWORK_MONITOR_NETWORKMONITOR_H
 

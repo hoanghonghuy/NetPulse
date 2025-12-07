@@ -1,9 +1,3 @@
-// ============================================================================
-// File: INetworkStatsProvider.h
-// Description: Interface for network statistics provider (Dependency Inversion)
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #ifndef NETWORK_MONITOR_INETWORK_STATS_PROVIDER_H
 #define NETWORK_MONITOR_INETWORK_STATS_PROVIDER_H
 

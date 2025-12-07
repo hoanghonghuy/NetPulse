@@ -1,9 +1,3 @@
-// ============================================================================
-// File: NetworkCalculator.h
-// Description: Network statistics calculator for bandwidth calculation
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #ifndef NETWORK_MONITOR_NETWORKCALCULATOR_H
 #define NETWORK_MONITOR_NETWORKCALCULATOR_H
 

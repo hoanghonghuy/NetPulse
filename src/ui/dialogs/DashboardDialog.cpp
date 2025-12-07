@@ -1,9 +1,3 @@
-// ============================================================================
-// File: DashboardDialog.cpp
-// Description: Dashboard dialog implementation for NetworkMonitor
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #include "NetworkMonitor/DashboardDialog.h"
 #include "NetworkMonitor/NetworkMonitor.h"
 #include "NetworkMonitor/HistoryLogger.h"

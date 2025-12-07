@@ -1,9 +1,3 @@
-// ============================================================================
-// File: HistoryLogger.h
-// Description: Logging of network usage history to SQLite database
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #ifndef NETWORK_MONITOR_HISTORYLOGGER_H
 #define NETWORK_MONITOR_HISTORYLOGGER_H
 

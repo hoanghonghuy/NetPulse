@@ -1,9 +1,3 @@
-// ============================================================================
-// File: HistoryDialog.cpp
-// Description: History management dialog implementation for NetworkMonitor
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #include "NetworkMonitor/HistoryDialog.h"
 #include "NetworkMonitor/HistoryLogger.h"
 #include "NetworkMonitor/DialogThemeHelper.h"

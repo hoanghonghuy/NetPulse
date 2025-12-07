@@ -1,9 +1,3 @@
-// ============================================================================
-// File: Application.h
-// Description: Main application class managing all components and state
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #ifndef NETWORK_MONITOR_APPLICATION_H
 #define NETWORK_MONITOR_APPLICATION_H
 

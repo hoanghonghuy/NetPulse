@@ -1,9 +1,3 @@
-// ============================================================================
-// File: DashboardDialog.h
-// Description: Dashboard dialog management for NetworkMonitor
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #ifndef NETWORK_MONITOR_DASHBOARD_DIALOG_H
 #define NETWORK_MONITOR_DASHBOARD_DIALOG_H
 

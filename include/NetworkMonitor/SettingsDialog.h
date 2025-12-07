@@ -1,9 +1,3 @@
-// ============================================================================
-// File: SettingsDialog.h
-// Description: Settings dialog management for NetworkMonitor
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #ifndef NETWORK_MONITOR_SETTINGS_DIALOG_H
 #define NETWORK_MONITOR_SETTINGS_DIALOG_H
 

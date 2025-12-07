@@ -1,9 +1,3 @@
-// ============================================================================
-// File: PingMonitor.cpp
-// Description: Implementation of ICMP ping monitor
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #include "NetworkMonitor/PingMonitor.h"
 #include "NetworkMonitor/Utils.h"
 #include <ws2tcpip.h>

@@ -1,9 +1,3 @@
-// ============================================================================
-// File: ThemeHelper.cpp
-// Description: Implementation of Windows Dark Mode integration
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #include "NetworkMonitor/ThemeHelper.h"
 #include <dwmapi.h>
 #include <uxtheme.h>

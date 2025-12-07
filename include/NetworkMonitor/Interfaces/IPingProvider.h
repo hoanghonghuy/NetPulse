@@ -1,9 +1,3 @@
-// ============================================================================
-// File: IPingProvider.h
-// Description: Interface for ping/latency provider (Dependency Inversion)
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #ifndef NETWORK_MONITOR_IPING_PROVIDER_H
 #define NETWORK_MONITOR_IPING_PROVIDER_H
 

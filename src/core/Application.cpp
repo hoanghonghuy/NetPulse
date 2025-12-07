@@ -1,9 +1,3 @@
-// ============================================================================
-// File: Application.cpp
-// Description: Main application class implementation for NetworkMonitor
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #include "NetworkMonitor/Application.h"
 #include "NetworkMonitor/Utils.h"
 #include "NetworkMonitor/HistoryLogger.h"

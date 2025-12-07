@@ -1,9 +1,3 @@
-// ============================================================================
-// File: TrayIcon.h
-// Description: System tray icon management and user interaction
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #ifndef NETWORK_MONITOR_TRAYICON_H
 #define NETWORK_MONITOR_TRAYICON_H
 

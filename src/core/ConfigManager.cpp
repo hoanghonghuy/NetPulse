@@ -1,9 +1,3 @@
-// ============================================================================
-// File: ConfigManager.cpp
-// Description: Implementation of configuration manager
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #include "NetworkMonitor/ConfigManager.h"
 #include "NetworkMonitor/Utils.h"
 #include "NetworkMonitor/ThemeHelper.h"

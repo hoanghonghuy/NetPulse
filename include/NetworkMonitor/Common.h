@@ -1,9 +1,3 @@
-// ============================================================================
-// File: Common.h
-// Description: Common definitions, constants, and structures for NetworkMonitor
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #ifndef NETWORK_MONITOR_COMMON_H
 #define NETWORK_MONITOR_COMMON_H
 

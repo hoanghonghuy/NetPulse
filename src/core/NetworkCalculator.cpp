@@ -1,9 +1,3 @@
-// ============================================================================
-// File: NetworkCalculator.cpp
-// Description: Implementation of network statistics calculator
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #include "NetworkMonitor/NetworkCalculator.h"
 #include "NetworkMonitor/Utils.h"
 #include "../../resources/resource.h"

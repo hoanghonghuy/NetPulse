@@ -1,9 +1,3 @@
-// ============================================================================
-// File: HistoryDialog.h
-// Description: History management dialog for NetworkMonitor
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #ifndef NETWORK_MONITOR_HISTORY_DIALOG_H
 #define NETWORK_MONITOR_HISTORY_DIALOG_H
 

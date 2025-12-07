@@ -1,9 +1,3 @@
-// ============================================================================
-// File: Utils.h
-// Description: Utility functions and helpers
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #ifndef NETWORK_MONITOR_UTILS_H
 #define NETWORK_MONITOR_UTILS_H
 

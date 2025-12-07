@@ -1,9 +1,3 @@
-// ============================================================================
-// File: SettingsDialog.cpp
-// Description: Settings dialog implementation for NetworkMonitor
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #include "NetworkMonitor/SettingsDialog.h"
 #include "NetworkMonitor/Interfaces/IConfigProvider.h"
 #include "NetworkMonitor/Interfaces/INetworkStatsProvider.h"
@@ -1190,8 +1184,6 @@ void SettingsDialog::PopulateInterfaceCombo(HWND hDlg)
         ComboBox_SetCurSel(hInterface, indexAll);
     }
 
-    // TODO: When NetworkMonitorClass is available here, enumerate real interfaces.
-    // For now, add the currently selected interface (if any) so the user sees it.
     if (m_pStatsProvider)
     {
         std::vector<NetworkStats> statsList = m_pStatsProvider->GetAllStats();
