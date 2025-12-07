@@ -2,6 +2,23 @@
 
 All notable changes to NetworkMonitor will be documented in this file.
 
+## [1.2.0] - 2025-12-07
+
+### Added
+- **Expanded Language Support**: Added Japanese, Korean, and Chinese (Simplified).
+- **Dark Theme Polish**: Implemented native-like dark mode for scrollbars, ComboBox dropdown lists, and checkboxes.
+- **Localization**: Full internationalization of remaining hardcoded UI strings (buttons, tabs, dialog labels).
+
+### Changed
+- **Brightness Control**: 
+  - Optimized response time for F5/F6 shortcuts (native-like performance).
+  - Completely removed annoyance popup notifications during brightness changes.
+- **Codebase Helper**: Removed redundant file banner headers from all source files for cleaner code.
+
+### Fixed
+- **Settings Persistence**: Fixed critical bug where selected language was not saving/loading correctly on restart.
+- **UI Consistency**: Fixed visual artifacts in dark mode for standard Windows controls.
+
 ## [1.1.0] - 2025-12-06
 
 ### Added
