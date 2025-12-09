@@ -30,6 +30,7 @@ namespace
 
 DashboardDialog::DashboardDialog()
     : m_hDialog(nullptr)
+    , m_pExternalHandle(nullptr)
     , m_pNetworkMonitor(nullptr)
     , m_pConfig(nullptr)
 {
@@ -70,6 +71,11 @@ INT_PTR CALLBACK DashboardDialog::DialogProc(HWND hDlg, UINT message, WPARAM wPa
         pThis = reinterpret_cast<DashboardDialog*>(lParam);
         SetWindowLongPtrW(hDlg, DWLP_USER, reinterpret_cast<LONG_PTR>(pThis));
         pThis->m_hDialog = hDlg;
+        // Update external handle storage for tracking
+        if (pThis->m_pExternalHandle)
+        {
+            *pThis->m_pExternalHandle = hDlg;
+        }
     }
     else
     {
@@ -302,6 +308,11 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                 case IDOK:
                 case IDCANCEL:
                 {
+                    // Clear external handle storage before closing
+                    if (m_pExternalHandle)
+                    {
+                        *m_pExternalHandle = nullptr;
+                    }
                     EndDialog(hDlg, LOWORD(wParam));
                     return TRUE;
                 }

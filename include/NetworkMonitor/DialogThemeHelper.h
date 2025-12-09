@@ -59,6 +59,12 @@ public:
     static void DrawTabItem(DRAWITEMSTRUCT* pDrawItem, bool darkTheme);
 
     /**
+     * Set thin window border for modern appearance
+     * @param hDlg Dialog handle
+     */
+    static void SetThinWindowBorder(HWND hDlg);
+
+    /**
      * Apply dark theme to common controls in a dialog
      * @param hDlg Dialog handle
      * @param darkTheme true to apply dark theme

@@ -24,6 +24,7 @@ public:
     using ShowDialogCallback = std::function<void()>;
     using ExitCallback = std::function<void()>;
     using UpdateTimerCallback = std::function<void(UINT intervalMs)>;
+    using ToggleFloatingWindowCallback = std::function<void()>;
 
     MenuHandler();
     ~MenuHandler();
@@ -46,6 +47,8 @@ public:
     void SetShowAboutCallback(ShowDialogCallback callback);
     void SetExitCallback(ExitCallback callback);
     void SetUpdateTimerCallback(UpdateTimerCallback callback);
+    void SetToggleFloatingWindowCallback(ToggleFloatingWindowCallback callback);
+    void SetShowPerAppCallback(ShowDialogCallback callback);
 
     /**
      * Handle a menu command
@@ -65,6 +68,8 @@ private:
     ShowDialogCallback m_showAboutCallback;
     ExitCallback m_exitCallback;
     UpdateTimerCallback m_updateTimerCallback;
+    ToggleFloatingWindowCallback m_toggleFloatingWindowCallback;
+    ShowDialogCallback m_showPerAppCallback;
 };
 
 } // namespace NetworkMonitor

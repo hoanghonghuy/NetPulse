@@ -1,5 +1,6 @@
 #include "NetworkMonitor/MenuHandler.h"
 #include "NetworkMonitor/TaskbarOverlay.h"
+#include "../../resources/resource.h"
 
 namespace NetworkMonitor
 {
@@ -55,6 +56,16 @@ void MenuHandler::SetUpdateTimerCallback(UpdateTimerCallback callback)
     m_updateTimerCallback = callback;
 }
 
+void MenuHandler::SetToggleFloatingWindowCallback(ToggleFloatingWindowCallback callback)
+{
+    m_toggleFloatingWindowCallback = callback;
+}
+
+void MenuHandler::SetShowPerAppCallback(ShowDialogCallback callback)
+{
+    m_showPerAppCallback = callback;
+}
+
 void MenuHandler::HandleCommand(UINT menuId)
 {
     if (!m_pConfig)
@@ -95,12 +106,20 @@ void MenuHandler::HandleCommand(UINT menuId)
             }
             break;
 
+        case IDM_SHOW_FLOATING_WINDOW:
+            if (m_toggleFloatingWindowCallback) m_toggleFloatingWindowCallback();
+            break;
+
         case IDM_SETTINGS:
             if (m_showSettingsCallback) m_showSettingsCallback();
             break;
 
         case IDM_DASHBOARD:
             if (m_showDashboardCallback) m_showDashboardCallback();
+            break;
+
+        case IDM_PERAPP:
+            if (m_showPerAppCallback) m_showPerAppCallback();
             break;
 
         case IDM_ABOUT:

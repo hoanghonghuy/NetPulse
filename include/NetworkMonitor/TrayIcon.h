@@ -5,6 +5,7 @@
 #include <windows.h>
 #include <shellapi.h>
 #include <functional>
+#include <map>
 
 #pragma comment(lib, "shell32.lib")
 
@@ -81,23 +82,56 @@ public:
     void ShowBalloonNotification(const std::wstring& title, const std::wstring& message);
 
     /**
+     * Provide callback to query floating window visibility state
+     */
+    void SetFloatingWindowVisibilityProvider(std::function<bool()> provider);
+
+    /**
      * Set callback for double-click on tray icon
      */
     void SetDoubleClickCallback(std::function<void()> callback);
 
 private:
+    // Menu item data for owner-draw
+    struct MenuItemData
+    {
+        std::wstring text;
+        UINT id;
+        bool checked;
+        bool separator;
+        bool isSubmenu;
+    };
+
     /**
      * Create context menu
      * @param config Current application configuration
      * @return Menu handle
      */
-    HMENU CreateContextMenu(const AppConfig& config, bool overlayVisible);
+    HMENU CreateContextMenu(const AppConfig& config, bool overlayVisible, bool floatingVisible);
 
     /**
      * Load application icon
      * @return Icon handle
      */
     HICON LoadAppIcon();
+
+    /**
+     * Handle menu item measurement
+     */
+    void HandleMenuMeasureItem(LPMEASUREITEMSTRUCT pMeasure);
+
+    /**
+     * Handle menu item drawing
+     */
+    void HandleMenuDrawItem(LPDRAWITEMSTRUCT pDraw);
+
+    /**
+     * Draw checkmark for checked menu items
+     */
+    void DrawCheckmark(HDC hdc, const RECT& rc, COLORREF color);
+
+    // Make Application class a friend to access menu handlers
+    friend class Application;
 
 private:
     HWND m_hwnd;                                    // Parent window handle
@@ -112,7 +146,9 @@ private:
     std::function<void(UINT)> m_menuCallback;       // Menu selection callback
     const AppConfig* m_configRef;                   // Current config reference
     std::function<bool()> m_overlayVisibleProvider; // Overlay visibility provider
+    std::function<bool()> m_floatingVisibleProvider; // Floating window visibility provider
     std::function<void()> m_doubleClickCallback;    // Double-click callback
+    std::map<UINT, MenuItemData> m_menuItems;       // Owner-draw menu item data
 };
 
 } // namespace NetworkMonitor

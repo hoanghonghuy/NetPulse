@@ -43,6 +43,8 @@
 #define IDM_UPDATE_SLOW                 1007
 #define IDM_SHOW_TASKBAR_OVERLAY        1008 
 #define IDM_DASHBOARD                   1009
+#define IDM_SHOW_FLOATING_WINDOW        1010
+#define IDM_PERAPP                      1011
 
 // ============================================================================
 // DIALOG RESOURCES
@@ -53,6 +55,11 @@
 #define IDD_DASHBOARD_DIALOG            303
 #define IDD_HISTORY_MANAGE_DIALOG       304
 #define IDD_MESSAGE_DIALOG              305
+#define IDD_PERAPP_DIALOG               306
+
+// Per-App Dialog Controls
+#define IDC_PERAPP_LIST                 3060
+#define IDC_PERAPP_REFRESH              3061
 
 // ============================================================================
 // STRING RESOURCES
@@ -160,6 +167,22 @@
 #define IDS_DASHBOARD_BUTTON_CLOSE      496
 #define IDS_DASHBOARD_BUTTON_MANAGE     497
 
+// Data Usage Alerts strings
+#define IDS_DATA_USAGE_TITLE            498
+#define IDS_DATA_USAGE_ENABLE           499
+#define IDS_DATA_USAGE_QUOTA            500
+#define IDS_DATA_USAGE_ALERT_MSG        501
+#define IDS_DATA_USAGE_UNIT_GB          502
+
+// Additional Settings labels (missing i18n)
+#define IDS_SETTINGS_LABEL_OVERLAY_FONT_SIZE  503
+#define IDS_SETTINGS_LABEL_OVERLAY_COLORS     504
+#define IDS_SETTINGS_LABEL_PING_TARGET        505
+#define IDS_SETTINGS_LABEL_PING_INTERVAL      506
+#define IDS_SETTINGS_LABEL_HOTKEY             507
+#define IDS_DATA_USAGE_QUOTA_GB               508
+#define IDS_SETTINGS_LABEL_DATA_USAGE_ENABLE  509
+
 // ============================================================================
 // CONTROL IDS (for dialogs)
 // ============================================================================
@@ -224,6 +247,26 @@
 #define IDC_PING_INTERVAL_LABEL         557
 #define IDC_HOTKEY_LABEL                558
 #define IDC_SETTINGS_BUTTON_APPLY       559
+
+// Data Usage Alert controls
+#define IDC_DATA_USAGE_ENABLE_CHECK     560
+#define IDC_DATA_USAGE_QUOTA_EDIT       561
+#define IDC_DATA_USAGE_QUOTA_LABEL      562
+#define IDC_DATA_USAGE_THRESHOLD1_EDIT  563
+#define IDC_DATA_USAGE_THRESHOLD2_EDIT  564
+
+// PerApp Dialog strings
+#define IDS_PERAPP_DIALOG_TITLE         565
+#define IDS_PERAPP_COL_APPLICATION      566
+#define IDS_PERAPP_COL_PID              567
+#define IDS_PERAPP_COL_TCP              568
+#define IDS_PERAPP_COL_UDP              569
+#define IDS_PERAPP_COL_SENT             570
+#define IDS_PERAPP_COL_RECEIVED         571
+#define IDS_PERAPP_BUTTON_REFRESH       572
+#define IDS_PERAPP_BUTTON_CLOSE         573
+#define IDS_MENU_FLOATING_WINDOW        574
+#define IDS_MENU_PERAPP                 575
 
 // ============================================================================
 // STANDARD DIALOG IDS

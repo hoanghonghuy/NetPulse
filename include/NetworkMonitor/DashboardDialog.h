@@ -17,6 +17,9 @@ public:
     DashboardDialog();
     ~DashboardDialog();
 
+    // Set external storage for dialog handle (for tracking/bringing to foreground)
+    void SetDialogHandleStorage(HWND* pDialogHandle) { m_pExternalHandle = pDialogHandle; }
+
     // Show the dashboard dialog modally
     bool Show(HWND parentWindow, NetworkMonitorClass* networkMonitor, const AppConfig* config);
 
@@ -35,6 +38,7 @@ private:
 
     // Member variables
     HWND m_hDialog;
+    HWND* m_pExternalHandle;  // External storage for dialog handle (for tracking)
     NetworkMonitorClass* m_pNetworkMonitor;
     const AppConfig* m_pConfig;
     std::vector<NetworkMonitor::HistorySample> m_chartSamples;

@@ -12,6 +12,7 @@ namespace NetworkMonitor
 
 HistoryDialog::HistoryDialog()
     : m_hDialog(nullptr)
+    , m_pExternalHandle(nullptr)
     , m_pConfig(nullptr)
 {
 }
@@ -44,6 +45,11 @@ INT_PTR CALLBACK HistoryDialog::DialogProc(HWND hDlg, UINT message, WPARAM wPara
         pThis = reinterpret_cast<HistoryDialog*>(lParam);
         SetWindowLongPtrW(hDlg, DWLP_USER, reinterpret_cast<LONG_PTR>(pThis));
         pThis->m_hDialog = hDlg;
+        // Update external handle storage for tracking
+        if (pThis->m_pExternalHandle)
+        {
+            *pThis->m_pExternalHandle = hDlg;
+        }
     }
     else
     {
@@ -315,6 +321,11 @@ INT_PTR CALLBACK HistoryDialog::InstanceDialogProc(HWND hDlg, UINT message, WPAR
 
                 case IDCANCEL:
                 case IDOK:
+                    // Clear external handle storage before closing
+                    if (m_pExternalHandle)
+                    {
+                        *m_pExternalHandle = nullptr;
+                    }
                     EndDialog(hDlg, LOWORD(wParam));
                     return TRUE;
             }

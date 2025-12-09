@@ -330,6 +330,17 @@ bool HistoryLogger::GetTotalsThisMonth(unsigned long long& totalDown, unsigned l
     return (rc == SQLITE_ROW || rc == SQLITE_DONE);
 }
 
+uint64_t HistoryLogger::GetThisMonthTotalBytes(const std::wstring* interfaceFilter)
+{
+    unsigned long long down = 0;
+    unsigned long long up = 0;
+    if (GetTotalsThisMonth(down, up, interfaceFilter))
+    {
+        return static_cast<uint64_t>(down + up);
+    }
+    return 0;
+}
+
 bool HistoryLogger::GetRecentSamples(int limit, std::vector<HistorySample>& outSamples,
                                      const std::wstring* interfaceFilter,
                                      bool onlyToday)

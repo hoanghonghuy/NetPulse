@@ -216,7 +216,13 @@
     <ClCompile Include="src\core\MenuHandler.cpp" />
     <ClCompile Include="src\core\UpdateCoordinator.cpp" />
     <ClCompile Include="src\core\LanguageManager.cpp" />
+    <ClCompile Include="src\core\DataUsageMonitor.cpp" />
+    <ClCompile Include="src\core\SystemMonitor.cpp" />
+    <ClCompile Include="src\ui\FloatingWindow.cpp" />
     <ClCompile Include="src\ui\DialogManager.cpp" />
+    <ClCompile Include="src\core\PerAppMonitor.cpp" />
+    <ClCompile Include="src\ui\dialogs\PerAppDialog.cpp" />
+    <ClCompile Include="src\core\EtwNetworkMonitor.cpp" />
     <ClCompile Include="third_party\sqlite\sqlite3.c" />
   </ItemGroup>
   <!-- ====================================================================== -->
@@ -242,6 +248,12 @@
     <ClInclude Include="include\NetworkMonitor\UpdateCoordinator.h" />
     <ClInclude Include="include\NetworkMonitor\DialogManager.h" />
     <ClInclude Include="include\NetworkMonitor\LanguageManager.h" />
+    <ClInclude Include="include\NetworkMonitor\DataUsageMonitor.h" />
+    <ClInclude Include="include\NetworkMonitor\FloatingWindow.h" />
+    <ClInclude Include="include\NetworkMonitor\SystemMonitor.h" />
+    <ClInclude Include="include\NetworkMonitor\PerAppMonitor.h" />
+    <ClInclude Include="include\NetworkMonitor\PerAppDialog.h" />
+    <ClInclude Include="include\NetworkMonitor\EtwNetworkMonitor.h" />
     <ClInclude Include="resources\resource.h" />
   </ItemGroup>
   <!-- ====================================================================== -->

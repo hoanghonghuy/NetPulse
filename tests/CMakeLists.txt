@@ -25,10 +25,16 @@ set(TEST_SOURCES
     ../src/core/MenuHandler.cpp
     ../src/core/UpdateCoordinator.cpp
     ../src/core/LanguageManager.cpp
+    ../src/core/DataUsageMonitor.cpp
+    ../src/core/SystemMonitor.cpp
     ../src/ui/DialogManager.cpp
+    ../src/ui/FloatingWindow.cpp
     ../src/ui/dialogs/SettingsDialog.cpp
     ../src/ui/dialogs/DashboardDialog.cpp
     ../src/ui/dialogs/HistoryDialog.cpp
+    ../src/ui/dialogs/PerAppDialog.cpp
+    ../src/core/PerAppMonitor.cpp
+    ../src/core/EtwNetworkMonitor.cpp
     ../third_party/sqlite/sqlite3.c
 )
 

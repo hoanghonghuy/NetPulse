@@ -12,6 +12,8 @@
 #include "NetworkMonitor/UpdateCoordinator.h"
 #include "NetworkMonitor/DialogManager.h"
 #include "NetworkMonitor/LanguageManager.h"
+#include "NetworkMonitor/FloatingWindow.h"
+#include "NetworkMonitor/SystemMonitor.h"
 #include <windows.h>
 #include <memory>
 
@@ -49,6 +51,7 @@ public:
     void ShowDashboardDialog();
     void ShowHistoryDialog();
     void ShowAboutDialog();
+    void ShowPerAppDialog();
     void OnTaskbarOverlayRightClick();
 
     // Menu command handling (delegated to MenuHandler)
@@ -78,6 +81,8 @@ private:
     std::unique_ptr<UpdateCoordinator> m_pUpdateCoordinator;
     std::unique_ptr<DialogManager> m_pDialogManager;
     std::unique_ptr<LanguageManager> m_pLanguageManager;
+    std::unique_ptr<FloatingWindow> m_pFloatingWindow;
+    std::unique_ptr<SystemMonitor> m_pSystemMonitor;
 
     // Application state
     AppConfig m_config;
@@ -86,6 +91,9 @@ private:
 
     // Initialization state
     bool m_initialized;
+    
+    // TaskbarCreated message ID (registered at runtime)
+    static UINT s_taskbarCreatedMsg;
 };
 
 } // namespace NetworkMonitor

@@ -17,6 +17,7 @@ TrayIcon::TrayIcon()
     , m_iconHighDark(nullptr)
     , m_configRef(nullptr)
     , m_overlayVisibleProvider(nullptr)
+    , m_floatingVisibleProvider(nullptr)
 {
     ZeroMemory(&m_notifyIconData, sizeof(NOTIFYICONDATAW));
 }
@@ -335,12 +336,18 @@ void TrayIcon::ShowContextMenu()
         overlayVisible = m_overlayVisibleProvider();
     }
 
+    bool floatingVisible = false;
+    if (m_floatingVisibleProvider)
+    {
+        floatingVisible = m_floatingVisibleProvider();
+    }
+
     // Get cursor position
     POINT cursorPos;
     GetCursorPos(&cursorPos);
 
     // Create context menu
-    HMENU hMenu = CreateContextMenu(*configPtr, overlayVisible);
+    HMENU hMenu = CreateContextMenu(*configPtr, overlayVisible, floatingVisible);
     if (hMenu == nullptr)
     {
         return;
@@ -349,7 +356,7 @@ void TrayIcon::ShowContextMenu()
     // Required for proper menu behavior in system tray
     SetForegroundWindow(m_hwnd);
 
-    // Show menu
+    // Show menu with owner-drawn items for dark theme support
     UINT menuItemId = TrackPopupMenuEx(
         hMenu,
         TPM_RIGHTBUTTON | TPM_RETURNCMD | TPM_NONOTIFY,
@@ -387,46 +394,78 @@ void TrayIcon::SetOverlayVisibilityProvider(std::function<bool()> provider)
     m_overlayVisibleProvider = std::move(provider);
 }
 
-HMENU TrayIcon::CreateContextMenu(const AppConfig& config, bool overlayVisible)
+void TrayIcon::SetFloatingWindowVisibilityProvider(std::function<bool()> provider)
 {
+    m_floatingVisibleProvider = std::move(provider);
+}
+
+HMENU TrayIcon::CreateContextMenu(const AppConfig& config, bool overlayVisible, bool floatingVisible)
+{
+    // Clear previous menu item data
+    m_menuItems.clear();
+    
     HMENU hMenu = CreatePopupMenu();
     if (hMenu == nullptr)
     {
         return nullptr;
     }
 
-    // Add menu items
+    // Helper lambda to add owner-draw menu item
+    auto AddMenuItem = [this](HMENU hMenu, UINT id, std::wstring text, bool checked = false, bool separator = false) {
+        MenuItemData data;
+        data.text = std::move(text);
+        data.id = id;
+        data.checked = checked;
+        data.separator = separator;
+        data.isSubmenu = false;
+        m_menuItems[id] = data;
+        
+        if (separator)
+        {
+            AppendMenuW(hMenu, MF_SEPARATOR | MF_OWNERDRAW, id, nullptr);
+        }
+        else
+        {
+            AppendMenuW(hMenu, MF_STRING | MF_OWNERDRAW, id, (LPCWSTR)(UINT_PTR)id);
+        }
+    };
+
     // Update Speed submenu
     HMENU hUpdateMenu = CreatePopupMenu();
-    AppendMenuW(hUpdateMenu, MF_STRING | (config.updateInterval == UPDATE_INTERVAL_FAST ? MF_CHECKED : 0),
-                IDM_UPDATE_FAST, LoadStringResource(IDS_MENU_UPDATE_FAST).c_str());
-    AppendMenuW(hUpdateMenu, MF_STRING | (config.updateInterval == UPDATE_INTERVAL_NORMAL ? MF_CHECKED : 0),
-                IDM_UPDATE_NORMAL, LoadStringResource(IDS_MENU_UPDATE_NORMAL).c_str());
-    AppendMenuW(hUpdateMenu, MF_STRING | (config.updateInterval == UPDATE_INTERVAL_SLOW ? MF_CHECKED : 0),
-                IDM_UPDATE_SLOW, LoadStringResource(IDS_MENU_UPDATE_SLOW).c_str());
+    AddMenuItem(hUpdateMenu, IDM_UPDATE_FAST, LoadStringResource(IDS_MENU_UPDATE_FAST), 
+                config.updateInterval == UPDATE_INTERVAL_FAST);
+    AddMenuItem(hUpdateMenu, IDM_UPDATE_NORMAL, LoadStringResource(IDS_MENU_UPDATE_NORMAL),
+                config.updateInterval == UPDATE_INTERVAL_NORMAL);
+    AddMenuItem(hUpdateMenu, IDM_UPDATE_SLOW, LoadStringResource(IDS_MENU_UPDATE_SLOW),
+                config.updateInterval == UPDATE_INTERVAL_SLOW);
 
-    AppendMenuW(hMenu, MF_POPUP, (UINT_PTR)hUpdateMenu, LoadStringResource(IDS_MENU_UPDATE_INTERVAL).c_str());
-    AppendMenuW(hMenu, MF_SEPARATOR, 0, nullptr);
+    // Add submenu to main menu
+    MenuItemData submenuData;
+    submenuData.text = LoadStringResource(IDS_MENU_UPDATE_INTERVAL);
+    submenuData.id = (UINT)(UINT_PTR)hUpdateMenu;
+    submenuData.checked = false;
+    submenuData.separator = false;
+    submenuData.isSubmenu = true;
+    m_menuItems[(UINT)(UINT_PTR)hUpdateMenu] = submenuData;
+    AppendMenuW(hMenu, MF_POPUP | MF_OWNERDRAW, (UINT_PTR)hUpdateMenu, (LPCWSTR)(UINT_PTR)hUpdateMenu);
+    
+    AddMenuItem(hMenu, 9999, L"", false, true); // Separator
 
-    // Auto Start
-    AppendMenuW(hMenu, MF_STRING | (config.autoStart ? MF_CHECKED : 0),
-                IDM_AUTOSTART, LoadStringResource(IDS_MENU_AUTOSTART).c_str());
+    // Main menu items
+    AddMenuItem(hMenu, IDM_AUTOSTART, LoadStringResource(IDS_MENU_AUTOSTART), config.autoStart);
+    AddMenuItem(hMenu, IDM_SHOW_TASKBAR_OVERLAY, LoadStringResource(IDS_MENU_TASKBAR_OVERLAY), overlayVisible);
+    AddMenuItem(hMenu, IDM_SHOW_FLOATING_WINDOW, LoadStringResource(IDS_MENU_FLOATING_WINDOW), floatingVisible);
+    
+    AddMenuItem(hMenu, 9998, L"", false, true); // Separator
 
-    // Taskbar overlay toggle
-    AppendMenuW(hMenu, MF_STRING | (overlayVisible ? MF_CHECKED : 0),
-                IDM_SHOW_TASKBAR_OVERLAY, LoadStringResource(IDS_MENU_TASKBAR_OVERLAY).c_str());
+    AddMenuItem(hMenu, IDM_SETTINGS, LoadStringResource(IDS_MENU_SETTINGS));
+    AddMenuItem(hMenu, IDM_DASHBOARD, LoadStringResource(IDS_MENU_DASHBOARD));
+    AddMenuItem(hMenu, IDM_PERAPP, LoadStringResource(IDS_MENU_PERAPP));
+    AddMenuItem(hMenu, IDM_ABOUT, LoadStringResource(IDS_MENU_ABOUT));
+    
+    AddMenuItem(hMenu, 9997, L"", false, true); // Separator
 
-    AppendMenuW(hMenu, MF_SEPARATOR, 0, nullptr);
-
-    // Settings, Dashboard & About
-    AppendMenuW(hMenu, MF_STRING, IDM_SETTINGS, LoadStringResource(IDS_MENU_SETTINGS).c_str());
-    AppendMenuW(hMenu, MF_STRING, IDM_DASHBOARD, LoadStringResource(IDS_MENU_DASHBOARD).c_str());
-    AppendMenuW(hMenu, MF_STRING, IDM_ABOUT, LoadStringResource(IDS_MENU_ABOUT).c_str());
-
-    AppendMenuW(hMenu, MF_SEPARATOR, 0, nullptr);
-
-    // Exit
-    AppendMenuW(hMenu, MF_STRING, IDM_EXIT, LoadStringResource(IDS_MENU_EXIT).c_str());
+    AddMenuItem(hMenu, IDM_EXIT, LoadStringResource(IDS_MENU_EXIT));
 
     return hMenu;
 }
@@ -488,6 +527,109 @@ void TrayIcon::ShowBalloonNotification(const std::wstring& title, const std::wst
 void TrayIcon::SetDoubleClickCallback(std::function<void()> callback)
 {
     m_doubleClickCallback = std::move(callback);
+}
+
+void TrayIcon::HandleMenuMeasureItem(LPMEASUREITEMSTRUCT pMeasure)
+{
+    auto it = m_menuItems.find(pMeasure->itemID);
+    if (it == m_menuItems.end())
+    {
+        return;
+    }
+
+    const MenuItemData& itemData = it->second;
+    
+    if (itemData.separator)
+    {
+        pMeasure->itemWidth = 100;
+        pMeasure->itemHeight = 6;
+    }
+    else
+    {
+        HDC hdc = GetDC(nullptr);
+        SIZE size;
+        GetTextExtentPoint32W(hdc, itemData.text.c_str(), (int)itemData.text.length(), &size);
+        ReleaseDC(nullptr, hdc);
+        
+        pMeasure->itemWidth = size.cx + 50;  // Padding for text + checkmark space
+        pMeasure->itemHeight = size.cy + 8;  // Vertical padding
+    }
+}
+
+void TrayIcon::HandleMenuDrawItem(LPDRAWITEMSTRUCT pDraw)
+{
+    auto it = m_menuItems.find(pDraw->itemID);
+    if (it == m_menuItems.end())
+    {
+        return;
+    }
+
+    const MenuItemData& itemData = it->second;
+    bool darkTheme = (m_configRef && m_configRef->darkTheme);
+    
+    // Colors based on theme
+    COLORREF bgColor = darkTheme ? RGB(30, 30, 30) : RGB(255, 255, 255);
+    COLORREF textColor = darkTheme ? RGB(220, 220, 220) : RGB(0, 0, 0);
+    COLORREF selectBg = darkTheme ? RGB(50, 50, 50) : RGB(200, 220, 240);
+    COLORREF separatorColor = darkTheme ? RGB(60, 60, 60) : RGB(200, 200, 200);
+    
+    if (itemData.separator)
+    {
+        // Draw separator
+        HBRUSH hBrush = CreateSolidBrush(bgColor);
+        FillRect(pDraw->hDC, &pDraw->rcItem, hBrush);
+        DeleteObject(hBrush);
+        
+        // Draw separator line
+        int midY = (pDraw->rcItem.top + pDraw->rcItem.bottom) / 2;
+        HPEN hPen = CreatePen(PS_SOLID, 1, separatorColor);
+        HPEN hOldPen = (HPEN)SelectObject(pDraw->hDC, hPen);
+        MoveToEx(pDraw->hDC, pDraw->rcItem.left + 5, midY, nullptr);
+        LineTo(pDraw->hDC, pDraw->rcItem.right - 5, midY);
+        SelectObject(pDraw->hDC, hOldPen);
+        DeleteObject(hPen);
+    }
+    else
+    {
+        // Draw background
+        HBRUSH hBrush = CreateSolidBrush((pDraw->itemState & ODS_SELECTED) ? selectBg : bgColor);
+        FillRect(pDraw->hDC, &pDraw->rcItem, hBrush);
+        DeleteObject(hBrush);
+        
+        // Draw checkmark if checked
+        if (itemData.checked)
+        {
+            DrawCheckmark(pDraw->hDC, pDraw->rcItem, textColor);
+        }
+        
+        // Draw text
+        SetTextColor(pDraw->hDC, textColor);
+        SetBkMode(pDraw->hDC, TRANSPARENT);
+        
+        RECT textRect = pDraw->rcItem;
+        textRect.left += 25;  // Padding for checkmark space
+        
+        DrawTextW(pDraw->hDC, itemData.text.c_str(), -1, &textRect, 
+                 DT_VCENTER | DT_SINGLELINE | DT_LEFT);
+    }
+}
+
+void TrayIcon::DrawCheckmark(HDC hdc, const RECT& rc, COLORREF color)
+{
+    // Draw a simple checkmark (√) using lines with thinner pen
+    HPEN hPen = CreatePen(PS_SOLID, 1, color);  // Changed from 2 to 1 for thinner checkmark
+    HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
+    
+    int left = rc.left + 6;
+    int centerY = (rc.top + rc.bottom) / 2;
+    
+    // Draw checkmark shape
+    MoveToEx(hdc, left, centerY, nullptr);
+    LineTo(hdc, left + 4, centerY + 4);
+    LineTo(hdc, left + 10, centerY - 4);
+    
+    SelectObject(hdc, hOldPen);
+    DeleteObject(hPen);
 }
 
 } // namespace NetworkMonitor

@@ -12,6 +12,9 @@ public:
     HistoryDialog();
     ~HistoryDialog();
 
+    // Set external storage for dialog handle (for tracking/bringing to foreground)
+    void SetDialogHandleStorage(HWND* pDialogHandle) { m_pExternalHandle = pDialogHandle; }
+
     // Show the history management dialog modally
     bool Show(HWND parentWindow, const AppConfig* config);
 
@@ -26,6 +29,7 @@ private:
 
     // Member variables
     HWND m_hDialog;
+    HWND* m_pExternalHandle;  // External storage for dialog handle (for tracking)
     const AppConfig* m_pConfig;
 };
 

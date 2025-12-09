@@ -3,7 +3,9 @@
 
 #include "NetworkMonitor/Common.h"
 #include "NetworkMonitor/Interfaces/INetworkStatsProvider.h"
+#include "NetworkMonitor/DataUsageMonitor.h"
 #include <functional>
+#include <memory>
 
 namespace NetworkMonitor
 {
@@ -26,6 +28,8 @@ public:
     using LogHistoryCallback = std::function<void(unsigned long long bytesDown, unsigned long long bytesUp)>;
     // Callback for connection status changes
     using ConnectionStatusCallback = std::function<void(bool isConnected)>;
+    // Callback for data usage alerts
+    using DataUsageAlertCallback = std::function<void(int thresholdPercent, int currentPercent)>;
 
     UpdateCoordinator();
     ~UpdateCoordinator();
@@ -50,6 +54,16 @@ public:
      * Set callback for connection status changes
      */
     void SetConnectionStatusCallback(ConnectionStatusCallback callback);
+
+    /**
+     * Set callback for data usage alerts
+     */
+    void SetDataUsageAlertCallback(DataUsageAlertCallback callback);
+
+    /**
+     * Get current month's total usage in bytes (for UI display)
+     */
+    uint64_t GetCurrentMonthUsage() const { return m_currentMonthUsageBytes; }
 
     /**
      * Called on network update timer tick
@@ -99,6 +113,11 @@ private:
     // Callbacks
     LogHistoryCallback m_logHistoryCallback;
     ConnectionStatusCallback m_connectionStatusCallback;
+    DataUsageAlertCallback m_dataUsageAlertCallback;
+
+    // Data usage monitoring
+    std::unique_ptr<DataUsageMonitor> m_pDataUsageMonitor;
+    uint64_t m_currentMonthUsageBytes;
 };
 
 } // namespace NetworkMonitor

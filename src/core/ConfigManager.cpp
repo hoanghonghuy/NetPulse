@@ -84,6 +84,22 @@ bool ConfigManager::LoadConfig(AppConfig& config)
     config.overlayFontSize = static_cast<int>(ReadDWORD(hKey, L"OverlayFontSize", 13));
     config.overlayDownloadColor = ReadDWORD(hKey, L"OverlayDownloadColor", RGB(0, 255, 255));
     config.overlayUploadColor = ReadDWORD(hKey, L"OverlayUploadColor", RGB(0, 255, 0));
+    
+    // Data Usage Alerts
+    config.enableDataUsageAlerts = ReadDWORD(hKey, L"EnableDataUsageAlerts", 0) != 0;
+    DWORD quotaMB = ReadDWORD(hKey, L"DataQuotaMB", 0);  // Store in MB for registry precision
+    config.dataQuotaGB = static_cast<double>(quotaMB) / 1024.0;
+    config.dataAlertThreshold1 = static_cast<int>(ReadDWORD(hKey, L"DataAlertThreshold1", 80));
+    config.dataAlertThreshold2 = static_cast<int>(ReadDWORD(hKey, L"DataAlertThreshold2", 100));
+
+    // Floating Window
+    config.showFloatingWindow = ReadDWORD(hKey, L"ShowFloatingWindow", 0) != 0;
+    config.floatingWindowX = static_cast<int>(ReadDWORD(hKey, L"FloatingWindowX", static_cast<DWORD>(-1)));
+    config.floatingWindowY = static_cast<int>(ReadDWORD(hKey, L"FloatingWindowY", static_cast<DWORD>(-1)));
+    config.floatingWindowOpacity = static_cast<BYTE>(ReadDWORD(hKey, L"FloatingWindowOpacity", 200));
+    config.floatingShowNetwork = ReadDWORD(hKey, L"FloatingShowNetwork", 1) != 0;
+    config.floatingShowCPU = ReadDWORD(hKey, L"FloatingShowCPU", 1) != 0;
+    config.floatingShowRAM = ReadDWORD(hKey, L"FloatingShowRAM", 1) != 0;
 
     RegCloseKey(hKey);
     return true;
@@ -144,6 +160,22 @@ bool ConfigManager::SaveConfig(const AppConfig& config)
     success &= WriteDWORD(hKey, L"OverlayFontSize", static_cast<DWORD>(config.overlayFontSize));
     success &= WriteDWORD(hKey, L"OverlayDownloadColor", config.overlayDownloadColor);
     success &= WriteDWORD(hKey, L"OverlayUploadColor", config.overlayUploadColor);
+    
+    // Data Usage Alerts
+    success &= WriteDWORD(hKey, L"EnableDataUsageAlerts", config.enableDataUsageAlerts ? 1 : 0);
+    DWORD quotaMB = static_cast<DWORD>(config.dataQuotaGB * 1024.0);  // Store in MB
+    success &= WriteDWORD(hKey, L"DataQuotaMB", quotaMB);
+    success &= WriteDWORD(hKey, L"DataAlertThreshold1", static_cast<DWORD>(config.dataAlertThreshold1));
+    success &= WriteDWORD(hKey, L"DataAlertThreshold2", static_cast<DWORD>(config.dataAlertThreshold2));
+
+    // Floating Window
+    success &= WriteDWORD(hKey, L"ShowFloatingWindow", config.showFloatingWindow ? 1 : 0);
+    success &= WriteDWORD(hKey, L"FloatingWindowX", static_cast<DWORD>(config.floatingWindowX));
+    success &= WriteDWORD(hKey, L"FloatingWindowY", static_cast<DWORD>(config.floatingWindowY));
+    success &= WriteDWORD(hKey, L"FloatingWindowOpacity", static_cast<DWORD>(config.floatingWindowOpacity));
+    success &= WriteDWORD(hKey, L"FloatingShowNetwork", config.floatingShowNetwork ? 1 : 0);
+    success &= WriteDWORD(hKey, L"FloatingShowCPU", config.floatingShowCPU ? 1 : 0);
+    success &= WriteDWORD(hKey, L"FloatingShowRAM", config.floatingShowRAM ? 1 : 0);
 
     // Save auto-start setting
     success &= SetAutoStart(config.autoStart);

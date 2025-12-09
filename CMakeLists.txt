@@ -73,10 +73,16 @@ set(HEADER_FILES
     include/NetworkMonitor/UpdateCoordinator.h
     include/NetworkMonitor/DialogManager.h
     include/NetworkMonitor/LanguageManager.h
+    include/NetworkMonitor/DataUsageMonitor.h
+    include/NetworkMonitor/FloatingWindow.h
+    include/NetworkMonitor/SystemMonitor.h
     include/NetworkMonitor/Application.h
     include/NetworkMonitor/SettingsDialog.h
     include/NetworkMonitor/DashboardDialog.h
     include/NetworkMonitor/HistoryDialog.h
+    include/NetworkMonitor/PerAppMonitor.h
+    include/NetworkMonitor/PerAppDialog.h
+    include/NetworkMonitor/EtwNetworkMonitor.h
 )
 
 # Source files
@@ -95,12 +101,18 @@ set(SOURCE_FILES
     src/core/MenuHandler.cpp
     src/core/UpdateCoordinator.cpp
     src/core/LanguageManager.cpp
+    src/core/DataUsageMonitor.cpp
+    src/core/SystemMonitor.cpp
     src/ui/TrayIcon.cpp
     src/ui/TaskbarOverlay.cpp
+    src/ui/FloatingWindow.cpp
     src/ui/ThemeHelper.cpp
     src/ui/DialogThemeHelper.cpp
     src/ui/DialogManager.cpp
     src/core/HistoryLogger.cpp
+    src/core/PerAppMonitor.cpp
+    src/ui/dialogs/PerAppDialog.cpp
+    src/core/EtwNetworkMonitor.cpp
     third_party/sqlite/sqlite3.c
 )
 

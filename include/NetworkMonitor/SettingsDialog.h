@@ -23,6 +23,9 @@ public:
     // Set callback for when settings are applied
     void SetSettingsChangedCallback(std::function<void()> callback);
 
+    // Set external storage for dialog handle (for tracking/bringing to foreground)
+    void SetDialogHandleStorage(HWND* pDialogHandle) { m_pExternalHandle = pDialogHandle; }
+
 private:
     // Dialog procedure
     static INT_PTR CALLBACK DialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
@@ -38,6 +41,7 @@ private:
 
     // Member variables
     HWND m_hDialog;
+    HWND* m_pExternalHandle;  // External storage for dialog handle (for tracking)
     IConfigProvider* m_pConfigProvider;
     INetworkStatsProvider* m_pStatsProvider;
     AppConfig m_configCopy;  // Working copy of config

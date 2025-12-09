@@ -4,6 +4,7 @@
 #include "NetworkMonitor/SettingsDialog.h"
 #include "NetworkMonitor/DashboardDialog.h"
 #include "NetworkMonitor/HistoryDialog.h"
+
 #include "NetworkMonitor/ThemeHelper.h"
 #include "../../resources/resource.h"
 #include <windowsx.h>
@@ -11,6 +12,9 @@
 
 namespace NetworkMonitor
 {
+
+// Static member initialization
+UINT Application::s_taskbarCreatedMsg = 0;
 
 Application::Application()
     : m_hwnd(nullptr)
@@ -58,6 +62,9 @@ bool Application::Initialize(HINSTANCE hInstance)
         return false;
     }
 
+    // Register for TaskbarCreated message (sent when explorer.exe restarts)
+    s_taskbarCreatedMsg = RegisterWindowMessageW(L"TaskbarCreated");
+
     // Create and initialize components
     m_pConfigManager = std::make_unique<ConfigManager>();
     if (!LoadConfig())
@@ -66,10 +73,12 @@ bool Application::Initialize(HINSTANCE hInstance)
         m_config = AppConfig();
     }
 
-    SetDebugLoggingEnabled(m_config.debugLogging);
-
-    // Apply UI language preference (for STRINGTABLE resources)
+    // CRITICAL: Create and apply language IMMEDIATELY after loading config
+    // BEFORE any string resources are loaded
+    m_pLanguageManager = std::make_unique<LanguageManager>();
     ApplyLanguageFromConfig();
+
+    SetDebugLoggingEnabled(m_config.debugLogging);
 
     // Initialize dark mode support for process-level elements (context
     // menus, some common controls) based on the current system app theme
@@ -104,6 +113,9 @@ bool Application::Initialize(HINSTANCE hInstance)
     m_pTrayIcon->SetConfigSource(&m_config);
     m_pTrayIcon->SetOverlayVisibilityProvider([this]() -> bool {
         return m_pTaskbarOverlay != nullptr && m_pTaskbarOverlay->IsVisible();
+    });
+    m_pTrayIcon->SetFloatingWindowVisibilityProvider([this]() -> bool {
+        return m_pFloatingWindow != nullptr && m_pFloatingWindow->IsVisible();
     });
     m_pTrayIcon->SetDoubleClickCallback([this]() {
         // Double-click opens Dashboard
@@ -167,6 +179,16 @@ bool Application::Initialize(HINSTANCE hInstance)
         KillTimer(m_hwnd, TIMER_UPDATE_NETWORK);
         SetTimer(m_hwnd, TIMER_UPDATE_NETWORK, intervalMs, nullptr);
     });
+    m_pMenuHandler->SetToggleFloatingWindowCallback([this]() {
+        if (m_pFloatingWindow)
+        {
+            bool isVisible = m_pFloatingWindow->IsVisible();
+            m_pFloatingWindow->Show(!isVisible);
+            m_config.showFloatingWindow = !isVisible;
+            SaveConfig();
+        }
+    });
+    m_pMenuHandler->SetShowPerAppCallback([this]() { ShowPerAppDialog(); });
 
     // Create and initialize UpdateCoordinator
     m_pUpdateCoordinator = std::make_unique<UpdateCoordinator>();
@@ -191,8 +213,6 @@ bool Application::Initialize(HINSTANCE hInstance)
         HistoryLogger::Instance().AppendSample(ifaceName, bytesDown, bytesUp);
     });
 
-    // Create and initialize LanguageManager
-    m_pLanguageManager = std::make_unique<LanguageManager>();
 
     // Create and initialize DialogManager
     m_pDialogManager = std::make_unique<DialogManager>();
@@ -209,6 +229,36 @@ bool Application::Initialize(HINSTANCE hInstance)
         KillTimer(m_hwnd, TIMER_UPDATE_NETWORK);
         SetTimer(m_hwnd, TIMER_UPDATE_NETWORK, intervalMs, nullptr);
     });
+
+    // Create and initialize SystemMonitor for CPU/RAM
+    m_pSystemMonitor = std::make_unique<SystemMonitor>();
+    m_pSystemMonitor->Initialize();
+
+    // Create and initialize FloatingWindow
+    m_pFloatingWindow = std::make_unique<FloatingWindow>();
+    if (m_pFloatingWindow->Create(m_hInstance))
+    {
+        // Apply config settings
+        m_pFloatingWindow->SetDarkTheme(m_config.darkTheme);
+        m_pFloatingWindow->SetOpacity(m_config.floatingWindowOpacity);
+        m_pFloatingWindow->SetShowNetwork(m_config.floatingShowNetwork);
+        m_pFloatingWindow->SetShowCPU(m_config.floatingShowCPU);
+        m_pFloatingWindow->SetShowRAM(m_config.floatingShowRAM);
+        
+        // Set position if saved
+        if (m_config.floatingWindowX >= 0 && m_config.floatingWindowY >= 0)
+        {
+            m_pFloatingWindow->SetPosition(m_config.floatingWindowX, m_config.floatingWindowY);
+        }
+        
+        // Show if enabled in config
+        m_pFloatingWindow->Show(m_config.showFloatingWindow);
+    }
+    else
+    {
+        LogDebug(L"Application::Initialize: FloatingWindow create failed, continuing without it");
+        m_pFloatingWindow.reset();
+    }
 
     m_initialized = true;
     LogDebug(L"Application::Initialize: succeeded");
@@ -272,6 +322,28 @@ void Application::Cleanup()
     {
         m_pTrayIcon->Cleanup();
         m_pTrayIcon.reset();
+    }
+
+    // Cleanup floating window (save position before destroying)
+    if (m_pFloatingWindow)
+    {
+        if (m_pFloatingWindow->IsVisible())
+        {
+            int x, y;
+            m_pFloatingWindow->GetPosition(x, y);
+            m_config.floatingWindowX = x;
+            m_config.floatingWindowY = y;
+            SaveConfig();
+        }
+        m_pFloatingWindow->Destroy();
+        m_pFloatingWindow.reset();
+    }
+
+    // Cleanup system monitor
+    if (m_pSystemMonitor)
+    {
+        m_pSystemMonitor->Shutdown();
+        m_pSystemMonitor.reset();
     }
 
     // Cleanup config manager
@@ -348,6 +420,14 @@ void Application::ShowAboutDialog()
     }
 }
 
+void Application::ShowPerAppDialog()
+{
+    if (m_pDialogManager)
+    {
+        m_pDialogManager->ShowPerApp();
+    }
+}
+
 void Application::OnTaskbarOverlayRightClick()
 {
     // When user right-clicks on taskbar overlay, show the tray icon context menu
@@ -405,6 +485,29 @@ LRESULT CALLBACK Application::InstanceWindowProc(HWND hwnd, UINT message, WPARAM
                 {
                     m_pUpdateCoordinator->OnNetworkUpdateTick();
                 }
+                
+                // Update floating window with network speed and system info
+                if (m_pFloatingWindow && m_pFloatingWindow->IsVisible())
+                {
+                    // Update system monitor
+                    if (m_pSystemMonitor)
+                    {
+                        m_pSystemMonitor->Update();
+                        m_pFloatingWindow->UpdateCPU(m_pSystemMonitor->GetCPUPercent());
+                        m_pFloatingWindow->UpdateRAM(m_pSystemMonitor->GetRAMPercent());
+                    }
+                    
+                    // Update network speed from network monitor
+                    if (m_pNetworkMonitor)
+                    {
+                        NetworkStats stats = m_pNetworkMonitor->GetAggregatedStats();
+                        m_pFloatingWindow->UpdateSpeed(
+                            stats.currentDownloadSpeed,
+                            stats.currentUploadSpeed,
+                            m_config.displayUnit
+                        );
+                    }
+                }
             }
             else if (wParam == TIMER_PING)
             {
@@ -442,6 +545,26 @@ LRESULT CALLBACK Application::InstanceWindowProc(HWND hwnd, UINT message, WPARAM
             return 0;
         }
 
+        case WM_MEASUREITEM:
+        {
+            if (((LPMEASUREITEMSTRUCT)lParam)->CtlType == ODT_MENU)
+            {
+                m_pTrayIcon->HandleMenuMeasureItem((LPMEASUREITEMSTRUCT)lParam);
+                return TRUE;
+            }
+            return DefWindowProcW(hwnd, message, wParam, lParam);
+        }
+
+        case WM_DRAWITEM:
+        {
+            if (((LPDRAWITEMSTRUCT)lParam)->CtlType == ODT_MENU)
+            {
+                m_pTrayIcon->HandleMenuDrawItem((LPDRAWITEMSTRUCT)lParam);
+                return TRUE;
+            }
+            return DefWindowProcW(hwnd, message, wParam, lParam);
+        }
+
         case WM_DESTROY:
         {
             // Kill timers
@@ -454,7 +577,29 @@ LRESULT CALLBACK Application::InstanceWindowProc(HWND hwnd, UINT message, WPARAM
         }
 
         default:
+        {
+            // Handle TaskbarCreated message to restore tray icon
+            if (message == s_taskbarCreatedMsg && s_taskbarCreatedMsg != 0)
+            {
+                LogDebug(L"Application::InstanceWindowProc: TaskbarCreated received, restoring tray icon");
+                
+                // Recreate tray icon (explorer.exe has been restarted)
+                if (m_pTrayIcon)
+                {
+                    // First cleanup the old (now invalid) icon
+                    m_pTrayIcon->Cleanup();
+                    
+                    // Re-initialize the tray icon
+                    if (!m_pTrayIcon->Initialize(m_hwnd))
+                    {
+                        LogError(L"Application::InstanceWindowProc: Failed to restore tray icon");
+                    }
+                    // Icon state will be updated automatically on next network update tick
+                }
+                return 0;
+            }
             return DefWindowProcW(hwnd, message, wParam, lParam);
+        }
     }
 }
 

@@ -118,6 +118,7 @@ static const int s_overlayColorPresetCount = 4;
 
 SettingsDialog::SettingsDialog()
     : m_hDialog(nullptr)
+    , m_pExternalHandle(nullptr)
     , m_pConfigProvider(nullptr)
     , m_pStatsProvider(nullptr)
     , m_isInitializing(false)
@@ -172,6 +173,11 @@ INT_PTR CALLBACK SettingsDialog::DialogProc(HWND hDlg, UINT message, WPARAM wPar
         pThis = reinterpret_cast<SettingsDialog*>(lParam);
         SetWindowLongPtrW(hDlg, DWLP_USER, reinterpret_cast<LONG_PTR>(pThis));
         pThis->m_hDialog = hDlg;
+        // Update external handle storage for tracking
+        if (pThis->m_pExternalHandle)
+        {
+            *pThis->m_pExternalHandle = hDlg;
+        }
     }
     else
     {
@@ -279,7 +285,50 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
             std::wstring trimLabelText = LoadStringResource(IDS_SETTINGS_LABEL_AUTOTRIM);
             if (!trimLabelText.empty())
             {
-                SetDlgItemTextW(hDlg, IDC_SETTINGS_LABEL_AUTOTRIM, trimLabelText.c_str());
+                SetDlgItemTextW(hDlg, IDC_HISTORY_TRIM_LABEL, trimLabelText.c_str());
+            }
+
+            // Localize new labels (previously missing i18n)
+            std::wstring overlayFontSizeText = LoadStringResource(IDS_SETTINGS_LABEL_OVERLAY_FONT_SIZE);
+            if (!overlayFontSizeText.empty())
+            {
+                SetDlgItemTextW(hDlg, IDC_FONT_SIZE_LABEL, overlayFontSizeText.c_str());
+            }
+
+            std::wstring overlayColorsText = LoadStringResource(IDS_SETTINGS_LABEL_OVERLAY_COLORS);
+            if (!overlayColorsText.empty())
+            {
+                SetDlgItemTextW(hDlg, IDC_OVERLAY_COLOR_LABEL, overlayColorsText.c_str());
+            }
+
+            std::wstring pingTargetText = LoadStringResource(IDS_SETTINGS_LABEL_PING_TARGET);
+            if (!pingTargetText.empty())
+            {
+                SetDlgItemTextW(hDlg, IDC_PING_TARGET_LABEL, pingTargetText.c_str());
+            }
+
+            std::wstring pingIntervalText = LoadStringResource(IDS_SETTINGS_LABEL_PING_INTERVAL);
+            if (!pingIntervalText.empty())
+            {
+                SetDlgItemTextW(hDlg, IDC_PING_INTERVAL_LABEL, pingIntervalText.c_str());
+            }
+
+            std::wstring hotkeyText = LoadStringResource(IDS_SETTINGS_LABEL_HOTKEY);
+            if (!hotkeyText.empty())
+            {
+                SetDlgItemTextW(hDlg, IDC_HOTKEY_LABEL, hotkeyText.c_str());
+            }
+
+            std::wstring quotaLabelText = LoadStringResource(IDS_DATA_USAGE_QUOTA_GB);
+            if (!quotaLabelText.empty())
+            {
+                SetDlgItemTextW(hDlg, IDC_DATA_USAGE_QUOTA_LABEL, quotaLabelText.c_str());
+            }
+
+            std::wstring dataUsageEnableText = LoadStringResource(IDS_SETTINGS_LABEL_DATA_USAGE_ENABLE);
+            if (!dataUsageEnableText.empty())
+            {
+                SetDlgItemTextW(hDlg, IDC_DATA_USAGE_ENABLE_CHECK, dataUsageEnableText.c_str());
             }
 
             std::wstring openLogText = LoadStringResource(IDS_SETTINGS_BUTTON_OPEN_LOG);
@@ -398,6 +447,11 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                         {
                             m_settingsChangedCallback();
                         }
+                        // Clear external handle storage before closing
+                        if (m_pExternalHandle)
+                        {
+                            *m_pExternalHandle = nullptr;
+                        }
                         EndDialog(hDlg, IDOK);
                     }
                     return TRUE;
@@ -421,6 +475,11 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                         if (m_configCopy.darkTheme != oldDarkTheme || 
                             m_configCopy.language != oldLanguage)
                         {
+                            // Clear external handle storage before closing
+                            if (m_pExternalHandle)
+                            {
+                                *m_pExternalHandle = nullptr;
+                            }
                             EndDialog(hDlg, IDAPPLY_REOPEN);
                         }
                     }
@@ -428,6 +487,11 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 }
 
                 case IDCANCEL:
+                    // Clear external handle storage before closing
+                    if (m_pExternalHandle)
+                    {
+                        *m_pExternalHandle = nullptr;
+                    }
                     EndDialog(hDlg, IDCANCEL);
                     return TRUE;
 
@@ -1169,6 +1233,21 @@ void SettingsDialog::PopulateDialog(HWND hDlg)
         subclassComboBox(hFontSizeTheme);
         subclassComboBox(hOverlayColorTheme);
     }
+
+    // === Data Usage Alerts ===
+    HWND hDataUsageEnable = GetDlgItem(hDlg, IDC_DATA_USAGE_ENABLE_CHECK);
+    if (hDataUsageEnable)
+    {
+        Button_SetCheck(hDataUsageEnable, m_configCopy.enableDataUsageAlerts ? BST_CHECKED : BST_UNCHECKED);
+    }
+
+    HWND hDataQuota = GetDlgItem(hDlg, IDC_DATA_USAGE_QUOTA_EDIT);
+    if (hDataQuota)
+    {
+        wchar_t buf[32];
+        swprintf_s(buf, L"%.1f", m_configCopy.dataQuotaGB);
+        SetWindowTextW(hDataQuota, buf);
+    }
 }
 
 bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
@@ -1372,6 +1451,21 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
         }
     }
 
+    // === Data Usage Alerts ===
+    m_configCopy.enableDataUsageAlerts = (Button_GetCheck(GetDlgItem(hDlg, IDC_DATA_USAGE_ENABLE_CHECK)) == BST_CHECKED);
+    
+    HWND hDataQuota = GetDlgItem(hDlg, IDC_DATA_USAGE_QUOTA_EDIT);
+    if (hDataQuota)
+    {
+        wchar_t buf[64] = {0};
+        GetWindowTextW(hDataQuota, buf, 64);
+        m_configCopy.dataQuotaGB = _wtof(buf);
+        if (m_configCopy.dataQuotaGB < 0.0)
+        {
+            m_configCopy.dataQuotaGB = 0.0;
+        }
+    }
+
     // Save to registry via config provider (ignore errors for now)
     if (m_pConfigProvider)
     {
@@ -1496,7 +1590,8 @@ void SettingsDialog::SwitchTab(HWND hDlg, int tabIndex)
         IDC_HISTORY_TRIM_LABEL, IDC_HISTORY_AUTO_TRIM_COMBO,
         IDC_PING_TARGET_LABEL, IDC_PING_TARGET_EDIT,
         IDC_PING_INTERVAL_LABEL, IDC_PING_INTERVAL_COMBO,
-        IDC_HOTKEY_LABEL, IDC_HOTKEY_COMBO
+        IDC_HOTKEY_LABEL, IDC_HOTKEY_COMBO,
+        IDC_DATA_USAGE_ENABLE_CHECK, IDC_DATA_USAGE_QUOTA_LABEL, IDC_DATA_USAGE_QUOTA_EDIT
     };
 
     auto showControls = [hDlg](const int* ids, int count, bool show)

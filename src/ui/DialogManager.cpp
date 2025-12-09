@@ -3,6 +3,7 @@
 #include "NetworkMonitor/SettingsDialog.h"
 #include "NetworkMonitor/DashboardDialog.h"
 #include "NetworkMonitor/HistoryDialog.h"
+#include "NetworkMonitor/PerAppDialog.h"
 #include "NetworkMonitor/HistoryLogger.h"
 #include "NetworkMonitor/ThemeHelper.h"
 #include "NetworkMonitor/UpdateCoordinator.h"
@@ -18,6 +19,10 @@ DialogManager::DialogManager()
     , m_pConfigProvider(nullptr)
     , m_pNetworkMonitor(nullptr)
     , m_pUpdateCoordinator(nullptr)
+    , m_hSettingsDialog(nullptr)
+    , m_hDashboardDialog(nullptr)
+    , m_hHistoryDialog(nullptr)
+    , m_hPerAppDialog(nullptr)
 {
 }
 
@@ -54,10 +59,36 @@ void DialogManager::SetTimerUpdateCallback(TimerUpdateCallback callback)
     m_timerUpdateCallback = callback;
 }
 
+/**
+ * Helper function to bring an existing dialog to foreground
+ */
+static void BringDialogToForeground(HWND hDialog)
+{
+    if (hDialog && IsWindow(hDialog))
+    {
+        // Restore if minimized
+        if (IsIconic(hDialog))
+        {
+            ShowWindow(hDialog, SW_RESTORE);
+        }
+        // Bring to foreground
+        SetForegroundWindow(hDialog);
+        // Flash the window to get user's attention
+        FlashWindow(hDialog, TRUE);
+    }
+}
+
 void DialogManager::ShowSettings()
 {
     if (!m_pConfigProvider || !m_pConfig)
     {
+        return;
+    }
+
+    // If dialog is already open, bring it to foreground
+    if (m_hSettingsDialog && IsWindow(m_hSettingsDialog))
+    {
+        BringDialogToForeground(m_hSettingsDialog);
         return;
     }
 
@@ -69,6 +100,9 @@ void DialogManager::ShowSettings()
     do
     {
         SettingsDialog dlg;
+
+        // Set external handle storage for tracking
+        dlg.SetDialogHandleStorage(&m_hSettingsDialog);
 
         // Set up callback for Apply button
         dlg.SetSettingsChangedCallback([this, &oldConfig]()
@@ -117,6 +151,7 @@ void DialogManager::ShowSettings()
 
         if (dialogResult == IDCANCEL)
         {
+            m_hSettingsDialog = nullptr;
             return;
         }
 
@@ -132,6 +167,8 @@ void DialogManager::ShowSettings()
     {
         m_pUpdateCoordinator->OnNetworkUpdateTick();
     }
+
+    m_hSettingsDialog = nullptr;
 }
 
 void DialogManager::ShowDashboard()
@@ -141,8 +178,18 @@ void DialogManager::ShowDashboard()
         return;
     }
 
+    // If dialog is already open, bring it to foreground
+    if (m_hDashboardDialog && IsWindow(m_hDashboardDialog))
+    {
+        BringDialogToForeground(m_hDashboardDialog);
+        return;
+    }
+
     DashboardDialog dlg;
+    dlg.SetDialogHandleStorage(&m_hDashboardDialog);
     dlg.Show(m_parentWindow, m_pNetworkMonitor, m_pConfig);
+
+    m_hDashboardDialog = nullptr;
 }
 
 void DialogManager::ShowHistory()
@@ -152,8 +199,41 @@ void DialogManager::ShowHistory()
         return;
     }
 
+    // If dialog is already open, bring it to foreground
+    if (m_hHistoryDialog && IsWindow(m_hHistoryDialog))
+    {
+        BringDialogToForeground(m_hHistoryDialog);
+        return;
+    }
+
     HistoryDialog dlg;
+    dlg.SetDialogHandleStorage(&m_hHistoryDialog);
     dlg.Show(m_parentWindow, m_pConfig);
+
+    m_hHistoryDialog = nullptr;
+}
+
+
+
+void DialogManager::ShowPerApp()
+{
+    if (!m_pConfig)
+    {
+        return;
+    }
+
+    // If dialog is already open, bring it to foreground
+    if (m_hPerAppDialog && IsWindow(m_hPerAppDialog))
+    {
+        BringDialogToForeground(m_hPerAppDialog);
+        return;
+    }
+
+    PerAppDialog dlg;
+    dlg.SetDialogHandleStorage(&m_hPerAppDialog);
+    dlg.Show(m_parentWindow, m_pConfig);
+
+    m_hPerAppDialog = nullptr;
 }
 
 void DialogManager::ShowAbout()
@@ -167,6 +247,14 @@ void DialogManager::ShowAbout()
     if (title.empty())
     {
         title = L"About NetworkMonitor";
+    }
+
+    // Check if About dialog is already open (using title finding since MessageBox is modal)
+    HWND hExisting = FindWindowW(nullptr, title.c_str());
+    if (hExisting && IsWindow(hExisting) && IsWindowVisible(hExisting))
+    {
+        BringDialogToForeground(hExisting);
+        return;
     }
 
     std::wstring versionLabel = LoadStringResource(IDS_ABOUT_VERSION_LABEL);
@@ -192,3 +280,5 @@ void DialogManager::ShowAbout()
 }
 
 } // namespace NetworkMonitor
+
+

@@ -40,6 +40,11 @@ public:
     bool GetTotalsThisMonth(unsigned long long& totalDown, unsigned long long& totalUp,
                             const std::wstring* interfaceFilter = nullptr);
 
+    /**
+     * Get total bytes (down + up) for current month - convenience method for data usage alerts
+     */
+    uint64_t GetThisMonthTotalBytes(const std::wstring* interfaceFilter = nullptr);
+
     // If onlyToday == true, restrict samples to from start-of-today (local time).
     bool GetRecentSamples(int limit, std::vector<HistorySample>& outSamples,
                           const std::wstring* interfaceFilter = nullptr,

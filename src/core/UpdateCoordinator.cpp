@@ -2,6 +2,7 @@
 #include "NetworkMonitor/TrayIcon.h"
 #include "NetworkMonitor/TaskbarOverlay.h"
 #include "NetworkMonitor/PingMonitor.h"
+#include "NetworkMonitor/HistoryLogger.h"
 #include "NetworkMonitor/Utils.h"
 #include "../../resources/resource.h"
 
@@ -18,7 +19,9 @@ UpdateCoordinator::UpdateCoordinator()
     , m_prevTotalBytesUp(0)
     , m_prevTotalsValid(false)
     , m_wasConnected(false)
+    , m_currentMonthUsageBytes(0)
 {
+    m_pDataUsageMonitor = std::make_unique<DataUsageMonitor>();
 }
 
 UpdateCoordinator::~UpdateCoordinator()
@@ -47,6 +50,11 @@ void UpdateCoordinator::SetLogHistoryCallback(LogHistoryCallback callback)
 void UpdateCoordinator::SetConnectionStatusCallback(ConnectionStatusCallback callback)
 {
     m_connectionStatusCallback = callback;
+}
+
+void UpdateCoordinator::SetDataUsageAlertCallback(DataUsageAlertCallback callback)
+{
+    m_dataUsageAlertCallback = callback;
 }
 
 void UpdateCoordinator::OnNetworkUpdateTick()
@@ -106,6 +114,47 @@ void UpdateCoordinator::OnNetworkUpdateTick()
 
     // Check connection status for notifications
     CheckConnectionStatus(stats.isActive);
+
+    // Data usage alert monitoring
+    if (m_pConfig && m_pConfig->enableDataUsageAlerts && m_pDataUsageMonitor)
+    {
+        // Configure monitor from config
+        uint64_t quotaBytes = static_cast<uint64_t>(m_pConfig->dataQuotaGB * 1024.0 * 1024.0 * 1024.0);
+        m_pDataUsageMonitor->SetQuota(quotaBytes);
+        m_pDataUsageMonitor->SetAlertThresholds({m_pConfig->dataAlertThreshold1, m_pConfig->dataAlertThreshold2});
+
+        // Get current month's usage from HistoryLogger
+        m_currentMonthUsageBytes = HistoryLogger::Instance().GetThisMonthTotalBytes();
+        
+        // Update monitor and check for alerts
+        if (m_pDataUsageMonitor->Update(m_currentMonthUsageBytes))
+        {
+            int thresholdCrossed = 0;
+            if (m_pDataUsageMonitor->ShouldAlert(thresholdCrossed))
+            {
+                int currentPercent = m_pDataUsageMonitor->GetUsagePercentage();
+                
+                // Show notification via TrayIcon
+                if (m_pTrayIcon)
+                {
+                    wchar_t title[64];
+                    wchar_t msg[256];
+                    swprintf_s(title, L"Data Usage Alert");
+                    swprintf_s(msg, L"You have used %d%% of your monthly quota!", currentPercent);
+                    m_pTrayIcon->ShowBalloonNotification(title, msg);
+                }
+                
+                // Also trigger callback if set
+                if (m_dataUsageAlertCallback)
+                {
+                    m_dataUsageAlertCallback(thresholdCrossed, currentPercent);
+                }
+                
+                LogDebug(L"DataUsageAlert: Threshold " + std::to_wstring(thresholdCrossed) + 
+                         L"% crossed (current: " + std::to_wstring(currentPercent) + L"%)");
+            }
+        }
+    }
 }
 
 void UpdateCoordinator::OnPingTick()

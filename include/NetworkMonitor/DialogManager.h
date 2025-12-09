@@ -64,6 +64,11 @@ public:
     void ShowHistory();
 
     /**
+     * Show Per-App dialog
+     */
+    void ShowPerApp();
+
+    /**
      * Show About dialog
      */
     void ShowAbout();
@@ -79,6 +84,12 @@ private:
     ConfigReloadCallback m_configReloadCallback;
     LanguageApplyCallback m_languageApplyCallback;
     TimerUpdateCallback m_timerUpdateCallback;
+
+    // Dialog handles for tracking open dialogs (to prevent multiple instances and bring to foreground)
+    HWND m_hSettingsDialog;
+    HWND m_hDashboardDialog;
+    HWND m_hHistoryDialog;
+    HWND m_hPerAppDialog;
 };
 
 } // namespace NetworkMonitor

@@ -38,7 +38,7 @@
 
 // Application Information
 #define APP_NAME L"NetworkMonitor"
-#define APP_VERSION L"1.0.0"
+#define APP_VERSION L"1.2.0"
 #define APP_WINDOW_CLASS L"NetworkMonitorWindowClass"
 
 // Update Intervals (milliseconds)
@@ -167,6 +167,21 @@ struct AppConfig
     int overlayFontSize;             // Overlay font size (default: 13)
     COLORREF overlayDownloadColor;   // Overlay download text color (default: cyan)
     COLORREF overlayUploadColor;     // Overlay upload text color (default: green)
+    
+    // Data Usage Alerts
+    bool enableDataUsageAlerts;      // Enable data usage alert feature
+    double dataQuotaGB;              // Monthly data quota in GB (0 = disabled)
+    int dataAlertThreshold1;         // First alert threshold percentage (default: 80)
+    int dataAlertThreshold2;         // Second alert threshold percentage (default: 100)
+
+    // Floating Window
+    bool showFloatingWindow;         // Show floating desktop widget
+    int floatingWindowX;             // Floating window X position
+    int floatingWindowY;             // Floating window Y position
+    BYTE floatingWindowOpacity;      // Floating window opacity (0-255)
+    bool floatingShowNetwork;        // Show network speed in floating window
+    bool floatingShowCPU;            // Show CPU usage in floating window
+    bool floatingShowRAM;            // Show RAM usage in floating window
 
     AppConfig()
         : updateInterval(DEFAULT_UPDATE_INTERVAL)
@@ -187,6 +202,17 @@ struct AppConfig
         , overlayFontSize(13)
         , overlayDownloadColor(RGB(0, 255, 255))   // Cyan
         , overlayUploadColor(RGB(0, 255, 0))       // Green
+        , enableDataUsageAlerts(false)
+        , dataQuotaGB(0.0)
+        , dataAlertThreshold1(80)
+        , dataAlertThreshold2(100)
+        , showFloatingWindow(false)
+        , floatingWindowX(-1)
+        , floatingWindowY(-1)
+        , floatingWindowOpacity(200)
+        , floatingShowNetwork(true)
+        , floatingShowCPU(true)
+        , floatingShowRAM(true)
     {
     }
 };

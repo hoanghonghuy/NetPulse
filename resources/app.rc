@@ -154,6 +154,23 @@ BEGIN
     IDS_DASHBOARD_BUTTON_REFRESH     "Refresh"
     IDS_DASHBOARD_BUTTON_CLOSE       "Close"
     IDS_DASHBOARD_BUTTON_MANAGE      "Manage History..."
+    IDS_PERAPP_DIALOG_TITLE          "Per-Application Network Usage"
+    IDS_PERAPP_COL_APPLICATION       "Application"
+    IDS_PERAPP_COL_PID               "PID"
+    IDS_PERAPP_COL_TCP               "TCP"
+    IDS_PERAPP_COL_UDP               "UDP"
+    IDS_PERAPP_COL_SENT              "Sent"
+    IDS_PERAPP_COL_RECEIVED          "Received"
+    IDS_PERAPP_BUTTON_REFRESH        "Refresh"
+    IDS_PERAPP_BUTTON_CLOSE          "Close"
+    IDS_MENU_FLOATING_WINDOW         "Floating Window"
+    IDS_MENU_PERAPP                  "Per-App Usage..."
+    IDS_SETTINGS_LABEL_OVERLAY_FONT_SIZE "Overlay Font Size:"
+    IDS_SETTINGS_LABEL_OVERLAY_COLORS    "Overlay Colors:"
+    IDS_SETTINGS_LABEL_PING_TARGET       "Ping Target:"
+    IDS_SETTINGS_LABEL_PING_INTERVAL     "Ping Interval:"
+    IDS_SETTINGS_LABEL_HOTKEY            "Hotkey:"
+    IDS_DATA_USAGE_QUOTA_GB              "Monthly quota (GB):"
 END
 
 // Vietnamese resources
@@ -257,6 +274,24 @@ BEGIN
     IDS_DASHBOARD_BUTTON_REFRESH     "Làm mới"
     IDS_DASHBOARD_BUTTON_CLOSE       "Đóng"
     IDS_DASHBOARD_BUTTON_MANAGE      "Quản lý lịch sử..."
+    IDS_PERAPP_DIALOG_TITLE          "Sử dụng mạng theo ứng dụng"
+    IDS_PERAPP_COL_APPLICATION       "Ứng dụng"
+    IDS_PERAPP_COL_PID               "PID"
+    IDS_PERAPP_COL_TCP               "TCP"
+    IDS_PERAPP_COL_UDP               "UDP"
+    IDS_PERAPP_COL_SENT              "Đã gửi"
+    IDS_PERAPP_COL_RECEIVED          "Đã nhận"
+    IDS_PERAPP_BUTTON_REFRESH        "Làm mới"
+    IDS_PERAPP_BUTTON_CLOSE          "Đóng"
+    IDS_MENU_FLOATING_WINDOW         "Cửa sổ nổi"
+    IDS_MENU_PERAPP                  "Sử dụng theo ứng dụng..."
+    IDS_SETTINGS_LABEL_OVERLAY_FONT_SIZE "Cỡ chữ overlay:"
+    IDS_SETTINGS_LABEL_OVERLAY_COLORS    "Màu overlay:"
+    IDS_SETTINGS_LABEL_PING_TARGET       "Địa chỉ ping:"
+    IDS_SETTINGS_LABEL_PING_INTERVAL     "Tần suất ping:"
+    IDS_SETTINGS_LABEL_HOTKEY            "Phím tắt:"
+    IDS_DATA_USAGE_QUOTA_GB              "Hạn ngạch tháng (GB):"
+    IDS_SETTINGS_LABEL_DATA_USAGE_ENABLE "Bật cảnh báo sử dụng dữ liệu"
 END
 
 // Japanese resources
@@ -360,6 +395,24 @@ BEGIN
     IDS_DASHBOARD_BUTTON_REFRESH     "更新"
     IDS_DASHBOARD_BUTTON_CLOSE       "閉じる"
     IDS_DASHBOARD_BUTTON_MANAGE      "履歴管理..."
+    IDS_PERAPP_DIALOG_TITLE          "アプリケーション別ネットワーク使用量"
+    IDS_PERAPP_COL_APPLICATION       "アプリケーション"
+    IDS_PERAPP_COL_PID               "PID"
+    IDS_PERAPP_COL_TCP               "TCP"
+    IDS_PERAPP_COL_UDP               "UDP"
+    IDS_PERAPP_COL_SENT              "送信"
+    IDS_PERAPP_COL_RECEIVED          "受信"
+    IDS_PERAPP_BUTTON_REFRESH        "更新"
+    IDS_PERAPP_BUTTON_CLOSE          "閉じる"
+    IDS_MENU_FLOATING_WINDOW         "フローティングウィンドウ"
+    IDS_MENU_PERAPP                  "アプリ別使用状況..."
+    IDS_SETTINGS_LABEL_OVERLAY_FONT_SIZE "オーバーレイフォントサイズ:"
+    IDS_SETTINGS_LABEL_OVERLAY_COLORS    "オーバーレイの色:"
+    IDS_SETTINGS_LABEL_PING_TARGET       "Pingターゲット:"
+    IDS_SETTINGS_LABEL_PING_INTERVAL     "Ping間隔:"
+    IDS_SETTINGS_LABEL_HOTKEY            "ホットキー:"
+    IDS_DATA_USAGE_QUOTA_GB              "月間割り当て (GB):"
+    IDS_SETTINGS_LABEL_DATA_USAGE_ENABLE "データ使用量アラートを有効にする"
 END
 
 // Korean resources
@@ -463,6 +516,24 @@ BEGIN
     IDS_DASHBOARD_BUTTON_REFRESH     "새로 고침"
     IDS_DASHBOARD_BUTTON_CLOSE       "닫기"
     IDS_DASHBOARD_BUTTON_MANAGE      "기록 관리..."
+    IDS_PERAPP_DIALOG_TITLE          "애플리케이션별 네트워크 사용량"
+    IDS_PERAPP_COL_APPLICATION       "애플리케이션"
+    IDS_PERAPP_COL_PID               "PID"
+    IDS_PERAPP_COL_TCP               "TCP"
+    IDS_PERAPP_COL_UDP               "UDP"
+    IDS_PERAPP_COL_SENT              "전송됨"
+    IDS_PERAPP_COL_RECEIVED          "수신됨"
+    IDS_PERAPP_BUTTON_REFRESH        "새로 고침"
+    IDS_PERAPP_BUTTON_CLOSE          "닫기"
+   IDS_MENU_FLOATING_WINDOW         "플로팅 창"
+    IDS_MENU_PERAPP                  "앱별 사용량..."
+    IDS_SETTINGS_LABEL_OVERLAY_FONT_SIZE "오버레이 글꼴 크기:"
+    IDS_SETTINGS_LABEL_OVERLAY_COLORS    "오버레이 색상:"
+    IDS_SETTINGS_LABEL_PING_TARGET       "Ping 대상:"
+    IDS_SETTINGS_LABEL_PING_INTERVAL     "Ping 간격:"
+    IDS_SETTINGS_LABEL_HOTKEY            "단축키:"
+    IDS_DATA_USAGE_QUOTA_GB              "월간 할당량 (GB):"
+    IDS_SETTINGS_LABEL_DATA_USAGE_ENABLE "데이터 사용량 알림 활성화"
 END
 
 // Chinese Simplified resources
@@ -566,6 +637,24 @@ BEGIN
     IDS_DASHBOARD_BUTTON_REFRESH     "刷新"
     IDS_DASHBOARD_BUTTON_CLOSE       "关闭"
     IDS_DASHBOARD_BUTTON_MANAGE      "管理历史记录..."
+    IDS_PERAPP_DIALOG_TITLE          "每个应用程序的网络使用情况"
+    IDS_PERAPP_COL_APPLICATION       "应用程序"
+    IDS_PERAPP_COL_PID               "PID"
+    IDS_PERAPP_COL_TCP               "TCP"
+    IDS_PERAPP_COL_UDP               "UDP"
+    IDS_PERAPP_COL_SENT              "已发送"
+    IDS_PERAPP_COL_RECEIVED          "已接收"
+    IDS_PERAPP_BUTTON_REFRESH        "刷新"
+    IDS_PERAPP_BUTTON_CLOSE          "关闭"
+    IDS_MENU_FLOATING_WINDOW         "浮动窗口"
+    IDS_MENU_PERAPP                  "应用程序使用情况..."
+    IDS_SETTINGS_LABEL_OVERLAY_FONT_SIZE "覆盖层字体大小:"
+    IDS_SETTINGS_LABEL_OVERLAY_COLORS    "覆盖层颜色:"
+    IDS_SETTINGS_LABEL_PING_TARGET       "Ping目标:"
+    IDS_SETTINGS_LABEL_PING_INTERVAL     "Ping间隔:"
+    IDS_SETTINGS_LABEL_HOTKEY            "快捷键:"
+    IDS_DATA_USAGE_QUOTA_GB              "每月配额 (GB):"
+    IDS_SETTINGS_LABEL_DATA_USAGE_ENABLE "启用数据使用警报"
 END
 
 // Switch back to English for the rest of resources
@@ -576,8 +665,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // ============================================================================
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,0
- PRODUCTVERSION 1,0,0,0
+ FILEVERSION 1,2,0,0
+ PRODUCTVERSION 1,2,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -594,12 +683,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "NetworkMonitor Project"
             VALUE "FileDescription", "Network Traffic Monitor for Windows"
-            VALUE "FileVersion", "1.0.0.0"
+            VALUE "FileVersion", "1.2.0.0"
             VALUE "InternalName", "NetworkMonitor.exe"
             VALUE "LegalCopyright", "Copyright (C) 2025"
             VALUE "OriginalFilename", "NetworkMonitor.exe"
             VALUE "ProductName", "NetworkMonitor"
-            VALUE "ProductVersion", "1.0.0.0"
+            VALUE "ProductVersion", "1.2.0.0"
         END
     END
     BLOCK "VarFileInfo"
@@ -627,7 +716,7 @@ BEGIN
     // ICON COMMENTED OUT - IDI_APP_ICON not defined yet
     // ICON            IDI_APP_ICON,IDC_STATIC,7,7,21,20
     LTEXT           "NetworkMonitor",IDC_STATIC,40,10,200,8,SS_NOPREFIX
-    LTEXT           "Version 1.0.0",IDC_VERSION_TEXT,40,25,200,8
+    LTEXT           "Version 1.2.0",IDC_VERSION_TEXT,40,25,200,8
     LTEXT           "A lightweight network traffic monitor for Windows.",IDC_STATIC,40,40,200,8
     LTEXT           "Copyright (C) 2025",IDC_COPYRIGHT_TEXT,40,55,200,8
     DEFPUSHBUTTON   "OK",IDOK,95,95,60,14,WS_GROUP
@@ -672,6 +761,11 @@ BEGIN
     COMBOBOX        IDC_PING_INTERVAL_COMBO,215,66,45,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT           "Hotkey:",IDC_HOTKEY_LABEL,15,86,35,8
     COMBOBOX        IDC_HOTKEY_COMBO,55,84,100,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    
+    // Data Usage Alerts
+    CONTROL         "Enable data usage alerts",IDC_DATA_USAGE_ENABLE_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,102,120,10
+    LTEXT           "Monthly quota (GB):",IDC_DATA_USAGE_QUOTA_LABEL,15,118,70,8
+    EDITTEXT        IDC_DATA_USAGE_QUOTA_EDIT,90,116,50,12,ES_AUTOHSCROLL
 
     // Bottom buttons (always visible)
     PUSHBUTTON      "Open log file...",IDC_SETTINGS_BUTTON_OPEN_LOG,7,195,70,14
@@ -729,4 +823,15 @@ BEGIN
     DEFPUSHBUTTON   "OK",IDOK,100,90,60,14,WS_GROUP
     PUSHBUTTON      "Yes",IDYES,60,90,60,14
     PUSHBUTTON      "No",IDNO,140,90,60,14
+END
+
+// Per-Application Network Usage dialog
+IDD_PERAPP_DIALOG DIALOGEX 0, 0, 480, 320
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Per-Application Network Usage"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_PERAPP_LIST,"SysListView32",WS_TABSTOP | WS_BORDER | WS_VSCROLL | LVS_REPORT | LVS_SHOWSELALWAYS | LVS_SINGLESEL,7,7,466,280
+    CONTROL         "Refresh",IDC_PERAPP_REFRESH,"Button",BS_OWNERDRAW | WS_TABSTOP,355,293,58,14
+    CONTROL         "Close",IDOK,"Button",BS_OWNERDRAW | WS_TABSTOP,415,293,58,14
 END
