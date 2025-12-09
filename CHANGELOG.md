@@ -2,6 +2,20 @@
 
 All notable changes to NetworkMonitor will be documented in this file.
 
+## [1.3.0] - 2025-12-09
+
+### Added
+- **Per-App Usage**: Monitor network usage per application (process).
+- **Floating Widget**: Desktop widget for quick stats overview.
+- **System Monitor**: CPU/RAM usage monitoring.
+- **Data Usage Alerts**: Monthly quota tracking and alerts.
+
+### Changed
+- **Dialog Management**: Improved single-instance behavior for Per-App and About dialogs.
+
+### Fixed
+- **Critical Crash**: Fixed assertion failure in LanguageManager when changing languages.
+
 ## [1.2.0] - 2025-12-07
 
 ### Added

@@ -38,7 +38,7 @@
 
 // Application Information
 #define APP_NAME L"NetworkMonitor"
-#define APP_VERSION L"1.2.0"
+#define APP_VERSION L"1.3.0"
 #define APP_WINDOW_CLASS L"NetworkMonitorWindowClass"
 
 // Update Intervals (milliseconds)
