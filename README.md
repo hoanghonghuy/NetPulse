@@ -28,9 +28,13 @@ NetworkMonitor is a lightweight C++ Win32 application for monitoring network tra
   - Configure ping target (IP/domain) and interval.
   - Customize hotkey for overlay toggle.
   - Enable/disable connection notifications.
+- **Per-App Usage**: Monitor network usage per application (process). **Requires Administrator privileges.**
+- **Floating Widget**: Desktop widget for quick stats overview (Network, CPU, RAM).
+- **System Monitor**: Real-time CPU and RAM usage monitoring.
+- **Data Usage Alerts**: Monthly quota tracking and configurable alerts.
 - **Multilingual (i18n)**:
-  - All menus, dialogs, message boxes use STRINGTABLE (EN/VI).
-  - Select by Language in Settings or by system language.
+  - All menus, dialogs, message boxes use STRINGTABLE.
+  - Supports: English, Vietnamese, Japanese, Korean, Chinese (Simplified).
 - **Performance**:
   - Very light background application, CPU almost 0%, RAM only a few MB.
 
