@@ -152,6 +152,7 @@ struct AppConfig
     UINT updateInterval;             // Update interval in milliseconds
     SpeedUnit displayUnit;           // Display unit for speed
     bool autoStart;                  // Auto-start with Windows
+    bool autoStartAsAdmin;           // Auto-start as Administrator (via Task Scheduler)
     bool enableLogging;              // Enable history logging
     bool debugLogging;               // Enable debug logging to file
     bool darkTheme;
@@ -187,6 +188,7 @@ struct AppConfig
         : updateInterval(DEFAULT_UPDATE_INTERVAL)
         , displayUnit(SpeedUnit::KiloBytesPerSecond)
         , autoStart(false)
+        , autoStartAsAdmin(false)
         , enableLogging(true)
         , debugLogging(false)
         , darkTheme(false)
@@ -214,6 +216,46 @@ struct AppConfig
         , floatingShowCPU(true)
         , floatingShowRAM(true)
     {
+    }
+
+    bool operator==(const AppConfig& other) const
+    {
+        return updateInterval == other.updateInterval &&
+               displayUnit == other.displayUnit &&
+               autoStart == other.autoStart &&
+               autoStartAsAdmin == other.autoStartAsAdmin &&
+               enableLogging == other.enableLogging &&
+               debugLogging == other.debugLogging &&
+               darkTheme == other.darkTheme &&
+               themeMode == other.themeMode &&
+               historyAutoTrimDays == other.historyAutoTrimDays &&
+               language == other.language &&
+               selectedInterface == other.selectedInterface &&
+               enableConnectionNotification == other.enableConnectionNotification &&
+               pingTarget == other.pingTarget &&
+               pingIntervalMs == other.pingIntervalMs &&
+               hotkeyModifier == other.hotkeyModifier &&
+               hotkeyKey == other.hotkeyKey &&
+               overlayFontSize == other.overlayFontSize &&
+               overlayDownloadColor == other.overlayDownloadColor &&
+               overlayUploadColor == other.overlayUploadColor &&
+               enableDataUsageAlerts == other.enableDataUsageAlerts &&
+               // Use epsilon for float comparison if needed, but direct match is fine for settings
+               dataQuotaGB == other.dataQuotaGB && 
+               dataAlertThreshold1 == other.dataAlertThreshold1 &&
+               dataAlertThreshold2 == other.dataAlertThreshold2 &&
+               showFloatingWindow == other.showFloatingWindow &&
+               floatingWindowX == other.floatingWindowX &&
+               floatingWindowY == other.floatingWindowY &&
+               floatingWindowOpacity == other.floatingWindowOpacity &&
+               floatingShowNetwork == other.floatingShowNetwork &&
+               floatingShowCPU == other.floatingShowCPU &&
+               floatingShowRAM == other.floatingShowRAM;
+    }
+
+    bool operator!=(const AppConfig& other) const
+    {
+        return !(*this == other);
     }
 };
 

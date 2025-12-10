@@ -129,6 +129,22 @@ SettingsDialog::~SettingsDialog()
 {
 }
 
+bool SettingsDialog::GetCheckboxState(UINT ctrlId) const
+{
+    auto it = m_checkboxStates.find(ctrlId);
+    return (it != m_checkboxStates.end()) ? it->second : false;
+}
+
+void SettingsDialog::SetCheckboxState(UINT ctrlId, bool checked)
+{
+    m_checkboxStates[ctrlId] = checked;
+}
+
+void SettingsDialog::ToggleCheckboxState(UINT ctrlId)
+{
+    m_checkboxStates[ctrlId] = !GetCheckboxState(ctrlId);
+}
+
 INT_PTR SettingsDialog::Show(HWND parentWindow, IConfigProvider* configProvider, INetworkStatsProvider* statsProvider)
 {
     if (!configProvider)
@@ -250,6 +266,12 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
             if (!autostartText.empty())
             {
                 SetDlgItemTextW(hDlg, IDC_AUTOSTART_CHECK, autostartText.c_str());
+            }
+
+            std::wstring autostartAdminText = LoadStringResource(IDS_SETTINGS_LABEL_AUTOSTART_ADMIN);
+            if (!autostartAdminText.empty())
+            {
+                SetDlgItemTextW(hDlg, IDC_AUTOSTART_ADMIN_CHECK, autostartAdminText.c_str());
             }
 
             std::wstring loggingText = LoadStringResource(IDS_SETTINGS_LABEL_LOGGING);
@@ -414,13 +436,14 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                     LONG_PTR style = GetWindowLongPtrW(hCheck, GWL_STYLE);
                     style |= BS_OWNERDRAW;
                     SetWindowLongPtrW(hCheck, GWL_STYLE, style);
-                    InvalidateRect(hCheck, nullptr, TRUE);
                 };
 
                 makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_AUTOSTART_CHECK));
+                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_AUTOSTART_ADMIN_CHECK));
                 makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_ENABLE_LOGGING_CHECK));
                 makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_DEBUG_LOGGING_CHECK));
                 makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_CONNECTION_NOTIFY_CHECK));
+                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_DATA_USAGE_ENABLE_CHECK));
 
                 // Clear default button to prevent the system from drawing an
                 // initial white default highlight before owner-draw kicks in.
@@ -441,19 +464,20 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
 
                 case IDOK:
                 {
+                    // Apply settings (internally checks for changes)
                     if (ApplySettingsFromDialog(hDlg))
                     {
                         if (m_settingsChangedCallback)
                         {
                             m_settingsChangedCallback();
                         }
-                        // Clear external handle storage before closing
-                        if (m_pExternalHandle)
-                        {
-                            *m_pExternalHandle = nullptr;
-                        }
-                        EndDialog(hDlg, IDOK);
                     }
+                    // Clear external handle storage before closing
+                    if (m_pExternalHandle)
+                    {
+                        *m_pExternalHandle = nullptr;
+                    }
+                    EndDialog(hDlg, IDOK);
                     return TRUE;
                 }
 
@@ -497,23 +521,64 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
 
                 // Handle owner-draw checkbox clicks
                 case IDC_AUTOSTART_CHECK:
+                case IDC_AUTOSTART_ADMIN_CHECK:
                 case IDC_ENABLE_LOGGING_CHECK:
                 case IDC_DEBUG_LOGGING_CHECK:
                 case IDC_CONNECTION_NOTIFY_CHECK:
+                case IDC_DATA_USAGE_ENABLE_CHECK:
                 {
-                    if (m_configCopy.darkTheme && HIWORD(wParam) == BN_CLICKED)
+                    if (HIWORD(wParam) == BN_CLICKED)
                     {
-                        HWND hCheck = reinterpret_cast<HWND>(lParam);
-                        // Toggle check state
-                        LRESULT state = SendMessageW(hCheck, BM_GETCHECK, 0, 0);
-                        SendMessageW(hCheck, BM_SETCHECK, 
-                            (state == BST_CHECKED) ? BST_UNCHECKED : BST_CHECKED, 0);
-                        // Force redraw
-                        InvalidateRect(hCheck, nullptr, TRUE);
-                        return TRUE;
+                        UINT ctrlId = LOWORD(wParam);
+                        HWND hCheck = GetDlgItem(hDlg, ctrlId);
+                        
+                        if (hCheck && m_configCopy.darkTheme)
+                        {
+                            // Toggle custom checkbox state (BS_OWNERDRAW doesn't store state)
+                            ToggleCheckboxState(ctrlId);
+                            
+                            wchar_t dbg[128];
+                            swprintf_s(dbg, L"[DEBUG] Toggle checkbox %u: new state=%d\n", 
+                                       ctrlId, GetCheckboxState(ctrlId) ? 1 : 0);
+                            OutputDebugStringW(dbg);
+                            
+                            // Force immediate repaint to prevent paint coalescing
+                            InvalidateRect(hCheck, nullptr, FALSE);
+                            UpdateWindow(hCheck);
+                        }
+                        
+                        // Special handling: Enable/disable Admin checkbox based on Autostart state
+                        if (ctrlId == IDC_AUTOSTART_CHECK)
+                        {
+                            bool autoStartChecked = m_configCopy.darkTheme 
+                                ? GetCheckboxState(IDC_AUTOSTART_CHECK)
+                                : (Button_GetCheck(hCheck) == BST_CHECKED);
+                            EnableWindow(GetDlgItem(hDlg, IDC_AUTOSTART_ADMIN_CHECK), autoStartChecked);
+                            
+                            // If unchecking Autostart, also uncheck Admin
+                            if (!autoStartChecked)
+                            {
+                                if (m_configCopy.darkTheme)
+                                {
+                                    SetCheckboxState(IDC_AUTOSTART_ADMIN_CHECK, false);
+                                    HWND hAdminCheck = GetDlgItem(hDlg, IDC_AUTOSTART_ADMIN_CHECK);
+                                    InvalidateRect(hAdminCheck, nullptr, FALSE);
+                                    UpdateWindow(hAdminCheck);
+                                }
+                                else
+                                {
+                                    Button_SetCheck(GetDlgItem(hDlg, IDC_AUTOSTART_ADMIN_CHECK), BST_UNCHECKED);
+                                }
+                            }
+                        }
+                        
+                        if (m_configCopy.darkTheme)
+                            return TRUE;
                     }
-                    break;
                 }
+
+                default:
+                    break;
             }
             break;
         }
@@ -692,85 +757,49 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 }
                 // Handle Checkbox owner-draw
                 UINT ctlId = pDrawItem->CtlID;
-                if (ctlId == IDC_AUTOSTART_CHECK || ctlId == IDC_ENABLE_LOGGING_CHECK ||
-                    ctlId == IDC_DEBUG_LOGGING_CHECK || ctlId == IDC_CONNECTION_NOTIFY_CHECK)
+                if (ctlId == IDC_AUTOSTART_CHECK || ctlId == IDC_AUTOSTART_ADMIN_CHECK ||
+                    ctlId == IDC_ENABLE_LOGGING_CHECK || ctlId == IDC_DEBUG_LOGGING_CHECK ||
+                    ctlId == IDC_CONNECTION_NOTIFY_CHECK || ctlId == IDC_DATA_USAGE_ENABLE_CHECK)
                 {
                     HDC hdc = pDrawItem->hDC;
                     RECT rc = pDrawItem->rcItem;
-                    bool checked = (pDrawItem->itemState & ODS_SELECTED) != 0;
-                    bool focused = (pDrawItem->itemState & ODS_FOCUS) != 0;
                     bool disabled = (pDrawItem->itemState & ODS_DISABLED) != 0;
 
-                    // Get actual check state from button
-                    checked = (SendMessageW(pDrawItem->hwndItem, BM_GETCHECK, 0, 0) == BST_CHECKED);
+                    // Get check state from our custom map (BS_OWNERDRAW doesn't store state)
+                    bool checked = GetCheckboxState(ctlId);
 
-                    // Colors
-                    COLORREF bgColor = DialogThemeHelper::DARK_BACKGROUND;
-                    COLORREF boxBgColor = RGB(45, 45, 45);
-                    COLORREF boxBorderColor = RGB(100, 100, 100);
-                    COLORREF checkColor = disabled ? RGB(120, 120, 120) : RGB(0, 200, 255);
-                    COLORREF textColor = disabled ? RGB(120, 120, 120) : DialogThemeHelper::DARK_TEXT;
-
-                    // Fill background
-                    HBRUSH hBgBrush = CreateSolidBrush(bgColor);
-                    FillRect(hdc, &rc, hBgBrush);
-                    DeleteObject(hBgBrush);
+                    // Fill background using cached brush
+                    FillRect(hdc, &rc, DialogThemeHelper::GetDarkBackgroundBrush());
 
                     // Draw checkbox box (13x13 pixels)
                     int boxSize = 13;
                     int boxY = rc.top + (rc.bottom - rc.top - boxSize) / 2;
                     RECT boxRect = {rc.left, boxY, rc.left + boxSize, boxY + boxSize};
 
-                    // Box background
-                    HBRUSH hBoxBrush = CreateSolidBrush(boxBgColor);
-                    FillRect(hdc, &boxRect, hBoxBrush);
-                    DeleteObject(hBoxBrush);
+                    // Box background and border
+                    SetDCBrushColor(hdc, RGB(45, 45, 45));
+                    FillRect(hdc, &boxRect, (HBRUSH)GetStockObject(DC_BRUSH));
+                    SetDCBrushColor(hdc, RGB(100, 100, 100));
+                    FrameRect(hdc, &boxRect, (HBRUSH)GetStockObject(DC_BRUSH));
 
-                    // Box border
-                    HBRUSH hBorderBrush = CreateSolidBrush(boxBorderColor);
-                    FrameRect(hdc, &boxRect, hBorderBrush);
-                    DeleteObject(hBorderBrush);
-
-                    // Draw checkmark if checked
+                    // Draw checkmark if checked - use simple solid fill for speed
                     if (checked)
                     {
-                        HPEN hPen = CreatePen(PS_SOLID, 2, checkColor);
-                        HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
-
-                        // Draw checkmark (V shape)
-                        int cx = boxRect.left + boxSize / 2;
-                        int cy = boxRect.top + boxSize / 2;
-                        MoveToEx(hdc, cx - 3, cy, NULL);
-                        LineTo(hdc, cx - 1, cy + 3);
-                        LineTo(hdc, cx + 4, cy - 3);
-
-                        SelectObject(hdc, hOldPen);
-                        DeleteObject(hPen);
+                        SetDCPenColor(hdc, disabled ? RGB(120, 120, 120) : RGB(0, 200, 255));
+                        SelectObject(hdc, GetStockObject(DC_PEN));
+                        int cx = boxRect.left + 6, cy = boxRect.top + 6;
+                        MoveToEx(hdc, cx - 3, cy, NULL); LineTo(hdc, cx - 1, cy + 3); LineTo(hdc, cx + 4, cy - 3);
+                        MoveToEx(hdc, cx - 3, cy + 1, NULL); LineTo(hdc, cx - 1, cy + 4); LineTo(hdc, cx + 4, cy - 2);
                     }
 
-                    // Draw text
-                    wchar_t text[128] = {0};
-                    GetWindowTextW(pDrawItem->hwndItem, text, 128);
-
-                    RECT textRect = rc;
-                    textRect.left = boxRect.right + 6;
-
+                    // Draw text - use cached text position
+                    wchar_t text[64] = {0};
+                    int textLen = GetWindowTextW(pDrawItem->hwndItem, text, 64);
                     SetBkMode(hdc, TRANSPARENT);
-                    SetTextColor(hdc, textColor);
-                    DrawTextW(hdc, text, -1, &textRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-
-                    // Focus rectangle
-                    if (focused)
-                    {
-                        RECT focusRect = textRect;
-                        focusRect.right = focusRect.left + 4;
-                        SIZE textSize;
-                        GetTextExtentPoint32W(hdc, text, (int)wcslen(text), &textSize);
-                        focusRect.right = focusRect.left + textSize.cx + 4;
-                        focusRect.top = (rc.top + rc.bottom - textSize.cy) / 2 - 1;
-                        focusRect.bottom = focusRect.top + textSize.cy + 2;
-                        DrawFocusRect(hdc, &focusRect);
-                    }
+                    SetTextColor(hdc, disabled ? RGB(120, 120, 120) : DialogThemeHelper::DARK_TEXT);
+                    int textX = boxRect.right + 6;
+                    int textY = rc.top + (rc.bottom - rc.top - 16) / 2;  // Assume 16px font height
+                    ExtTextOutW(hdc, textX, textY, 0, nullptr, text, textLen, nullptr);
 
                     return TRUE;
                 }
@@ -1015,9 +1044,18 @@ void SettingsDialog::PopulateDialog(HWND hDlg)
 
     // Set checkbox states (only controls that exist in current dialog)
     Button_SetCheck(GetDlgItem(hDlg, IDC_AUTOSTART_CHECK), m_configCopy.autoStart ? BST_CHECKED : BST_UNCHECKED);
+    SetCheckboxState(IDC_AUTOSTART_CHECK, m_configCopy.autoStart);
+    Button_SetCheck(GetDlgItem(hDlg, IDC_AUTOSTART_ADMIN_CHECK), m_configCopy.autoStartAsAdmin ? BST_CHECKED : BST_UNCHECKED);
+    SetCheckboxState(IDC_AUTOSTART_ADMIN_CHECK, m_configCopy.autoStartAsAdmin);
+    EnableWindow(GetDlgItem(hDlg, IDC_AUTOSTART_ADMIN_CHECK), m_configCopy.autoStart);
     Button_SetCheck(GetDlgItem(hDlg, IDC_ENABLE_LOGGING_CHECK), m_configCopy.enableLogging ? BST_CHECKED : BST_UNCHECKED);
+    SetCheckboxState(IDC_ENABLE_LOGGING_CHECK, m_configCopy.enableLogging);
     Button_SetCheck(GetDlgItem(hDlg, IDC_DEBUG_LOGGING_CHECK), m_configCopy.debugLogging ? BST_CHECKED : BST_UNCHECKED);
+    SetCheckboxState(IDC_DEBUG_LOGGING_CHECK, m_configCopy.debugLogging);
     Button_SetCheck(GetDlgItem(hDlg, IDC_CONNECTION_NOTIFY_CHECK), m_configCopy.enableConnectionNotification ? BST_CHECKED : BST_UNCHECKED);
+    SetCheckboxState(IDC_CONNECTION_NOTIFY_CHECK, m_configCopy.enableConnectionNotification);
+    Button_SetCheck(GetDlgItem(hDlg, IDC_DATA_USAGE_ENABLE_CHECK), m_configCopy.enableDataUsageAlerts ? BST_CHECKED : BST_UNCHECKED);
+    SetCheckboxState(IDC_DATA_USAGE_ENABLE_CHECK, m_configCopy.enableDataUsageAlerts);
 
     // Populate history auto-trim combo
     HWND hTrim = GetDlgItem(hDlg, IDC_HISTORY_AUTO_TRIM_COMBO);
@@ -1252,42 +1290,51 @@ void SettingsDialog::PopulateDialog(HWND hDlg)
 
 bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
 {
+    // Create a temporary config to hold new values
+    AppConfig tempConfig = m_configCopy;
+
     // Get update interval selection
-    UINT newInterval = m_configCopy.updateInterval;
     HWND hInterval = GetDlgItem(hDlg, IDC_UPDATE_INTERVAL_COMBO);
     if (hInterval)
     {
         int sel = static_cast<int>(SendMessageW(hInterval, CB_GETCURSEL, 0, 0));
         if (sel != CB_ERR)
         {
-            newInterval = static_cast<UINT>(SendMessageW(hInterval, CB_GETITEMDATA, sel, 0));
+            tempConfig.updateInterval = static_cast<UINT>(SendMessageW(hInterval, CB_GETITEMDATA, sel, 0));
         }
     }
 
     // Get display unit selection
-    SpeedUnit newUnit = m_configCopy.displayUnit;
     HWND hUnit = GetDlgItem(hDlg, IDC_DISPLAY_UNIT_COMBO);
     if (hUnit)
     {
         int sel = static_cast<int>(SendMessageW(hUnit, CB_GETCURSEL, 0, 0));
         if (sel != CB_ERR)
         {
-            newUnit = static_cast<SpeedUnit>(SendMessageW(hUnit, CB_GETITEMDATA, sel, 0));
+            tempConfig.displayUnit = static_cast<SpeedUnit>(SendMessageW(hUnit, CB_GETITEMDATA, sel, 0));
         }
     }
 
-    // Get checkbox states
-    bool newAutoStart = (Button_GetCheck(GetDlgItem(hDlg, IDC_AUTOSTART_CHECK)) == BST_CHECKED);
-    bool newEnableLogging = (Button_GetCheck(GetDlgItem(hDlg, IDC_ENABLE_LOGGING_CHECK)) == BST_CHECKED);
-    bool newDebugLogging = (Button_GetCheck(GetDlgItem(hDlg, IDC_DEBUG_LOGGING_CHECK)) == BST_CHECKED);
-    bool newConnectionNotify = (Button_GetCheck(GetDlgItem(hDlg, IDC_CONNECTION_NOTIFY_CHECK)) == BST_CHECKED);
-    bool newDarkTheme = m_configCopy.darkTheme;
+    // Get checkbox states - use custom state map for dark theme (owner-draw doesn't store state)
+    // Note: We use m_configCopy.darkTheme (current state) to determine how to read
+    if (m_configCopy.darkTheme)
+    {
+        tempConfig.autoStart = GetCheckboxState(IDC_AUTOSTART_CHECK);
+        tempConfig.autoStartAsAdmin = GetCheckboxState(IDC_AUTOSTART_ADMIN_CHECK);
+        tempConfig.enableLogging = GetCheckboxState(IDC_ENABLE_LOGGING_CHECK);
+        tempConfig.debugLogging = GetCheckboxState(IDC_DEBUG_LOGGING_CHECK);
+        tempConfig.enableConnectionNotification = GetCheckboxState(IDC_CONNECTION_NOTIFY_CHECK);
+    }
+    else
+    {
+        tempConfig.autoStart = (Button_GetCheck(GetDlgItem(hDlg, IDC_AUTOSTART_CHECK)) == BST_CHECKED);
+        tempConfig.autoStartAsAdmin = (Button_GetCheck(GetDlgItem(hDlg, IDC_AUTOSTART_ADMIN_CHECK)) == BST_CHECKED);
+        tempConfig.enableLogging = (Button_GetCheck(GetDlgItem(hDlg, IDC_ENABLE_LOGGING_CHECK)) == BST_CHECKED);
+        tempConfig.debugLogging = (Button_GetCheck(GetDlgItem(hDlg, IDC_DEBUG_LOGGING_CHECK)) == BST_CHECKED);
+        tempConfig.enableConnectionNotification = (Button_GetCheck(GetDlgItem(hDlg, IDC_CONNECTION_NOTIFY_CHECK)) == BST_CHECKED);
+    }
 
-    // Keep ThemeMode roughly in sync with the dark theme checkbox so that
-    // future logic based on ThemeMode can distinguish between explicit
-    // Light/Dark overrides (while SystemDefault remains the migrated value
-    // when the user has not changed the theme setting yet).
-    ThemeMode newThemeMode = m_configCopy.themeMode;
+    // Keep ThemeMode roughly in sync with the dark theme checkbox
     HWND hThemeModeDlg = GetDlgItem(hDlg, IDC_THEME_MODE_COMBO);
     if (hThemeModeDlg)
     {
@@ -1297,17 +1344,15 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
             LRESULT data = SendMessageW(hThemeModeDlg, CB_GETITEMDATA, selTheme, 0);
             if (data != CB_ERR)
             {
-                newThemeMode = static_cast<ThemeMode>(static_cast<int>(data));
+                tempConfig.themeMode = static_cast<ThemeMode>(static_cast<int>(data));
             }
         }
     }
 
-    AppConfig tempConfig = m_configCopy;
-    tempConfig.themeMode = newThemeMode;
-    newDarkTheme = IsDarkThemeEnabled(tempConfig);
+    // Calculate effective dark theme based on mode
+    tempConfig.darkTheme = IsDarkThemeEnabled(tempConfig);
 
     // Get interface selection
-    std::wstring newInterface = m_configCopy.selectedInterface;
     HWND hInterface = GetDlgItem(hDlg, IDC_INTERFACE_COMBO);
     if (hInterface)
     {
@@ -1318,17 +1363,16 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
             SendMessageW(hInterface, CB_GETLBTEXT, sel, reinterpret_cast<LPARAM>(buffer));
             if (sel == 0)
             {
-                newInterface.clear();
+                tempConfig.selectedInterface.clear();
             }
             else
             {
-                newInterface = buffer;
+                tempConfig.selectedInterface = buffer;
             }
         }
     }
 
     // Get history auto-trim selection
-    int newTrimDays = m_configCopy.historyAutoTrimDays;
     HWND hTrim = GetDlgItem(hDlg, IDC_HISTORY_AUTO_TRIM_COMBO);
     if (hTrim)
     {
@@ -1338,13 +1382,12 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
             LRESULT days = SendMessageW(hTrim, CB_GETITEMDATA, selTrim, 0);
             if (days != CB_ERR)
             {
-                newTrimDays = static_cast<int>(days);
+                tempConfig.historyAutoTrimDays = static_cast<int>(days);
             }
         }
     }
 
     // Get language selection
-    AppLanguage newLanguage = m_configCopy.language;
     HWND hLanguage = GetDlgItem(hDlg, IDC_LANGUAGE_COMBO);
     if (hLanguage)
     {
@@ -1354,27 +1397,25 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
             LRESULT langVal = SendMessageW(hLanguage, CB_GETITEMDATA, selLang, 0);
             if (langVal != CB_ERR)
             {
-                newLanguage = static_cast<AppLanguage>(langVal);
+                tempConfig.language = static_cast<AppLanguage>(langVal);
             }
         }
     }
 
     // Get ping target
-    std::wstring newPingTarget = m_configCopy.pingTarget;
     HWND hPingTarget = GetDlgItem(hDlg, IDC_PING_TARGET_EDIT);
     if (hPingTarget)
     {
         wchar_t buffer[256] = {0};
         GetWindowTextW(hPingTarget, buffer, 256);
-        newPingTarget = buffer;
-        if (newPingTarget.empty())
+        tempConfig.pingTarget = buffer;
+        if (tempConfig.pingTarget.empty())
         {
-            newPingTarget = L"8.8.8.8";
+            tempConfig.pingTarget = L"8.8.8.8";
         }
     }
 
     // Get ping interval
-    UINT newPingInterval = m_configCopy.pingIntervalMs;
     HWND hPingInterval = GetDlgItem(hDlg, IDC_PING_INTERVAL_COMBO);
     if (hPingInterval)
     {
@@ -1384,14 +1425,12 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
             LRESULT data = SendMessageW(hPingInterval, CB_GETITEMDATA, sel, 0);
             if (data != CB_ERR)
             {
-                newPingInterval = static_cast<UINT>(data);
+                tempConfig.pingIntervalMs = static_cast<UINT>(data);
             }
         }
     }
 
     // Get hotkey
-    UINT newHotkeyModifier = m_configCopy.hotkeyModifier;
-    UINT newHotkeyKey = m_configCopy.hotkeyKey;
     HWND hHotkeyCombo = GetDlgItem(hDlg, IDC_HOTKEY_COMBO);
     if (hHotkeyCombo)
     {
@@ -1401,28 +1440,11 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
             LRESULT data = SendMessageW(hHotkeyCombo, CB_GETITEMDATA, sel, 0);
             if (data != CB_ERR)
             {
-                newHotkeyKey = LOWORD(data);
-                newHotkeyModifier = HIWORD(data);
+                tempConfig.hotkeyKey = LOWORD(data);
+                tempConfig.hotkeyModifier = HIWORD(data);
             }
         }
     }
-
-    // Update working copy
-    m_configCopy.updateInterval = newInterval;
-    m_configCopy.displayUnit = newUnit;
-    m_configCopy.autoStart = newAutoStart;
-    m_configCopy.enableLogging = newEnableLogging;
-    m_configCopy.debugLogging = newDebugLogging;
-    m_configCopy.enableConnectionNotification = newConnectionNotify;
-    m_configCopy.darkTheme = newDarkTheme;
-    m_configCopy.themeMode = newThemeMode;
-    m_configCopy.selectedInterface = newInterface;
-    m_configCopy.historyAutoTrimDays = newTrimDays;
-    m_configCopy.language = newLanguage;
-    m_configCopy.pingTarget = newPingTarget;
-    m_configCopy.pingIntervalMs = newPingInterval;
-    m_configCopy.hotkeyModifier = newHotkeyModifier;
-    m_configCopy.hotkeyKey = newHotkeyKey;
 
     // Get font size
     HWND hFontSize = GetDlgItem(hDlg, IDC_OVERLAY_FONT_SIZE_COMBO);
@@ -1434,7 +1456,7 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
             LRESULT data = SendMessageW(hFontSize, CB_GETITEMDATA, sel, 0);
             if (data != CB_ERR)
             {
-                m_configCopy.overlayFontSize = static_cast<int>(data);
+                tempConfig.overlayFontSize = static_cast<int>(data);
             }
         }
     }
@@ -1446,34 +1468,96 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
         int sel = static_cast<int>(SendMessageW(hOverlayColor, CB_GETCURSEL, 0, 0));
         if (sel != CB_ERR && sel < s_overlayColorPresetCount)
         {
-            m_configCopy.overlayDownloadColor = s_overlayColorPresets[sel].down;
-            m_configCopy.overlayUploadColor = s_overlayColorPresets[sel].up;
+            tempConfig.overlayDownloadColor = s_overlayColorPresets[sel].down;
+            tempConfig.overlayUploadColor = s_overlayColorPresets[sel].up;
         }
     }
 
     // === Data Usage Alerts ===
-    m_configCopy.enableDataUsageAlerts = (Button_GetCheck(GetDlgItem(hDlg, IDC_DATA_USAGE_ENABLE_CHECK)) == BST_CHECKED);
+    if (m_configCopy.darkTheme)
+    {
+        tempConfig.enableDataUsageAlerts = GetCheckboxState(IDC_DATA_USAGE_ENABLE_CHECK);
+    }
+    else
+    {
+        tempConfig.enableDataUsageAlerts = (Button_GetCheck(GetDlgItem(hDlg, IDC_DATA_USAGE_ENABLE_CHECK)) == BST_CHECKED);
+    }
     
     HWND hDataQuota = GetDlgItem(hDlg, IDC_DATA_USAGE_QUOTA_EDIT);
     if (hDataQuota)
     {
         wchar_t buf[64] = {0};
         GetWindowTextW(hDataQuota, buf, 64);
-        m_configCopy.dataQuotaGB = _wtof(buf);
-        if (m_configCopy.dataQuotaGB < 0.0)
+        tempConfig.dataQuotaGB = _wtof(buf);
+        if (tempConfig.dataQuotaGB < 0.0)
         {
-            m_configCopy.dataQuotaGB = 0.0;
+            tempConfig.dataQuotaGB = 0.0;
         }
     }
+
+    // === CHECK FOR CHANGES ===
+    // If nothing changed, return success immediately without saving
+    // === CHECK FOR CHANGES ===
+    
+    // Fix precision issue for data quota (round to 1 decimal place to match UI)
+    tempConfig.dataQuotaGB = round(tempConfig.dataQuotaGB * 10.0) / 10.0;
+    
+    // === CHECK FOR CHANGES ===
+    
+    // Fix precision issue for data quota (round to 1 decimal place to match UI)
+    tempConfig.dataQuotaGB = round(tempConfig.dataQuotaGB * 10.0) / 10.0;
+    
+    // Compare and log differences
+    if (tempConfig == m_configCopy)
+    {
+        LogDebug(L"ApplySettings: No changes detected.");
+        return true;
+    }
+
+    // Log what changed for debugging
+    if (tempConfig.updateInterval != m_configCopy.updateInterval) LogDebug(L"Settings Changed: updateInterval");
+    if (tempConfig.displayUnit != m_configCopy.displayUnit) LogDebug(L"Settings Changed: displayUnit");
+    if (tempConfig.autoStart != m_configCopy.autoStart) LogDebug(L"Settings Changed: autoStart");
+    if (tempConfig.autoStartAsAdmin != m_configCopy.autoStartAsAdmin) LogDebug(L"Settings Changed: autoStartAsAdmin");
+    if (tempConfig.enableLogging != m_configCopy.enableLogging) LogDebug(L"Settings Changed: enableLogging");
+    if (tempConfig.debugLogging != m_configCopy.debugLogging) LogDebug(L"Settings Changed: debugLogging");
+    if (tempConfig.darkTheme != m_configCopy.darkTheme) LogDebug(L"Settings Changed: darkTheme");
+    if (tempConfig.themeMode != m_configCopy.themeMode) LogDebug(L"Settings Changed: themeMode");
+    if (tempConfig.selectedInterface != m_configCopy.selectedInterface) LogDebug(L"Settings Changed: selectedInterface");
+    if (tempConfig.historyAutoTrimDays != m_configCopy.historyAutoTrimDays) LogDebug(L"Settings Changed: historyAutoTrimDays");
+    if (tempConfig.language != m_configCopy.language) LogDebug(L"Settings Changed: language");
+    if (tempConfig.pingTarget != m_configCopy.pingTarget) LogDebug(L"Settings Changed: pingTarget");
+    if (tempConfig.pingIntervalMs != m_configCopy.pingIntervalMs) LogDebug(L"Settings Changed: pingIntervalMs");
+    if (tempConfig.enableDataUsageAlerts != m_configCopy.enableDataUsageAlerts) LogDebug(L"Settings Changed: enableDataUsageAlerts");
+    if (tempConfig.dataQuotaGB != m_configCopy.dataQuotaGB) 
+    {
+        LogDebug(L"Settings Changed: dataQuotaGB");
+    }
+
+    // Capture old auto-start state before updating m_configCopy
+    bool oldAutoStart = m_configCopy.autoStart;
+    bool oldAutoStartAsAdmin = m_configCopy.autoStartAsAdmin;
+
+    // Apply changes
+    m_configCopy = tempConfig;
 
     // Save to registry via config provider (ignore errors for now)
     if (m_pConfigProvider)
     {
         m_pConfigProvider->SaveConfig(m_configCopy);
-    }
 
+        // Explicitly update auto-start if changed
+        // This avoids UAC prompts when only other settings (like language) are changed
+        if (m_configCopy.autoStart != oldAutoStart || 
+            m_configCopy.autoStartAsAdmin != oldAutoStartAsAdmin)
+        {
+            m_pConfigProvider->SetAutoStart(m_configCopy.autoStart, m_configCopy.autoStartAsAdmin);
+        }
+    }
+    
     return true;
 }
+
 
 void SettingsDialog::PopulateInterfaceCombo(HWND hDlg)
 {
@@ -1571,7 +1655,7 @@ void SettingsDialog::SwitchTab(HWND hDlg, int tabIndex)
     // General tab controls
     const int generalControls[] = {
         IDC_SETTINGS_LABEL_LANGUAGE, IDC_LANGUAGE_COMBO,
-        IDC_AUTOSTART_CHECK, IDC_ENABLE_LOGGING_CHECK,
+        IDC_AUTOSTART_CHECK, IDC_AUTOSTART_ADMIN_CHECK, IDC_ENABLE_LOGGING_CHECK,
         IDC_DEBUG_LOGGING_CHECK, IDC_CONNECTION_NOTIFY_CHECK
     };
 

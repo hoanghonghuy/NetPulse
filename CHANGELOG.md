@@ -2,6 +2,20 @@
 
 All notable changes to NetworkMonitor will be documented in this file.
 
+## [1.3.1] - 2025-12-10
+
+### Added
+- **Run as Administrator Auto-Start**: New checkbox option to start with Windows using elevated privileges via Task Scheduler.
+- **Enhanced Debug Logging**: Replaced ephemeral debug prints with a persistent file-based logging system (`%LOCALAPPDATA%\NetworkMonitor\NetworkMonitor.log`) for easier troubleshooting.
+
+### Fixed
+- **Settings Dialog Reliability**: Rewrote "dirty check" logic to use value-based comparison instead of event-based tracking. Settings are now only saved when actual values change.
+- **Phantom UAC Prompts**: Decoupled Auto-Start logic from general settings saving. UAC prompts now only appear when enabling/disabling Admin Auto-Start, not when changing language or theme.
+- **Dark Theme Checkboxes**: Fixed multiple issues with owner-draw checkboxes in dark mode (unresponsive clicks, paint coalescing lag, missing handler for Data Usage checkbox).
+
+### Changed
+- **IConfigProvider Interface**: Updated `SetAutoStart` signature to support admin mode parameter.
+
 ## [1.3.0] - 2025-12-09
 
 ### Added

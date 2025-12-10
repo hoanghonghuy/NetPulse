@@ -31,7 +31,7 @@ public:
    * @param enable true to enable, false to disable
    * @return true if successful, false otherwise
    */
-  bool SetAutoStart(bool enable) override;
+  bool SetAutoStart(bool enable, bool asAdmin = false) override;
 
   /**
    * Check if auto-start is enabled

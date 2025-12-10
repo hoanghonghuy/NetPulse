@@ -267,6 +267,8 @@
 #define IDS_PERAPP_BUTTON_CLOSE         573
 #define IDS_MENU_FLOATING_WINDOW        574
 #define IDS_MENU_PERAPP                 575
+#define IDC_AUTOSTART_ADMIN_CHECK       576
+#define IDS_SETTINGS_LABEL_AUTOSTART_ADMIN 577
 
 // ============================================================================
 // STANDARD DIALOG IDS

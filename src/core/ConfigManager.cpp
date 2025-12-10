@@ -1,6 +1,7 @@
 #include "NetworkMonitor/ConfigManager.h"
 #include "NetworkMonitor/Utils.h"
 #include "NetworkMonitor/ThemeHelper.h"
+#include <shellapi.h>
 
 namespace NetworkMonitor
 {
@@ -76,6 +77,7 @@ bool ConfigManager::LoadConfig(AppConfig& config)
     config.language = static_cast<AppLanguage>(langValue);
     config.selectedInterface = ReadString(hKey, L"SelectedInterface", L"");
     config.autoStart = IsAutoStartEnabled();
+    config.autoStartAsAdmin = ReadDWORD(hKey, L"AutoStartAsAdmin", 0) != 0;
     config.enableConnectionNotification = ReadDWORD(hKey, L"EnableConnectionNotify", 1) != 0;
     config.pingTarget = ReadString(hKey, L"PingTarget", L"8.8.8.8");
     config.pingIntervalMs = ReadDWORD(hKey, L"PingIntervalMs", 5000);
@@ -177,69 +179,183 @@ bool ConfigManager::SaveConfig(const AppConfig& config)
     success &= WriteDWORD(hKey, L"FloatingShowCPU", config.floatingShowCPU ? 1 : 0);
     success &= WriteDWORD(hKey, L"FloatingShowRAM", config.floatingShowRAM ? 1 : 0);
 
-    // Save auto-start setting
-    success &= SetAutoStart(config.autoStart);
+    // Save auto-start setting (registry only)
+    success &= WriteDWORD(hKey, L"AutoStartAsAdmin", config.autoStartAsAdmin ? 1 : 0);
+    
+    // Note: SetAutoStart is NOT called here anymore to avoid unnecessary UAC prompts.
+    // Callers (like SettingsDialog) must call SetAutoStart explicitly if those settings changed.
 
     RegCloseKey(hKey);
     return success;
 }
 
-bool ConfigManager::SetAutoStart(bool enable)
+bool ConfigManager::SetAutoStart(bool enable, bool asAdmin)
 {
+    LogDebug(L"SetAutoStart called: enable=" + std::to_wstring(enable) + L", asAdmin=" + std::to_wstring(asAdmin));
+    
+    static const wchar_t* TASK_NAME = L"NetworkMonitorAutoStart";
+    bool regSuccess = true;
+    bool taskSuccess = true;
+
+    // === REGISTRY: Standard auto-start (non-admin) ===
     HKEY hKey = nullptr;
     LONG result = RegOpenKeyExW(HKEY_CURRENT_USER, AUTOSTART_PATH, 0, KEY_WRITE, &hKey);
-    
-    if (result != ERROR_SUCCESS)
+    if (result == ERROR_SUCCESS)
     {
-        return false;
-    }
-
-    bool success = false;
-
-    if (enable)
-    {
-        // Get executable path
-        wchar_t exePath[MAX_PATH] = {0};
-        GetModuleFileNameW(nullptr, exePath, MAX_PATH);
-
-        // Add to startup
-        result = RegSetValueExW(hKey, APP_NAME, 0, REG_SZ, 
-                                reinterpret_cast<const BYTE*>(exePath), 
-                                static_cast<DWORD>((wcslen(exePath) + 1) * sizeof(wchar_t)));
-        
-        success = (result == ERROR_SUCCESS);
+        if (enable && !asAdmin)
+        {
+            // Enable via Registry
+            wchar_t exePath[MAX_PATH] = {0};
+            GetModuleFileNameW(nullptr, exePath, MAX_PATH);
+            result = RegSetValueExW(hKey, APP_NAME, 0, REG_SZ,
+                                    reinterpret_cast<const BYTE*>(exePath),
+                                    static_cast<DWORD>((wcslen(exePath) + 1) * sizeof(wchar_t)));
+            regSuccess = (result == ERROR_SUCCESS);
+        }
+        else
+        {
+            // Remove from Registry (either disabled or using Admin mode)
+            result = RegDeleteValueW(hKey, APP_NAME);
+            regSuccess = (result == ERROR_SUCCESS || result == ERROR_FILE_NOT_FOUND);
+        }
+        RegCloseKey(hKey);
     }
     else
     {
-        // Remove from startup
-        result = RegDeleteValueW(hKey, APP_NAME);
-        success = (result == ERROR_SUCCESS || result == ERROR_FILE_NOT_FOUND);
+        regSuccess = false;
     }
 
-    RegCloseKey(hKey);
-    return success;
+    // === TASK SCHEDULER: Admin auto-start ===
+    wchar_t exePath[MAX_PATH] = {0};
+    GetModuleFileNameW(nullptr, exePath, MAX_PATH);
+    wchar_t cmdParams[1024] = {0};
+
+    if (enable && asAdmin)
+    {
+        // Create scheduled task with highest privileges
+        swprintf_s(cmdParams, L"/Create /TN \"%ls\" /TR \"\\\"%ls\\\"\" /SC ONLOGON /RL HIGHEST /F",
+                   TASK_NAME, exePath);
+
+        SHELLEXECUTEINFOW sei = { sizeof(sei) };
+        sei.lpVerb = L"runas";  // Request UAC elevation
+        sei.lpFile = L"schtasks.exe";
+        sei.lpParameters = cmdParams;
+        sei.nShow = SW_HIDE;
+        sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+
+        if (ShellExecuteExW(&sei))
+        {
+            WaitForSingleObject(sei.hProcess, 10000);  // Wait up to 10s
+            DWORD exitCode = 0;
+            GetExitCodeProcess(sei.hProcess, &exitCode);
+            CloseHandle(sei.hProcess);
+            taskSuccess = (exitCode == 0);
+        }
+        else
+        {
+            taskSuccess = false;
+        }
+    }
+    else
+    {
+        // Delete scheduled task (if exists) - need admin to delete admin task
+        swprintf_s(cmdParams, L"/Delete /TN \"%ls\" /F", TASK_NAME);
+
+        SHELLEXECUTEINFOW sei = { sizeof(sei) };
+        sei.lpVerb = L"runas";  // Need admin to delete elevated task
+        sei.lpFile = L"schtasks.exe";
+        sei.lpParameters = cmdParams;
+        sei.nShow = SW_HIDE;
+        sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+
+        if (ShellExecuteExW(&sei))
+        {
+            WaitForSingleObject(sei.hProcess, 5000);
+            DWORD exitCode = 0;
+            GetExitCodeProcess(sei.hProcess, &exitCode);
+            CloseHandle(sei.hProcess);
+            
+            wchar_t dbgDelete[128];
+            swprintf_s(dbgDelete, L"[DEBUG] Task delete exitCode=%lu\n", exitCode);
+            LogDebug(L"Task delete exit code: " + std::to_wstring(exitCode));
+            
+            // Exit code 1 means task not found - that's OK
+            taskSuccess = (exitCode == 0 || exitCode == 1);
+        }
+        else
+        {
+            // ShellExecuteEx failed - try without elevation (task might not exist)
+            DWORD err = GetLastError();
+            LogError(L"Task delete ShellExecuteEx failed, error=" + std::to_wstring(err));
+            
+            // Error 1223 means user cancelled UAC - not a success
+            taskSuccess = (err != ERROR_CANCELLED);
+        }
+    }
+
+    if (regSuccess && taskSuccess)
+    {
+        LogDebug(L"SetAutoStart completed successfully.");
+    }
+    else
+    {
+        LogError(L"SetAutoStart failed: Reg=" + std::to_wstring(regSuccess) + L", Task=" + std::to_wstring(taskSuccess));
+    }
+
+    return regSuccess && taskSuccess;
 }
 
 bool ConfigManager::IsAutoStartEnabled()
 {
+    // First check Registry (standard auto-start)
     HKEY hKey = nullptr;
     LONG result = RegOpenKeyExW(HKEY_CURRENT_USER, AUTOSTART_PATH, 0, KEY_READ, &hKey);
     
-    if (result != ERROR_SUCCESS)
+    if (result == ERROR_SUCCESS)
     {
-        return false;
+        wchar_t value[MAX_PATH] = {0};
+        DWORD valueSize = sizeof(value);
+        DWORD type = REG_SZ;
+
+        result = RegQueryValueExW(hKey, APP_NAME, nullptr, &type, 
+                                  reinterpret_cast<BYTE*>(value), &valueSize);
+        RegCloseKey(hKey);
+        
+        if (result == ERROR_SUCCESS)
+        {
+            LogDebug(L"IsAutoStartEnabled: TRUE (found in registry)");
+            return true;  // Found in registry
+        }
     }
 
-    wchar_t value[MAX_PATH] = {0};
-    DWORD valueSize = sizeof(value);
-    DWORD type = REG_SZ;
+    // Check Task Scheduler for admin auto-start
+    static const wchar_t* TASK_NAME = L"NetworkMonitorAutoStart";
+    wchar_t cmdParams[256] = {0};
+    swprintf_s(cmdParams, L"/Query /TN \"%ls\"", TASK_NAME);
 
-    result = RegQueryValueExW(hKey, APP_NAME, nullptr, &type, 
-                              reinterpret_cast<BYTE*>(value), &valueSize);
+    SHELLEXECUTEINFOW sei = { sizeof(sei) };
+    sei.lpVerb = nullptr;
+    sei.lpFile = L"schtasks.exe";
+    sei.lpParameters = cmdParams;
+    sei.nShow = SW_HIDE;
+    sei.fMask = SEE_MASK_NOCLOSEPROCESS;
 
-    RegCloseKey(hKey);
+    if (ShellExecuteExW(&sei))
+    {
+        WaitForSingleObject(sei.hProcess, 3000);
+        DWORD exitCode = 0;
+        GetExitCodeProcess(sei.hProcess, &exitCode);
+        CloseHandle(sei.hProcess);
+        
+        if (exitCode == 0)
+        {
+            LogDebug(L"IsAutoStartEnabled: TRUE (found in task scheduler)");
+            return true;  // Found in Task Scheduler
+        }
+    }
 
-    return (result == ERROR_SUCCESS);
+    OutputDebugStringW(L"[DEBUG] IsAutoStartEnabled: FALSE (not found)\n");
+    return false;
 }
 
 bool ConfigManager::OpenSettingsKey(HKEY& hKey)

@@ -3,6 +3,7 @@
 
 #include "NetworkMonitor/Common.h"
 #include <functional>
+#include <unordered_map>
 
 namespace NetworkMonitor
 {
@@ -38,6 +39,11 @@ private:
     void CenterDialogOnScreen(HWND hDlg);
     void InitializeTabControl(HWND hDlg);
     void SwitchTab(HWND hDlg, int tabIndex);
+    
+    // Checkbox state helpers for dark theme (BS_OWNERDRAW doesn't store state)
+    bool GetCheckboxState(UINT ctrlId) const;
+    void SetCheckboxState(UINT ctrlId, bool checked);
+    void ToggleCheckboxState(UINT ctrlId);
 
     // Member variables
     HWND m_hDialog;
@@ -47,6 +53,7 @@ private:
     AppConfig m_configCopy;  // Working copy of config
     std::function<void()> m_settingsChangedCallback;
     bool m_isInitializing;   // Prevent recursive updates during initialization
+    std::unordered_map<UINT, bool> m_checkboxStates;  // Dark theme checkbox states
 };
 
 } // namespace NetworkMonitor

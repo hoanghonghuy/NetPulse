@@ -40,7 +40,7 @@ public:
      * @param enable true to enable, false to disable
      * @return true if successful, false otherwise
      */
-    virtual bool SetAutoStart(bool enable) = 0;
+    virtual bool SetAutoStart(bool enable, bool asAdmin = false) = 0;
 };
 
 } // namespace NetworkMonitor
