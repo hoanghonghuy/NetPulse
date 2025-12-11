@@ -59,6 +59,11 @@ void DialogManager::SetTimerUpdateCallback(TimerUpdateCallback callback)
     m_timerUpdateCallback = callback;
 }
 
+void DialogManager::SetApplyAllSettingsCallback(ApplyAllSettingsCallback callback)
+{
+    m_applyAllSettingsCallback = callback;
+}
+
 /**
  * Helper function to bring an existing dialog to foreground
  */
@@ -139,6 +144,18 @@ void DialogManager::ShowSettings()
                 // Update oldConfig for next comparison
                 oldConfig = *m_pConfig;
 
+                // Apply overlay style changes
+                if (m_pUpdateCoordinator)
+                {
+                    m_pUpdateCoordinator->ApplyOverlayStyleFromConfig();
+                }
+
+                // Apply all other settings (FloatingWindow, Hotkey, Ping, TrayIcon)
+                if (m_applyAllSettingsCallback)
+                {
+                    m_applyAllSettingsCallback();
+                }
+
                 // Refresh UI
                 if (m_pUpdateCoordinator)
                 {
@@ -163,6 +180,19 @@ void DialogManager::ShowSettings()
         m_configReloadCallback();
     }
     SetDebugLoggingEnabled(m_pConfig->debugLogging);
+    
+    // Apply overlay style changes (same as Apply button path)
+    if (m_pUpdateCoordinator)
+    {
+        m_pUpdateCoordinator->ApplyOverlayStyleFromConfig();
+    }
+    
+    // Apply all other settings (FloatingWindow, Hotkey, Ping, TrayIcon)
+    if (m_applyAllSettingsCallback)
+    {
+        m_applyAllSettingsCallback();
+    }
+    
     if (m_pUpdateCoordinator)
     {
         m_pUpdateCoordinator->OnNetworkUpdateTick();

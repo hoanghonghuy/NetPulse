@@ -79,12 +79,86 @@ bool ImGuiApp::Initialize(HINSTANCE hInstance, int nCmdShow)
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
     // Note: Docking requires the docking branch of ImGui, which is not being used here.
 
-    // Setup Dear ImGui style (Dark theme)
-    ImGui::StyleColorsDark();
+    // Setup Dear ImGui style (EVKey-inspired "Professional Dark")
+    // ImGui::StyleColorsDark(); // Replaced with custom theme
     ImGuiStyle& style = ImGui::GetStyle();
-    style.WindowRounding = 5.0f;
-    style.FrameRounding = 4.0f;
+    
+    // Geometry
+    style.WindowRounding = 4.0f;
+    style.FrameRounding = 3.0f;
     style.GrabRounding = 3.0f;
+    style.PopupRounding = 4.0f;
+    style.ScrollbarRounding = 9.0f;
+    style.TabRounding = 3.0f;
+    style.WindowBorderSize = 1.0f;
+    style.FrameBorderSize = 0.0f;
+    style.PopupBorderSize = 1.0f;
+
+    // Colors
+    ImVec4* colors = style.Colors;
+    
+    const ImVec4 valBg       = ImVec4(0.125f, 0.133f, 0.145f, 1.00f); // #202225 (Dark Gray Background)
+    const ImVec4 valPanel    = ImVec4(0.169f, 0.176f, 0.192f, 1.00f); // #2b2d31 (Lighter Panel)
+    const ImVec4 valBorder   = ImVec4(0.227f, 0.235f, 0.263f, 1.00f); // #3a3c43 (Subtle Border)
+    const ImVec4 valText     = ImVec4(0.949f, 0.953f, 0.961f, 1.00f); // #f2f3f5 (White-ish Text)
+    const ImVec4 valTextDis  = ImVec4(0.725f, 0.733f, 0.745f, 1.00f); // #b9bbbe (Gray Text)
+    const ImVec4 valAccent   = ImVec4(0.231f, 0.510f, 0.965f, 1.00f); // #3b82f6 (Bright Blue Accent)
+    const ImVec4 valAccentHv = ImVec4(0.376f, 0.647f, 0.980f, 1.00f); // #60a5fa (Lighter Blue Hover)
+    const ImVec4 valAccentAc = ImVec4(0.145f, 0.388f, 0.922f, 1.00f); // #2563eb (Darker Blue Active)
+
+    colors[ImGuiCol_Text]                   = valText;
+    colors[ImGuiCol_TextDisabled]           = valTextDis;
+    colors[ImGuiCol_WindowBg]               = valBg;
+    colors[ImGuiCol_ChildBg]                = valPanel;
+    colors[ImGuiCol_PopupBg]                = valPanel;
+    colors[ImGuiCol_Border]                 = valBorder;
+    colors[ImGuiCol_BorderShadow]           = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+    colors[ImGuiCol_FrameBg]                = valPanel;
+    colors[ImGuiCol_FrameBgHovered]         = valBorder;
+    colors[ImGuiCol_FrameBgActive]          = valBorder;
+    colors[ImGuiCol_TitleBg]                = valPanel;
+    colors[ImGuiCol_TitleBgActive]          = valPanel;
+    colors[ImGuiCol_TitleBgCollapsed]       = valBg;
+    colors[ImGuiCol_MenuBarBg]              = valPanel;
+    colors[ImGuiCol_ScrollbarBg]            = valBg;
+    colors[ImGuiCol_ScrollbarGrab]          = valBorder;
+    colors[ImGuiCol_ScrollbarGrabHovered]   = valAccentHv;
+    colors[ImGuiCol_ScrollbarGrabActive]    = valAccentAc;
+    colors[ImGuiCol_CheckMark]              = valAccent;
+    colors[ImGuiCol_SliderGrab]             = valAccent;
+    colors[ImGuiCol_SliderGrabActive]       = valAccentAc;
+    colors[ImGuiCol_Button]                 = valPanel; // Buttons blend in
+    colors[ImGuiCol_ButtonHovered]          = valBorder;
+    colors[ImGuiCol_ButtonActive]           = valAccentAc;
+    colors[ImGuiCol_Header]                 = valPanel;
+    colors[ImGuiCol_HeaderHovered]          = valBorder;
+    colors[ImGuiCol_HeaderActive]           = valBorder;
+    colors[ImGuiCol_Separator]              = valBorder;
+    colors[ImGuiCol_SeparatorHovered]       = valAccentHv;
+    colors[ImGuiCol_SeparatorActive]        = valAccentAc;
+    colors[ImGuiCol_ResizeGrip]             = valBorder;
+    colors[ImGuiCol_ResizeGripHovered]      = valAccentHv;
+    colors[ImGuiCol_ResizeGripActive]       = valAccentAc;
+    colors[ImGuiCol_Tab]                    = valPanel;
+    colors[ImGuiCol_TabHovered]             = valBorder;
+    colors[ImGuiCol_TabActive]              = valBg; // Active tab merges with window
+    colors[ImGuiCol_TabUnfocused]           = valPanel;
+    colors[ImGuiCol_TabUnfocusedActive]     = valBg;
+    colors[ImGuiCol_PlotLines]              = valAccent;
+    colors[ImGuiCol_PlotLinesHovered]       = valAccentHv;
+    colors[ImGuiCol_PlotHistogram]          = valAccent;
+    colors[ImGuiCol_PlotHistogramHovered]   = valAccentHv;
+    colors[ImGuiCol_TableHeaderBg]          = valPanel;
+    colors[ImGuiCol_TableBorderStrong]      = valBorder;
+    colors[ImGuiCol_TableBorderLight]       = valBorder;
+    colors[ImGuiCol_TableRowBg]             = valBg;
+    colors[ImGuiCol_TableRowBgAlt]          = valPanel; // Striped rows
+    colors[ImGuiCol_TextSelectedBg]         = valAccentAc;
+    colors[ImGuiCol_DragDropTarget]         = valAccent;
+    colors[ImGuiCol_NavHighlight]           = valAccent;
+    colors[ImGuiCol_NavWindowingHighlight]  = valAccent;
+    colors[ImGuiCol_NavWindowingDimBg]      = ImVec4(0.00f, 0.00f, 0.00f, 0.50f);
+    colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(0.00f, 0.00f, 0.00f, 0.50f);
 
     // Setup Platform/Renderer backends
     ImGui_ImplWin32_Init(m_hWnd);

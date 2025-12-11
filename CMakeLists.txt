@@ -83,8 +83,6 @@ set(HEADER_FILES
     include/NetworkMonitor/PerAppMonitor.h
     include/NetworkMonitor/PerAppDialog.h
     include/NetworkMonitor/EtwNetworkMonitor.h
-    include/NetworkMonitor/ImGuiApp.h
-    include/NetworkMonitor/ImGuiDashboard.h
 )
 
 # Source files
@@ -115,35 +113,13 @@ set(SOURCE_FILES
     src/core/PerAppMonitor.cpp
     src/ui/dialogs/PerAppDialog.cpp
     src/core/EtwNetworkMonitor.cpp
-    src/ui/ImGuiApp.cpp
-    src/ui/ImGuiDashboard.cpp
     third_party/sqlite/sqlite3.c
-)
-
-# ImGui source files
-set(IMGUI_SOURCE_FILES
-    third_party/imgui/imgui.cpp
-    third_party/imgui/imgui_draw.cpp
-    third_party/imgui/imgui_tables.cpp
-    third_party/imgui/imgui_widgets.cpp
-    third_party/imgui/backends/imgui_impl_dx11.cpp
-    third_party/imgui/backends/imgui_impl_win32.cpp
 )
 
 if(MSVC)
     # Suppress deprecated GetVersionEx warnings in third-party SQLite only
     set_source_files_properties(third_party/sqlite/sqlite3.c PROPERTIES
         COMPILE_FLAGS "/wd4996"
-    )
-    # Suppress common harmless warnings in third-party ImGui
-    set_source_files_properties(
-        third_party/imgui/imgui.cpp
-        third_party/imgui/imgui_draw.cpp
-        third_party/imgui/imgui_tables.cpp
-        third_party/imgui/imgui_widgets.cpp
-        third_party/imgui/backends/imgui_impl_dx11.cpp
-        third_party/imgui/backends/imgui_impl_win32.cpp
-        PROPERTIES COMPILE_FLAGS "/wd4244 /wd4127 /wd4456 /wd4457 /wd4702"
     )
 endif()
 
@@ -162,7 +138,6 @@ set(RESOURCE_FILES
 add_executable(${PROJECT_NAME} WIN32
     ${HEADER_FILES}
     ${SOURCE_FILES}
-    ${IMGUI_SOURCE_FILES}
     ${RESOURCE_FILES}
 )
 
@@ -175,8 +150,6 @@ target_include_directories(${PROJECT_NAME}
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/resources
         ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sqlite
-        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui
-        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/backends
 )
 
 # ============================================================================

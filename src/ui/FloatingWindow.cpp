@@ -17,11 +17,16 @@ FloatingWindow::FloatingWindow()
     , m_showNetwork(true)
     , m_showCPU(true)
     , m_showRAM(true)
+    , m_showPing(true)
+    , m_showDataToday(true)
     , m_downloadSpeed(0.0)
     , m_uploadSpeed(0.0)
     , m_speedUnit(SpeedUnit::KiloBytesPerSecond)
     , m_cpuPercent(0.0)
     , m_ramPercent(0.0)
+    , m_pingLatency(-1)
+    , m_todayBytesDown(0)
+    , m_todayBytesUp(0)
 {
 }
 
@@ -97,14 +102,66 @@ bool FloatingWindow::IsVisible() const
     return m_hwnd && IsWindowVisible(m_hwnd);
 }
 
-void FloatingWindow::UpdateSpeed(double downloadBytesPerSec, double uploadBytesPerSec, SpeedUnit unit)
+void FloatingWindow::SetShowNetwork(bool show)
 {
-    m_downloadSpeed = downloadBytesPerSec;
-    m_uploadSpeed = uploadBytesPerSec;
-    m_speedUnit = unit;
+    m_showNetwork = show;
+    RecalculateWindowSize();
     Invalidate();
 }
 
+void FloatingWindow::SetShowCPU(bool show)
+{
+    m_showCPU = show;
+    RecalculateWindowSize();
+    Invalidate();
+}
+
+void FloatingWindow::SetShowRAM(bool show)
+{
+    m_showRAM = show;
+    RecalculateWindowSize();
+    Invalidate();
+}
+
+void FloatingWindow::SetShowPing(bool show)
+{
+    m_showPing = show;
+    RecalculateWindowSize();
+    Invalidate();
+}
+
+void FloatingWindow::SetShowDataToday(bool show)
+{
+    m_showDataToday = show;
+    RecalculateWindowSize();
+    Invalidate();
+}
+
+
+void FloatingWindow::UpdateSpeed(double downloadSpeed, double uploadSpeed, SpeedUnit unit)
+{
+    // Check if values changed significantly to avoid unnecessary repaints
+    if (m_downloadSpeed != downloadSpeed || m_uploadSpeed != uploadSpeed || m_speedUnit != unit)
+    {
+        m_downloadSpeed = downloadSpeed;
+        m_uploadSpeed = uploadSpeed;
+        m_speedUnit = unit;
+        Invalidate();
+    }
+}
+
+void FloatingWindow::UpdateDataToday(uint64_t bytesDown, uint64_t bytesUp)
+{
+    if (m_todayBytesDown != bytesDown || m_todayBytesUp != bytesUp)
+    {
+        m_todayBytesDown = bytesDown;
+        m_todayBytesUp = bytesUp;
+        if (m_showDataToday)
+        {
+            Invalidate();
+        }
+    }
+}
 void FloatingWindow::UpdateCPU(double cpuPercent)
 {
     m_cpuPercent = cpuPercent;
@@ -114,6 +171,12 @@ void FloatingWindow::UpdateCPU(double cpuPercent)
 void FloatingWindow::UpdateRAM(double ramPercent)
 {
     m_ramPercent = ramPercent;
+    Invalidate();
+}
+
+void FloatingWindow::UpdatePing(int latencyMs)
+{
+    m_pingLatency = latencyMs;
     Invalidate();
 }
 
@@ -285,68 +348,113 @@ void FloatingWindow::Paint(HDC hdc)
         TextOutW(hdc, PADDING, y, downText.c_str(), static_cast<int>(downText.length()));
         
         SetTextColor(hdc, upColor);
-        TextOutW(hdc, PADDING + 70, y, upText.c_str(), static_cast<int>(upText.length()));
+        TextOutW(hdc, PADDING + 85, y, upText.c_str(), static_cast<int>(upText.length()));
         y += LINE_HEIGHT;
     }
 
-    // Draw CPU
-    if (m_showCPU)
+    // Draw CPU and RAM on the same line
+    if (m_showCPU || m_showRAM)
     {
-        wchar_t buf[32];
-        swprintf_s(buf, L"CPU: %.0f%%", m_cpuPercent);
-        SetTextColor(hdc, cpuColor);
-        TextOutW(hdc, PADDING, y, buf, static_cast<int>(wcslen(buf)));
+        int xPos = PADDING;
+        
+        if (m_showCPU)
+        {
+            wchar_t buf[32];
+            swprintf_s(buf, L"CPU: %.0f%%", m_cpuPercent);
+            SetTextColor(hdc, cpuColor);
+            TextOutW(hdc, xPos, y, buf, static_cast<int>(wcslen(buf)));
+            xPos = PADDING + 85; // Move to second column for RAM
+        }
+
+        if (m_showRAM)
+        {
+            wchar_t buf[32];
+            swprintf_s(buf, L"RAM: %.0f%%", m_ramPercent);
+            SetTextColor(hdc, ramColor);
+            // If CPU is hidden, RAM aligns left; otherwise aligns to second column
+            TextOutW(hdc, xPos, y, buf, static_cast<int>(wcslen(buf)));
+        }
         y += LINE_HEIGHT;
     }
 
-    // Draw RAM
-    if (m_showRAM)
+    // Draw Ping and Data Today
+    if (m_showPing || m_showDataToday)
     {
-        wchar_t buf[32];
-        swprintf_s(buf, L"RAM: %.0f%%", m_ramPercent);
-        SetTextColor(hdc, ramColor);
-        TextOutW(hdc, PADDING, y, buf, static_cast<int>(wcslen(buf)));
+        int startX = PADDING;
+        
+        // Draw Ping
+        if (m_showPing)
+        {
+            wchar_t buf[32];
+            COLORREF pingColor;
+            
+            if (m_pingLatency < 0)
+            {
+                wcscpy_s(buf, L"Ping: --");
+                pingColor = m_darkTheme ? RGB(128, 128, 128) : RGB(150, 150, 150);
+            }
+            else if (m_pingLatency < 50)
+            {
+                swprintf_s(buf, L"Ping: %dms", m_pingLatency);
+                pingColor = m_darkTheme ? RGB(0, 220, 100) : RGB(0, 150, 60);
+            }
+            else if (m_pingLatency < 100)
+            {
+                swprintf_s(buf, L"Ping: %dms", m_pingLatency);
+                pingColor = m_darkTheme ? RGB(255, 200, 50) : RGB(200, 140, 0);
+            }
+            else
+            {
+                swprintf_s(buf, L"Ping: %dms", m_pingLatency);
+                pingColor = m_darkTheme ? RGB(255, 80, 80) : RGB(200, 40, 40);
+            }
+            
+            SetTextColor(hdc, pingColor);
+            TextOutW(hdc, startX, y, buf, static_cast<int>(wcslen(buf)));
+            
+            // If showing ping, move Data Today to the right
+            if (m_showDataToday) 
+            {
+                startX += 85; // Offset for Data Today (aligned with Upload/RAM)
+            }
+        }
+        
+        // Draw Data Today
+        if (m_showDataToday)
+        {
+            std::wstring todayStr = L"Today: " + FormatBytes(m_todayBytesDown + m_todayBytesUp);
+            // Use a subtler color (e.g., CPU/RAM color or gray)
+            COLORREF dateColor = m_darkTheme ? RGB(200, 200, 200) : RGB(80, 80, 80);
+            SetTextColor(hdc, dateColor);
+            
+            // If Ping is hidden, Data Today aligns left (startX = PADDING)
+            // If Ping is shown, Data Today aligns to second column (startX = PADDING + 85)
+            TextOutW(hdc, startX, y, todayStr.c_str(), static_cast<int>(todayStr.length()));
+        }
+        
+        y += LINE_HEIGHT;
     }
 
     SelectObject(hdc, hOldFont);
     DeleteObject(hFont);
 }
 
-std::wstring FloatingWindow::FormatSpeed(double bytesPerSec, SpeedUnit unit) const
+void FloatingWindow::RecalculateWindowSize()
 {
-    double value = bytesPerSec;
-    const wchar_t* suffix = L"B/s";
-
-    switch (unit)
+    int visibleRows = 0;
+    
+    if (m_showNetwork) visibleRows++;
+    if (m_showCPU || m_showRAM) visibleRows++;
+    if (m_showPing || m_showDataToday) visibleRows++;
+    
+    int newHeight = (PADDING * 2) + (visibleRows * LINE_HEIGHT);
+    
+    // Resize window but keep position
+    if (m_hwnd)
     {
-    case SpeedUnit::BytesPerSecond:
-        suffix = L"B/s";
-        break;
-    case SpeedUnit::KiloBytesPerSecond:
-        value = bytesPerSec / 1024.0;
-        suffix = L"KB/s";
-        break;
-    case SpeedUnit::MegaBytesPerSecond:
-        value = bytesPerSec / (1024.0 * 1024.0);
-        suffix = L"MB/s";
-        break;
-    case SpeedUnit::MegaBitsPerSecond:
-        value = (bytesPerSec * 8.0) / (1024.0 * 1024.0);
-        suffix = L"Mbps";
-        break;
+        SetWindowPos(m_hwnd, nullptr, 0, 0, WINDOW_WIDTH, newHeight, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
     }
-
-    wchar_t buf[32];
-    if (value < 10.0)
-    {
-        swprintf_s(buf, L"%.1f", value);
-    }
-    else
-    {
-        swprintf_s(buf, L"%.0f", value);
-    }
-
-    return std::wstring(buf) + suffix;
 }
+
 
 } // namespace NetworkMonitor

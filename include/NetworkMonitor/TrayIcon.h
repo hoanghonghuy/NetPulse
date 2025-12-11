@@ -91,6 +91,12 @@ public:
      */
     void SetDoubleClickCallback(std::function<void()> callback);
 
+    /**
+     * Refresh tray icon for theme change
+     * @param useDarkTheme true to use dark icon variant
+     */
+    void RefreshIcon(bool useDarkTheme);
+
 private:
     // Menu item data for owner-draw
     struct MenuItemData

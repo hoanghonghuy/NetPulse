@@ -269,6 +269,20 @@
 #define IDS_MENU_PERAPP                 575
 #define IDC_AUTOSTART_ADMIN_CHECK       576
 #define IDS_SETTINGS_LABEL_AUTOSTART_ADMIN 577
+#define IDC_SETTINGS_GROUP_FLOATING     578
+#define IDC_FLOATING_SHOW_NETWORK_CHECK 579
+#define IDC_FLOATING_SHOW_CPU_CHECK     580
+#define IDC_FLOATING_SHOW_RAM_CHECK     1222
+#define IDC_FLOATING_SHOW_PING_CHECK    1223
+#define IDC_FLOATING_SHOW_DATA_TODAY_CHECK 1224
+
+// Note: standard strings are defined earlier
+#define IDS_SETTINGS_GROUP_FLOATING     2100
+#define IDS_FLOATING_SHOW_NETWORK       2101
+#define IDS_FLOATING_SHOW_CPU           2102
+#define IDS_FLOATING_SHOW_RAM           2103
+#define IDS_FLOATING_SHOW_PING          2104
+#define IDS_FLOATING_SHOW_DATA_TODAY    2105
 
 // ============================================================================
 // STANDARD DIALOG IDS

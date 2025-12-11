@@ -171,6 +171,12 @@ BEGIN
     IDS_SETTINGS_LABEL_PING_TARGET       "Ping Target:"
     IDS_SETTINGS_LABEL_PING_INTERVAL     "Ping Interval:"
     IDS_SETTINGS_LABEL_HOTKEY            "Hotkey:"
+    IDS_SETTINGS_GROUP_FLOATING          "Floating Window:"
+    IDS_FLOATING_SHOW_NETWORK            "Network"
+    IDS_FLOATING_SHOW_CPU                "CPU"
+    IDS_FLOATING_SHOW_RAM                "RAM"
+    IDS_FLOATING_SHOW_PING               "Ping"
+    IDS_FLOATING_SHOW_DATA_TODAY         "Data Today"
     IDS_DATA_USAGE_QUOTA_GB              "Monthly quota (GB):"
 END
 
@@ -294,6 +300,12 @@ BEGIN
     IDS_SETTINGS_LABEL_HOTKEY            "Phím tắt:"
     IDS_DATA_USAGE_QUOTA_GB              "Hạn ngạch tháng (GB):"
     IDS_SETTINGS_LABEL_DATA_USAGE_ENABLE "Bật cảnh báo sử dụng dữ liệu"
+    IDS_SETTINGS_GROUP_FLOATING          "Cửa sổ nổi:"
+    IDS_FLOATING_SHOW_NETWORK            "Mạng"
+    IDS_FLOATING_SHOW_CPU                "CPU"
+    IDS_FLOATING_SHOW_RAM                "RAM"
+    IDS_FLOATING_SHOW_PING               "Ping"
+    IDS_FLOATING_SHOW_DATA_TODAY         "Dung lượng hôm nay"
 END
 
 // Japanese resources
@@ -416,6 +428,12 @@ BEGIN
     IDS_SETTINGS_LABEL_HOTKEY            "ホットキー:"
     IDS_DATA_USAGE_QUOTA_GB              "月間割り当て (GB):"
     IDS_SETTINGS_LABEL_DATA_USAGE_ENABLE "データ使用量アラートを有効にする"
+    IDS_SETTINGS_GROUP_FLOATING          "フローティングウィンドウ:"
+    IDS_FLOATING_SHOW_NETWORK            "ネットワーク"
+    IDS_FLOATING_SHOW_CPU                "CPU"
+    IDS_FLOATING_SHOW_RAM                "RAM"
+    IDS_FLOATING_SHOW_PING               "Ping"
+    IDS_FLOATING_SHOW_DATA_TODAY         "本日のデータ"
 END
 
 // Korean resources
@@ -538,6 +556,12 @@ BEGIN
     IDS_SETTINGS_LABEL_HOTKEY            "단축키:"
     IDS_DATA_USAGE_QUOTA_GB              "월간 할당량 (GB):"
     IDS_SETTINGS_LABEL_DATA_USAGE_ENABLE "데이터 사용량 알림 활성화"
+    IDS_SETTINGS_GROUP_FLOATING          "플로팅 창:"
+    IDS_FLOATING_SHOW_NETWORK            "네트워크"
+    IDS_FLOATING_SHOW_CPU                "CPU"
+    IDS_FLOATING_SHOW_RAM                "RAM"
+    IDS_FLOATING_SHOW_PING               "Ping"
+    IDS_FLOATING_SHOW_DATA_TODAY         "오늘 데이터"
 END
 
 // Chinese Simplified resources
@@ -660,6 +684,12 @@ BEGIN
     IDS_SETTINGS_LABEL_HOTKEY            "快捷键:"
     IDS_DATA_USAGE_QUOTA_GB              "每月配额 (GB):"
     IDS_SETTINGS_LABEL_DATA_USAGE_ENABLE "启用数据使用警报"
+    IDS_SETTINGS_GROUP_FLOATING          "浮动窗口:"
+    IDS_FLOATING_SHOW_NETWORK            "网络"
+    IDS_FLOATING_SHOW_CPU                "CPU"
+    IDS_FLOATING_SHOW_RAM                "内存"
+    IDS_FLOATING_SHOW_PING               "Ping"
+    IDS_FLOATING_SHOW_DATA_TODAY         "今日流量"
 END
 
 // Switch back to English for the rest of resources
@@ -755,6 +785,12 @@ BEGIN
     COMBOBOX        IDC_OVERLAY_FONT_SIZE_COMBO,90,84,50,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT           "Overlay Colors:",IDC_OVERLAY_COLOR_LABEL,15,104,60,8
     COMBOBOX        IDC_OVERLAY_COLOR_COMBO,80,102,100,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Floating Window:",IDC_SETTINGS_GROUP_FLOATING,15,122,60,8
+    CONTROL         "Network",IDC_FLOATING_SHOW_NETWORK_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,80,120,45,10
+    CONTROL         "CPU",IDC_FLOATING_SHOW_CPU_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,130,120,30,10
+    CONTROL         "RAM",IDC_FLOATING_SHOW_RAM_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,165,120,30,10
+    CONTROL         "Ping",IDC_FLOATING_SHOW_PING_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,200,120,30,10
+    CONTROL         "Data Today",IDC_FLOATING_SHOW_DATA_TODAY_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,80,135,70,10
 
     // === ADVANCED TAB (index 2) ===
     LTEXT           "Network Interface:",IDC_SETTINGS_LABEL_MONITOR,15,32,70,8

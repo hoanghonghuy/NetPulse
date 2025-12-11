@@ -14,10 +14,12 @@ class DialogThemeHelper
 {
 public:
     // Dark theme colors
-    static constexpr COLORREF DARK_BACKGROUND = RGB(32, 32, 32);
-    static constexpr COLORREF DARK_BACKGROUND_SELECTED = RGB(50, 50, 50);
-    static constexpr COLORREF DARK_TEXT = RGB(230, 230, 230);
-    static constexpr COLORREF DARK_BORDER = RGB(80, 80, 80);
+    // Dark theme colors (EVKey-inspired "Professional Dark")
+    static constexpr COLORREF DARK_BACKGROUND = RGB(32, 34, 37);      // #202225
+    static constexpr COLORREF DARK_PANEL = RGB(43, 45, 49);           // #2b2d31
+    static constexpr COLORREF DARK_TEXT = RGB(242, 243, 245);         // #f2f3f5
+    static constexpr COLORREF DARK_BORDER = RGB(58, 60, 67);          // #3a3c43
+    static constexpr COLORREF DARK_BACKGROUND_SELECTED = RGB(43, 45, 49); // Same as Panel
 
     // Light theme colors
     static constexpr COLORREF LIGHT_BACKGROUND = RGB(255, 255, 255);

@@ -408,7 +408,7 @@ void PerAppDialog::ApplyTheme(HWND hDlg)
 }
 
 LRESULT CALLBACK PerAppDialog::HeaderSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, 
-                                                   LPARAM lParam, UINT_PTR uIdSubclass, 
+                                                   LPARAM lParam, UINT_PTR /*uIdSubclass*/, 
                                                    DWORD_PTR dwRefData)
 {
     PerAppDialog* pThis = (PerAppDialog*)dwRefData;

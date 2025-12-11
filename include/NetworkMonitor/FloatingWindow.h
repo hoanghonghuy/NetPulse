@@ -59,6 +59,12 @@ public:
     void UpdateRAM(double ramPercent);
 
     /**
+     * Update displayed ping latency
+     * @param latencyMs Ping latency in milliseconds, -1 for unavailable/timeout
+     */
+    void UpdatePing(int latencyMs);
+
+    /**
      * Set window position
      */
     void SetPosition(int x, int y);
@@ -81,9 +87,13 @@ public:
     /**
      * Configure which metrics to display
      */
-    void SetShowNetwork(bool show) { m_showNetwork = show; Invalidate(); }
-    void SetShowCPU(bool show) { m_showCPU = show; Invalidate(); }
-    void SetShowRAM(bool show) { m_showRAM = show; Invalidate(); }
+    void SetShowNetwork(bool show);
+    void SetShowCPU(bool show);
+    void SetShowRAM(bool show);
+    void SetShowPing(bool show);
+    void SetShowDataToday(bool show);
+    
+    void UpdateDataToday(uint64_t bytesDown, uint64_t bytesUp);
 
     /**
      * Get window handle
@@ -97,7 +107,7 @@ private:
     void RegisterWindowClass(HINSTANCE hInstance);
     void Paint(HDC hdc);
     void Invalidate();
-    std::wstring FormatSpeed(double bytesPerSec, SpeedUnit unit) const;
+    void RecalculateWindowSize();
 
     HWND m_hwnd;
     HINSTANCE m_hInstance;
@@ -108,6 +118,8 @@ private:
     bool m_showNetwork;
     bool m_showCPU;
     bool m_showRAM;
+    bool m_showPing;
+    bool m_showDataToday;
 
     // Current values
     double m_downloadSpeed;
@@ -115,10 +127,13 @@ private:
     SpeedUnit m_speedUnit;
     double m_cpuPercent;
     double m_ramPercent;
+    int m_pingLatency;  // -1 = unavailable
+    uint64_t m_todayBytesDown;
+    uint64_t m_todayBytesUp;
 
     // Window dimensions
-    static constexpr int WINDOW_WIDTH = 150;
-    static constexpr int WINDOW_HEIGHT = 70;
+    static constexpr int WINDOW_WIDTH = 190;
+    static constexpr int WINDOW_HEIGHT = 90; // Increased base height, will be dynamic
     static constexpr int PADDING = 8;
     static constexpr int LINE_HEIGHT = 16;
 

@@ -1,0 +1,9 @@
+﻿MSBuild version 18.0.5+e22287bf1 for .NET Framework
+
+  Application.cpp
+  UpdateCoordinator.cpp
+  main.cpp
+  DialogManager.cpp
+  TrayIcon.cpp
+  NetworkMonitor.vcxproj -> D:\workspace\project\tools\NetworkMonitor\build\Release\NetworkMonitor.exe
+  Creating resources directory

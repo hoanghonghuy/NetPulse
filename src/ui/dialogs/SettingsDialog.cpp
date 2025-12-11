@@ -244,6 +244,28 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 SetDlgItemTextW(hDlg, IDC_SETTINGS_GROUP_NETWORK, networkText.c_str());
             }
 
+            // Localize Floating Window group
+            std::wstring floatingText = LoadStringResource(IDS_SETTINGS_GROUP_FLOATING);
+            if (!floatingText.empty())
+            {
+                SetDlgItemTextW(hDlg, IDC_SETTINGS_GROUP_FLOATING, floatingText.c_str());
+            }
+
+            std::wstring floatNet = LoadStringResource(IDS_FLOATING_SHOW_NETWORK);
+            if (!floatNet.empty()) SetDlgItemTextW(hDlg, IDC_FLOATING_SHOW_NETWORK_CHECK, floatNet.c_str());
+
+            std::wstring floatCpu = LoadStringResource(IDS_FLOATING_SHOW_CPU);
+            if (!floatCpu.empty()) SetDlgItemTextW(hDlg, IDC_FLOATING_SHOW_CPU_CHECK, floatCpu.c_str());
+
+            std::wstring floatRam = LoadStringResource(IDS_FLOATING_SHOW_RAM);
+            if (!floatRam.empty()) SetDlgItemTextW(hDlg, IDC_FLOATING_SHOW_RAM_CHECK, floatRam.c_str());
+
+            std::wstring floatPing = LoadStringResource(IDS_FLOATING_SHOW_PING);
+            if (!floatPing.empty()) SetDlgItemTextW(hDlg, IDC_FLOATING_SHOW_PING_CHECK, floatPing.c_str());
+
+            std::wstring floatDataToday = LoadStringResource(IDS_FLOATING_SHOW_DATA_TODAY);
+            if (!floatDataToday.empty()) SetDlgItemTextW(hDlg, IDC_FLOATING_SHOW_DATA_TODAY_CHECK, floatDataToday.c_str());
+
             std::wstring langText = LoadStringResource(IDS_SETTINGS_LABEL_LANGUAGE);
             if (!langText.empty())
             {
@@ -444,6 +466,11 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_DEBUG_LOGGING_CHECK));
                 makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_CONNECTION_NOTIFY_CHECK));
                 makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_DATA_USAGE_ENABLE_CHECK));
+                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_NETWORK_CHECK));
+                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_CPU_CHECK));
+                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_RAM_CHECK));
+                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_PING_CHECK));
+                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_DATA_TODAY_CHECK));
 
                 // Clear default button to prevent the system from drawing an
                 // initial white default highlight before owner-draw kicks in.
@@ -526,6 +553,11 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 case IDC_DEBUG_LOGGING_CHECK:
                 case IDC_CONNECTION_NOTIFY_CHECK:
                 case IDC_DATA_USAGE_ENABLE_CHECK:
+                case IDC_FLOATING_SHOW_NETWORK_CHECK:
+                case IDC_FLOATING_SHOW_CPU_CHECK:
+                case IDC_FLOATING_SHOW_RAM_CHECK:
+                case IDC_FLOATING_SHOW_PING_CHECK:
+                case IDC_FLOATING_SHOW_DATA_TODAY_CHECK:
                 {
                     if (HIWORD(wParam) == BN_CLICKED)
                     {
@@ -536,11 +568,6 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                         {
                             // Toggle custom checkbox state (BS_OWNERDRAW doesn't store state)
                             ToggleCheckboxState(ctrlId);
-                            
-                            wchar_t dbg[128];
-                            swprintf_s(dbg, L"[DEBUG] Toggle checkbox %u: new state=%d\n", 
-                                       ctrlId, GetCheckboxState(ctrlId) ? 1 : 0);
-                            OutputDebugStringW(dbg);
                             
                             // Force immediate repaint to prevent paint coalescing
                             InvalidateRect(hCheck, nullptr, FALSE);
@@ -759,7 +786,10 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 UINT ctlId = pDrawItem->CtlID;
                 if (ctlId == IDC_AUTOSTART_CHECK || ctlId == IDC_AUTOSTART_ADMIN_CHECK ||
                     ctlId == IDC_ENABLE_LOGGING_CHECK || ctlId == IDC_DEBUG_LOGGING_CHECK ||
-                    ctlId == IDC_CONNECTION_NOTIFY_CHECK || ctlId == IDC_DATA_USAGE_ENABLE_CHECK)
+                    ctlId == IDC_CONNECTION_NOTIFY_CHECK || ctlId == IDC_DATA_USAGE_ENABLE_CHECK ||
+                    ctlId == IDC_FLOATING_SHOW_NETWORK_CHECK || ctlId == IDC_FLOATING_SHOW_CPU_CHECK ||
+                    ctlId == IDC_FLOATING_SHOW_RAM_CHECK || ctlId == IDC_FLOATING_SHOW_PING_CHECK ||
+                    ctlId == IDC_FLOATING_SHOW_DATA_TODAY_CHECK)
                 {
                     HDC hdc = pDrawItem->hDC;
                     RECT rc = pDrawItem->rcItem;
@@ -1279,6 +1309,31 @@ void SettingsDialog::PopulateDialog(HWND hDlg)
         Button_SetCheck(hDataUsageEnable, m_configCopy.enableDataUsageAlerts ? BST_CHECKED : BST_UNCHECKED);
     }
 
+    // Initialize Floating Window checkboxes
+    HWND hFloatNet = GetDlgItem(hDlg, IDC_FLOATING_SHOW_NETWORK_CHECK);
+    if (hFloatNet) Button_SetCheck(hFloatNet, m_configCopy.floatingShowNetwork ? BST_CHECKED : BST_UNCHECKED);
+
+    HWND hFloatCpu = GetDlgItem(hDlg, IDC_FLOATING_SHOW_CPU_CHECK);
+    if (hFloatCpu) Button_SetCheck(hFloatCpu, m_configCopy.floatingShowCPU ? BST_CHECKED : BST_UNCHECKED);
+
+    HWND hFloatRam = GetDlgItem(hDlg, IDC_FLOATING_SHOW_RAM_CHECK);
+    if (hFloatRam) Button_SetCheck(hFloatRam, m_configCopy.floatingShowRAM ? BST_CHECKED : BST_UNCHECKED);
+
+    // Track checkbox state for dark theme mode
+    SetCheckboxState(IDC_FLOATING_SHOW_NETWORK_CHECK, m_configCopy.floatingShowNetwork);
+    SetCheckboxState(IDC_FLOATING_SHOW_CPU_CHECK, m_configCopy.floatingShowCPU);
+    SetCheckboxState(IDC_FLOATING_SHOW_RAM_CHECK, m_configCopy.floatingShowRAM);
+
+    // Initialize Ping checkbox
+    HWND hFloatPing = GetDlgItem(hDlg, IDC_FLOATING_SHOW_PING_CHECK);
+    if (hFloatPing) Button_SetCheck(hFloatPing, m_configCopy.floatingShowPing ? BST_CHECKED : BST_UNCHECKED);
+    SetCheckboxState(IDC_FLOATING_SHOW_PING_CHECK, m_configCopy.floatingShowPing);
+
+    // Initialize Data Today checkbox
+    HWND hFloatData = GetDlgItem(hDlg, IDC_FLOATING_SHOW_DATA_TODAY_CHECK);
+    if (hFloatData) Button_SetCheck(hFloatData, m_configCopy.floatingShowDataToday ? BST_CHECKED : BST_UNCHECKED);
+    SetCheckboxState(IDC_FLOATING_SHOW_DATA_TODAY_CHECK, m_configCopy.floatingShowDataToday);
+
     HWND hDataQuota = GetDlgItem(hDlg, IDC_DATA_USAGE_QUOTA_EDIT);
     if (hDataQuota)
     {
@@ -1483,6 +1538,24 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
         tempConfig.enableDataUsageAlerts = (Button_GetCheck(GetDlgItem(hDlg, IDC_DATA_USAGE_ENABLE_CHECK)) == BST_CHECKED);
     }
     
+    // === Floating Window Settings ===
+    if (m_configCopy.darkTheme)
+    {
+        tempConfig.floatingShowNetwork = GetCheckboxState(IDC_FLOATING_SHOW_NETWORK_CHECK);
+        tempConfig.floatingShowCPU = GetCheckboxState(IDC_FLOATING_SHOW_CPU_CHECK);
+        tempConfig.floatingShowRAM = GetCheckboxState(IDC_FLOATING_SHOW_RAM_CHECK);
+        tempConfig.floatingShowPing = GetCheckboxState(IDC_FLOATING_SHOW_PING_CHECK);
+        tempConfig.floatingShowDataToday = GetCheckboxState(IDC_FLOATING_SHOW_DATA_TODAY_CHECK);
+    }
+    else
+    {
+        tempConfig.floatingShowNetwork = (Button_GetCheck(GetDlgItem(hDlg, IDC_FLOATING_SHOW_NETWORK_CHECK)) == BST_CHECKED);
+        tempConfig.floatingShowCPU = (Button_GetCheck(GetDlgItem(hDlg, IDC_FLOATING_SHOW_CPU_CHECK)) == BST_CHECKED);
+        tempConfig.floatingShowRAM = (Button_GetCheck(GetDlgItem(hDlg, IDC_FLOATING_SHOW_RAM_CHECK)) == BST_CHECKED);
+        tempConfig.floatingShowPing = (Button_GetCheck(GetDlgItem(hDlg, IDC_FLOATING_SHOW_PING_CHECK)) == BST_CHECKED);
+        tempConfig.floatingShowDataToday = (Button_GetCheck(GetDlgItem(hDlg, IDC_FLOATING_SHOW_DATA_TODAY_CHECK)) == BST_CHECKED);
+    }
+    
     HWND hDataQuota = GetDlgItem(hDlg, IDC_DATA_USAGE_QUOTA_EDIT);
     if (hDataQuota)
     {
@@ -1533,6 +1606,11 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
     {
         LogDebug(L"Settings Changed: dataQuotaGB");
     }
+    if (tempConfig.floatingShowNetwork != m_configCopy.floatingShowNetwork) LogDebug(L"Settings Changed: floatingShowNetwork");
+    if (tempConfig.floatingShowCPU != m_configCopy.floatingShowCPU) LogDebug(L"Settings Changed: floatingShowCPU");
+    if (tempConfig.floatingShowRAM != m_configCopy.floatingShowRAM) LogDebug(L"Settings Changed: floatingShowRAM");
+    if (tempConfig.floatingShowPing != m_configCopy.floatingShowPing) LogDebug(L"Settings Changed: floatingShowPing");
+    if (tempConfig.floatingShowDataToday != m_configCopy.floatingShowDataToday) LogDebug(L"Settings Changed: floatingShowDataToday");
 
     // Capture old auto-start state before updating m_configCopy
     bool oldAutoStart = m_configCopy.autoStart;
@@ -1665,7 +1743,10 @@ void SettingsDialog::SwitchTab(HWND hDlg, int tabIndex)
         IDC_SETTINGS_LABEL_INTERVAL, IDC_UPDATE_INTERVAL_COMBO,
         IDC_DISPLAY_UNIT_LABEL, IDC_DISPLAY_UNIT_COMBO,
         IDC_FONT_SIZE_LABEL, IDC_OVERLAY_FONT_SIZE_COMBO,
-        IDC_OVERLAY_COLOR_LABEL, IDC_OVERLAY_COLOR_COMBO
+        IDC_OVERLAY_COLOR_LABEL, IDC_OVERLAY_COLOR_COMBO,
+        IDC_SETTINGS_GROUP_FLOATING,
+        IDC_FLOATING_SHOW_NETWORK_CHECK, IDC_FLOATING_SHOW_CPU_CHECK, IDC_FLOATING_SHOW_RAM_CHECK,
+        IDC_FLOATING_SHOW_PING_CHECK, IDC_FLOATING_SHOW_DATA_TODAY_CHECK
     };
 
     // Advanced tab controls

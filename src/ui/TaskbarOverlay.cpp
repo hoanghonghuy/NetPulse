@@ -532,27 +532,27 @@ void TaskbarOverlay::OnPaint()
 
         if (m_pingLatency < 0)
         {
-            // Timeout or unavailable - show "---" in red
+            // Timeout or unavailable - show "---" in gray
             wcscpy_s(pingBuffer, L"---");
-            pingColor = m_darkTheme ? RGB(255, 100, 100) : RGB(220, 50, 50);
+            pingColor = m_darkTheme ? RGB(128, 128, 128) : RGB(150, 150, 150);
         }
-        else if (m_pingLatency < 100)
+        else if (m_pingLatency < 50)
         {
             // Good latency - green
             swprintf_s(pingBuffer, L"%dms", m_pingLatency);
-            pingColor = m_darkTheme ? RGB(100, 255, 130) : RGB(50, 200, 80);
+            pingColor = m_darkTheme ? RGB(0, 220, 100) : RGB(0, 150, 60);
         }
-        else if (m_pingLatency < 200)
+        else if (m_pingLatency < 100)
         {
             // Medium latency - yellow/orange
             swprintf_s(pingBuffer, L"%dms", m_pingLatency);
-            pingColor = m_darkTheme ? RGB(255, 220, 100) : RGB(230, 180, 50);
+            pingColor = m_darkTheme ? RGB(255, 200, 50) : RGB(200, 140, 0);
         }
         else
         {
             // High latency - red
             swprintf_s(pingBuffer, L"%dms", m_pingLatency);
-            pingColor = m_darkTheme ? RGB(255, 100, 100) : RGB(220, 50, 50);
+            pingColor = m_darkTheme ? RGB(255, 80, 80) : RGB(200, 40, 40);
         }
 
         SetTextColor(hdcMem, pingColor);

@@ -26,6 +26,7 @@ public:
     using ConfigReloadCallback = std::function<bool()>;
     using LanguageApplyCallback = std::function<void()>;
     using TimerUpdateCallback = std::function<void(UINT intervalMs)>;
+    using ApplyAllSettingsCallback = std::function<void()>;  // Apply FloatingWindow/Hotkey/Ping/TrayIcon settings
 
     DialogManager();
     ~DialogManager();
@@ -47,6 +48,7 @@ public:
     void SetConfigReloadCallback(ConfigReloadCallback callback);
     void SetLanguageApplyCallback(LanguageApplyCallback callback);
     void SetTimerUpdateCallback(TimerUpdateCallback callback);
+    void SetApplyAllSettingsCallback(ApplyAllSettingsCallback callback);
 
     /**
      * Show Settings dialog
@@ -84,6 +86,7 @@ private:
     ConfigReloadCallback m_configReloadCallback;
     LanguageApplyCallback m_languageApplyCallback;
     TimerUpdateCallback m_timerUpdateCallback;
+    ApplyAllSettingsCallback m_applyAllSettingsCallback;
 
     // Dialog handles for tracking open dialogs (to prevent multiple instances and bring to foreground)
     HWND m_hSettingsDialog;

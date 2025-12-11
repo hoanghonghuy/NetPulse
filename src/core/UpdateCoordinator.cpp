@@ -260,4 +260,16 @@ void UpdateCoordinator::CheckConnectionStatus(bool hasActiveInterface)
     m_wasConnected = hasActiveInterface;
 }
 
+void UpdateCoordinator::ApplyOverlayStyleFromConfig()
+{
+    if (m_pOverlay && m_pConfig)
+    {
+        m_pOverlay->SetDarkTheme(m_pConfig->darkTheme);
+        m_pOverlay->SetOverlayStyle(
+            m_pConfig->overlayFontSize,
+            m_pConfig->overlayDownloadColor,
+            m_pConfig->overlayUploadColor);
+    }
+}
+
 } // namespace NetworkMonitor

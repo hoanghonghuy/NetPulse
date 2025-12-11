@@ -529,6 +529,19 @@ void TrayIcon::SetDoubleClickCallback(std::function<void()> callback)
     m_doubleClickCallback = std::move(callback);
 }
 
+void TrayIcon::RefreshIcon(bool useDarkTheme)
+{
+    if (!m_initialized)
+    {
+        return;
+    }
+    
+    // Select appropriate icon based on theme
+    m_notifyIconData.hIcon = useDarkTheme ? m_iconIdleDark : m_iconIdle;
+    m_notifyIconData.uFlags = NIF_ICON;
+    Shell_NotifyIconW(NIM_MODIFY, &m_notifyIconData);
+}
+
 void TrayIcon::HandleMenuMeasureItem(LPMEASUREITEMSTRUCT pMeasure)
 {
     auto it = m_menuItems.find(pMeasure->itemID);
@@ -568,10 +581,12 @@ void TrayIcon::HandleMenuDrawItem(LPDRAWITEMSTRUCT pDraw)
     bool darkTheme = (m_configRef && m_configRef->darkTheme);
     
     // Colors based on theme
-    COLORREF bgColor = darkTheme ? RGB(30, 30, 30) : RGB(255, 255, 255);
-    COLORREF textColor = darkTheme ? RGB(220, 220, 220) : RGB(0, 0, 0);
-    COLORREF selectBg = darkTheme ? RGB(50, 50, 50) : RGB(200, 220, 240);
-    COLORREF separatorColor = darkTheme ? RGB(60, 60, 60) : RGB(200, 200, 200);
+    // Colors based on theme (EVKey "Professional Dark")
+    // Values match DialogThemeHelper::DARK_...
+    COLORREF bgColor = darkTheme ? RGB(32, 34, 37) : RGB(255, 255, 255);
+    COLORREF textColor = darkTheme ? RGB(242, 243, 245) : RGB(0, 0, 0);
+    COLORREF selectBg = darkTheme ? RGB(43, 45, 49) : RGB(200, 220, 240);
+    COLORREF separatorColor = darkTheme ? RGB(58, 60, 67) : RGB(200, 200, 200);
     
     if (itemData.separator)
     {

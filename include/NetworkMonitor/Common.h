@@ -183,6 +183,8 @@ struct AppConfig
     bool floatingShowNetwork;        // Show network speed in floating window
     bool floatingShowCPU;            // Show CPU usage in floating window
     bool floatingShowRAM;            // Show RAM usage in floating window
+    bool floatingShowPing;           // Show ping latency in floating window
+    bool floatingShowDataToday;      // Show today's data usage in floating window
 
     AppConfig()
         : updateInterval(DEFAULT_UPDATE_INTERVAL)
@@ -215,6 +217,8 @@ struct AppConfig
         , floatingShowNetwork(true)
         , floatingShowCPU(true)
         , floatingShowRAM(true)
+        , floatingShowPing(true)
+        , floatingShowDataToday(true)
     {
     }
 
@@ -250,7 +254,9 @@ struct AppConfig
                floatingWindowOpacity == other.floatingWindowOpacity &&
                floatingShowNetwork == other.floatingShowNetwork &&
                floatingShowCPU == other.floatingShowCPU &&
-               floatingShowRAM == other.floatingShowRAM;
+               floatingShowRAM == other.floatingShowRAM &&
+               floatingShowPing == other.floatingShowPing &&
+               floatingShowDataToday == other.floatingShowDataToday;
     }
 
     bool operator!=(const AppConfig& other) const

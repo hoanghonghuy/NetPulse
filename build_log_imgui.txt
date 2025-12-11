@@ -1,0 +1,20 @@
+﻿CMake is re-running because D:/workspace/project/tools/NetworkMonitor/build/CMakeFiles/generate.stamp is out-of-date.
+  the file 'D:/workspace/project/tools/NetworkMonitor/CMakeLists.txt'
+  is newer than 'D:/workspace/project/tools/NetworkMonitor/build/CMakeFiles/generate.stamp.depend'
+  result='-1'
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26200.
+-- 
+-- === NetworkMonitor Build Configuration ===
+-- Build type: 
+-- C++ standard: 17
+-- Compiler: MSVC 19.50.35719.0
+-- Install prefix: C:/Program Files (x86)/NetworkMonitor
+-- Build tests: OFF
+-- ==========================================
+-- 
+-- Configuring done (3.8s)
+-- Generating done (2.3s)
+-- Build files have been written to: D:/workspace/project/tools/NetworkMonitor/build
+MSBuild version 18.0.5+e22287bf1 for .NET Framework
+MSBUILD : error MSB1009: Project file does not exist.
+Switch: NetworkMonitorImGui.vcxproj

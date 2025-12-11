@@ -75,6 +75,11 @@ public:
      */
     void OnPingTick();
 
+    /**
+     * Apply overlay style from current config (call after settings change)
+     */
+    void ApplyOverlayStyleFromConfig();
+
 private:
     /**
      * Get current network stats based on config (single interface or aggregated)

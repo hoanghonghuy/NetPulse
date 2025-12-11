@@ -229,6 +229,38 @@ bool Application::Initialize(HINSTANCE hInstance)
         KillTimer(m_hwnd, TIMER_UPDATE_NETWORK);
         SetTimer(m_hwnd, TIMER_UPDATE_NETWORK, intervalMs, nullptr);
     });
+    m_pDialogManager->SetApplyAllSettingsCallback([this]() {
+        // Apply FloatingWindow settings
+        if (m_pFloatingWindow)
+        {
+            m_pFloatingWindow->SetDarkTheme(m_config.darkTheme);
+            m_pFloatingWindow->SetOpacity(m_config.floatingWindowOpacity);
+            m_pFloatingWindow->SetShowNetwork(m_config.floatingShowNetwork);
+            m_pFloatingWindow->SetShowCPU(m_config.floatingShowCPU);
+            m_pFloatingWindow->SetShowRAM(m_config.floatingShowRAM);
+            m_pFloatingWindow->SetShowPing(m_config.floatingShowPing);
+            m_pFloatingWindow->SetShowDataToday(m_config.floatingShowDataToday);
+        }
+        
+        // Apply Ping Target change
+        if (m_pPingMonitor)
+        {
+            m_pPingMonitor->SetTarget(m_config.pingTarget);
+        }
+        
+        // Re-register Hotkeys if changed
+        if (m_pHotkeyManager)
+        {
+            m_pHotkeyManager->UnregisterAll();
+            SetupHotkeys();
+        }
+        
+        // Apply TrayIcon theme
+        if (m_pTrayIcon)
+        {
+            m_pTrayIcon->RefreshIcon(m_config.darkTheme);
+        }
+    });
 
     // Create and initialize SystemMonitor for CPU/RAM
     m_pSystemMonitor = std::make_unique<SystemMonitor>();
@@ -244,6 +276,8 @@ bool Application::Initialize(HINSTANCE hInstance)
         m_pFloatingWindow->SetShowNetwork(m_config.floatingShowNetwork);
         m_pFloatingWindow->SetShowCPU(m_config.floatingShowCPU);
         m_pFloatingWindow->SetShowRAM(m_config.floatingShowRAM);
+        m_pFloatingWindow->SetShowPing(m_config.floatingShowPing);
+        m_pFloatingWindow->SetShowDataToday(m_config.floatingShowDataToday);
         
         // Set position if saved
         if (m_config.floatingWindowX >= 0 && m_config.floatingWindowY >= 0)
@@ -506,6 +540,21 @@ LRESULT CALLBACK Application::InstanceWindowProc(HWND hwnd, UINT message, WPARAM
                             stats.currentUploadSpeed,
                             m_config.displayUnit
                         );
+                    }
+                    
+                    // Update ping latency from ping monitor
+                    if (m_pPingMonitor)
+                    {
+                        m_pFloatingWindow->UpdatePing(m_pPingMonitor->GetLatency());
+                    }
+                    
+                    // Update Data Today (from HistoryLogger)
+                    // HistoryLogger is a singleton
+                    unsigned long long todayDown = 0;
+                    unsigned long long todayUp = 0;
+                    if (HistoryLogger::Instance().GetTotalsToday(todayDown, todayUp))
+                    {
+                        m_pFloatingWindow->UpdateDataToday(todayDown, todayUp);
                     }
                 }
             }
