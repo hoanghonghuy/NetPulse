@@ -83,6 +83,7 @@ set(HEADER_FILES
     include/NetworkMonitor/PerAppMonitor.h
     include/NetworkMonitor/PerAppDialog.h
     include/NetworkMonitor/EtwNetworkMonitor.h
+    include/NetworkMonitor/SparklineRenderer.h
 )
 
 # Source files
@@ -113,6 +114,7 @@ set(SOURCE_FILES
     src/core/PerAppMonitor.cpp
     src/ui/dialogs/PerAppDialog.cpp
     src/core/EtwNetworkMonitor.cpp
+    src/ui/SparklineRenderer.cpp
     third_party/sqlite/sqlite3.c
 )
 

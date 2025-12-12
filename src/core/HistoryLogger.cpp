@@ -554,4 +554,146 @@ bool HistoryLogger::TrimToRecentDays(int days)
     return true;
 }
 
+bool HistoryLogger::ExportToCSV(const std::wstring& filePath,
+                                const std::wstring* interfaceFilter,
+                                int daysBack)
+{
+    EnsureInitialized();
+    if (!m_sqliteAvailable || !m_db)
+    {
+        LogError(L"HistoryLogger::ExportToCSV: SQLite not available");
+        return false;
+    }
+
+    // Open file for writing (UTF-8 with BOM for Excel compatibility)
+    FILE* file = nullptr;
+    if (_wfopen_s(&file, filePath.c_str(), L"wb") != 0 || !file)
+    {
+        LogError(L"HistoryLogger::ExportToCSV: Failed to open file: " + filePath);
+        return false;
+    }
+
+    // Write UTF-8 BOM
+    const unsigned char bom[] = { 0xEF, 0xBB, 0xBF };
+    fwrite(bom, 1, 3, file);
+
+    // Write CSV header
+    fprintf(file, "Timestamp,DateTime,Interface,BytesDown,BytesUp,TotalBytes,DownloadMB,UploadMB\n");
+
+    // Build query
+    std::string sql = "SELECT timestamp, interface, bytes_down, bytes_up FROM usage";
+    
+    std::time_t cutoff = 0;
+    bool useDaysFilter = (daysBack > 0);
+    if (useDaysFilter)
+    {
+        std::time_t now = std::time(nullptr);
+        cutoff = now - static_cast<std::time_t>(static_cast<long long>(daysBack) * 24 * 60 * 60);
+    }
+
+    bool useInterfaceFilter = (interfaceFilter != nullptr && !interfaceFilter->empty());
+    bool hasWhere = false;
+
+    if (useDaysFilter)
+    {
+        sql += " WHERE timestamp >= ?";
+        hasWhere = true;
+    }
+
+    if (useInterfaceFilter)
+    {
+        sql += hasWhere ? " AND interface = ?" : " WHERE interface = ?";
+    }
+
+    sql += " ORDER BY timestamp ASC";
+
+    sqlite3_stmt* stmt = nullptr;
+    int rc = sqlite3_prepare_v2(m_db, sql.c_str(), -1, &stmt, nullptr);
+    if (rc != SQLITE_OK || !stmt)
+    {
+        LogError(L"HistoryLogger::ExportToCSV: sqlite3_prepare_v2 failed, rc=" + std::to_wstring(rc));
+        fclose(file);
+        return false;
+    }
+
+    int bindIndex = 1;
+    if (useDaysFilter)
+    {
+        sqlite3_bind_int64(stmt, bindIndex++, static_cast<sqlite3_int64>(cutoff));
+    }
+    if (useInterfaceFilter)
+    {
+        sqlite3_bind_text16(stmt, bindIndex++, interfaceFilter->c_str(), -1, nullptr);
+    }
+
+    int rowCount = 0;
+    while ((rc = sqlite3_step(stmt)) == SQLITE_ROW)
+    {
+        std::time_t ts = static_cast<std::time_t>(sqlite3_column_int64(stmt, 0));
+        
+        const void* ifaceText = sqlite3_column_text16(stmt, 1);
+        std::wstring iface;
+        if (ifaceText)
+        {
+            iface.assign(static_cast<const wchar_t*>(ifaceText));
+        }
+
+        unsigned long long bytesDown = static_cast<unsigned long long>(sqlite3_column_int64(stmt, 2));
+        unsigned long long bytesUp = static_cast<unsigned long long>(sqlite3_column_int64(stmt, 3));
+        unsigned long long total = bytesDown + bytesUp;
+        
+        // Format timestamp to readable datetime
+        std::tm localTime = {};
+        if (localtime_s(&localTime, &ts) == 0)
+        {
+            char dateBuffer[32];
+            strftime(dateBuffer, sizeof(dateBuffer), "%Y-%m-%d %H:%M:%S", &localTime);
+            
+            // Convert interface name to UTF-8 for CSV
+            char ifaceUtf8[256] = "";
+            WideCharToMultiByte(CP_UTF8, 0, iface.c_str(), -1, ifaceUtf8, sizeof(ifaceUtf8), nullptr, nullptr);
+            
+            // Escape interface name if it contains comma or quotes
+            std::string ifaceEscaped = ifaceUtf8;
+            bool needsQuotes = (ifaceEscaped.find(',') != std::string::npos || 
+                               ifaceEscaped.find('"') != std::string::npos);
+            if (needsQuotes)
+            {
+                // Escape double quotes by doubling them
+                std::string temp;
+                for (char c : ifaceEscaped)
+                {
+                    if (c == '"') temp += "\"\"";
+                    else temp += c;
+                }
+                ifaceEscaped = "\"" + temp + "\"";
+            }
+
+            fprintf(file, "%lld,%s,%s,%llu,%llu,%llu,%.2f,%.2f\n",
+                    static_cast<long long>(ts),
+                    dateBuffer,
+                    ifaceEscaped.c_str(),
+                    bytesDown,
+                    bytesUp,
+                    total,
+                    static_cast<double>(bytesDown) / (1024.0 * 1024.0),
+                    static_cast<double>(bytesUp) / (1024.0 * 1024.0));
+            
+            rowCount++;
+        }
+    }
+
+    sqlite3_finalize(stmt);
+    fclose(file);
+
+    if (rc != SQLITE_DONE)
+    {
+        LogError(L"HistoryLogger::ExportToCSV: sqlite3_step ended with rc=" + std::to_wstring(rc));
+        return false;
+    }
+
+    LogDebug(L"HistoryLogger::ExportToCSV: exported " + std::to_wstring(rowCount) + L" rows to " + filePath);
+    return true;
+}
+
 } // namespace NetworkMonitor

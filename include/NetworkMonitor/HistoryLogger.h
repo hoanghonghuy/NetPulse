@@ -53,6 +53,17 @@ public:
     bool DeleteAll();
     bool TrimToRecentDays(int days);
 
+    /**
+     * Export history data to CSV file
+     * @param filePath Path to the output CSV file
+     * @param interfaceFilter Optional filter by interface name
+     * @param daysBack Number of days of history to export (0 = all)
+     * @return true if export succeeded
+     */
+    bool ExportToCSV(const std::wstring& filePath,
+                     const std::wstring* interfaceFilter = nullptr,
+                     int daysBack = 0);
+
 private:
     HistoryLogger();
     ~HistoryLogger();

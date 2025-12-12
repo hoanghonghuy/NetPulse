@@ -19,9 +19,9 @@ This document tracks planned features and improvements for future development.
 - **Complexity**: High
 
 ### 3. Advanced Network Graphs
-- [ ] Live real-time chart in Floating Window (mini graph/sparkline)
+- [x] ✅ Live real-time chart in Floating Window (mini graph/sparkline) (Phase 2)
 - [ ] Sparklines for recent 30s/1m/5m speeds
-- [ ] Export chart to PNG/CSV
+- [x] ✅ Export chart to PNG/CSV (Phase 2)
 - **Priority**: High
 - **Complexity**: Medium
 

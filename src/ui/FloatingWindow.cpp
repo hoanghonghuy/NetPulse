@@ -31,6 +31,9 @@ FloatingWindow::FloatingWindow()
     , m_snapDistance(20)       // Default 20px snap distance
     , m_clickThrough(false)    // Click-through disabled by default
     , m_miniMode(false)        // Normal mode by default
+    , m_showSparkline(true)    // Show sparkline by default
+    , m_downloadSparkline(std::make_unique<SparklineRenderer>(30))
+    , m_uploadSparkline(std::make_unique<SparklineRenderer>(30))
 {
 }
 
@@ -144,12 +147,24 @@ void FloatingWindow::SetShowDataToday(bool show)
 
 void FloatingWindow::UpdateSpeed(double downloadSpeed, double uploadSpeed, SpeedUnit unit)
 {
+    // Add data points to sparklines (always, for smooth graph)
+    if (m_downloadSparkline && m_uploadSparkline)
+    {
+        m_downloadSparkline->AddDataPoint(downloadSpeed);
+        m_uploadSparkline->AddDataPoint(uploadSpeed);
+    }
+    
     // Check if values changed significantly to avoid unnecessary repaints
     if (m_downloadSpeed != downloadSpeed || m_uploadSpeed != uploadSpeed || m_speedUnit != unit)
     {
         m_downloadSpeed = downloadSpeed;
         m_uploadSpeed = uploadSpeed;
         m_speedUnit = unit;
+        Invalidate();
+    }
+    else if (m_showSparkline)
+    {
+        // Force repaint for sparkline even if speed didn't change
         Invalidate();
     }
 }
@@ -425,6 +440,25 @@ void FloatingWindow::PaintNormal(HDC hdc)
         SetTextColor(hdc, upColor);
         TextOutW(hdc, PADDING + 85, y, upText.c_str(), static_cast<int>(upText.length()));
         y += LINE_HEIGHT;
+        
+        // Draw sparkline graph below network speeds
+        if (m_showSparkline && m_downloadSparkline && m_uploadSparkline)
+        {
+            RECT sparkRect;
+            sparkRect.left = PADDING;
+            sparkRect.right = rc.right - PADDING;
+            sparkRect.top = y;
+            sparkRect.bottom = y + SPARKLINE_HEIGHT;
+            
+            // Use semi-transparent fill for download sparkline
+            COLORREF downFill = m_darkTheme ? RGB(0, 60, 80) : RGB(200, 235, 250);
+            m_downloadSparkline->Render(hdc, sparkRect, downColor, downFill);
+            
+            // Overlay upload sparkline (line only, no fill)
+            m_uploadSparkline->Render(hdc, sparkRect, upColor, 0);
+            
+            y += SPARKLINE_HEIGHT + 4;  // +4 for spacing
+        }
     }
 
     // Draw CPU and RAM on the same line
@@ -535,6 +569,12 @@ void FloatingWindow::RecalculateWindowSize()
         
         newWidth = WINDOW_WIDTH;
         newHeight = (PADDING * 2) + (visibleRows * LINE_HEIGHT);
+        
+        // Add sparkline height if enabled
+        if (m_showSparkline && m_showNetwork)
+        {
+            newHeight += SPARKLINE_HEIGHT + 4;  // +4 for spacing
+        }
     }
     
     // Resize window but keep position

@@ -2,7 +2,9 @@
 #define NETWORK_MONITOR_FLOATING_WINDOW_H
 
 #include "NetworkMonitor/Common.h"
+#include "NetworkMonitor/SparklineRenderer.h"
 #include <string>
+#include <memory>
 
 namespace NetworkMonitor
 {
@@ -170,6 +172,11 @@ private:
     bool m_clickThrough;      // Click-through mode
     bool m_miniMode;          // Mini/compact mode
 
+    // Phase 2 Features - Sparkline
+    bool m_showSparkline;     // Show sparkline graph
+    std::unique_ptr<SparklineRenderer> m_downloadSparkline;
+    std::unique_ptr<SparklineRenderer> m_uploadSparkline;
+
     // Window dimensions
     static constexpr int WINDOW_WIDTH = 190;
     static constexpr int WINDOW_WIDTH_MINI = 100;  // Compact width for mini mode
@@ -177,6 +184,7 @@ private:
     static constexpr int WINDOW_HEIGHT_MINI = 24;  // Single line height for mini mode
     static constexpr int PADDING = 8;
     static constexpr int LINE_HEIGHT = 16;
+    static constexpr int SPARKLINE_HEIGHT = 20;  // Height for sparkline graph
 
     // Class name
     static constexpr const wchar_t* WINDOW_CLASS_NAME = L"NetworkMonitorFloatingWindow";

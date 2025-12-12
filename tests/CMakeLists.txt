@@ -35,6 +35,7 @@ set(TEST_SOURCES
     ../src/ui/dialogs/PerAppDialog.cpp
     ../src/core/PerAppMonitor.cpp
     ../src/core/EtwNetworkMonitor.cpp
+    ../src/ui/SparklineRenderer.cpp
     ../third_party/sqlite/sqlite3.c
 )
 
