@@ -223,6 +223,7 @@
     <ClCompile Include="src\core\PerAppMonitor.cpp" />
     <ClCompile Include="src\ui\dialogs\PerAppDialog.cpp" />
     <ClCompile Include="src\core\EtwNetworkMonitor.cpp" />
+    <ClCompile Include="src\ui\SparklineRenderer.cpp" />
     <ClCompile Include="third_party\sqlite\sqlite3.c" />
   </ItemGroup>
   <!-- ====================================================================== -->
@@ -254,6 +255,7 @@
     <ClInclude Include="include\NetworkMonitor\PerAppMonitor.h" />
     <ClInclude Include="include\NetworkMonitor\PerAppDialog.h" />
     <ClInclude Include="include\NetworkMonitor\EtwNetworkMonitor.h" />
+    <ClInclude Include="include\NetworkMonitor\SparklineRenderer.h" />
     <ClInclude Include="resources\resource.h" />
   </ItemGroup>
   <!-- ====================================================================== -->
