@@ -240,6 +240,7 @@ bool Application::Initialize(HINSTANCE hInstance)
             m_pFloatingWindow->SetShowRAM(m_config.floatingShowRAM);
             m_pFloatingWindow->SetShowPing(m_config.floatingShowPing);
             m_pFloatingWindow->SetShowDataToday(m_config.floatingShowDataToday);
+            m_pFloatingWindow->SetShowSparkline(m_config.floatingShowSparkline);
         }
         
         // Apply Ping Target change
@@ -278,6 +279,7 @@ bool Application::Initialize(HINSTANCE hInstance)
         m_pFloatingWindow->SetShowRAM(m_config.floatingShowRAM);
         m_pFloatingWindow->SetShowPing(m_config.floatingShowPing);
         m_pFloatingWindow->SetShowDataToday(m_config.floatingShowDataToday);
+        m_pFloatingWindow->SetShowSparkline(m_config.floatingShowSparkline);
         
         // Set position if saved
         if (m_config.floatingWindowX >= 0 && m_config.floatingWindowY >= 0)

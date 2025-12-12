@@ -30,3 +30,5 @@ UpgradeLog*.htm
 # Local docs (not tracked)
 docs/
 notes/
+
+.agent/
