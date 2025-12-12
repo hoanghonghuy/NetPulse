@@ -18,6 +18,8 @@ TrayIcon::TrayIcon()
     , m_configRef(nullptr)
     , m_overlayVisibleProvider(nullptr)
     , m_floatingVisibleProvider(nullptr)
+    , m_animating(false)
+    , m_animationPhase(0)
 {
     ZeroMemory(&m_notifyIconData, sizeof(NOTIFYICONDATAW));
 }
@@ -148,6 +150,9 @@ bool TrayIcon::Initialize(HWND hwnd)
 
 void TrayIcon::Cleanup()
 {
+    // Stop animation timer if running
+    StopAnimation();
+    
     if (m_initialized)
     {
         // Remove tray icon
@@ -222,7 +227,44 @@ void TrayIcon::UpdateIcon(double downloadSpeed, double uploadSpeed)
         return;
     }
 
-    // Determine if we should use dark theme icons
+    // Get animation settings from config
+    bool animationEnabled = true;
+    double animationThreshold = 1024.0 * 1024.0;  // Default 1 MB/s
+    if (m_configRef)
+    {
+        animationEnabled = m_configRef->trayAnimationEnabled;
+        animationThreshold = m_configRef->trayAnimationThresholdKB * 1024.0;  // Convert KB to bytes
+    }
+    
+    // Determine traffic level
+    const double STOP_ANIMATION_THRESHOLD = animationThreshold * 0.5;  // 50% hysteresis
+    const double ACTIVE_THRESHOLD = 10.0 * 1024.0;  // 10 KB/s
+
+    double totalSpeed = downloadSpeed + uploadSpeed;
+
+    // Handle animation state (only if enabled)
+    if (animationEnabled && totalSpeed > animationThreshold)
+    {
+        // Start animation when high traffic
+        if (!m_animating)
+        {
+            StartAnimation();
+        }
+        return; // OnAnimationTick will handle icon updates
+    }
+    else if (totalSpeed < STOP_ANIMATION_THRESHOLD && m_animating)
+    {
+        // Stop animation when traffic drops below threshold
+        StopAnimation();
+    }
+
+    // If animating, let OnAnimationTick handle icons
+    if (m_animating)
+    {
+        return;
+    }
+
+    // Normal icon update (not animating)
     bool useDark = false;
     if (m_configRef)
     {
@@ -233,18 +275,9 @@ void TrayIcon::UpdateIcon(double downloadSpeed, double uploadSpeed)
         useDark = ThemeHelper::IsSystemInDarkMode();
     }
 
-    // Determine which icon to use based on traffic
-    const double HIGH_THRESHOLD = 1024.0 * 1024.0;  // 1 MB/s
-    const double ACTIVE_THRESHOLD = 10.0 * 1024.0;  // 10 KB/s
-
     HICON newIcon = useDark ? m_iconIdleDark : m_iconIdle;
-    double totalSpeed = downloadSpeed + uploadSpeed;
 
-    if (totalSpeed > HIGH_THRESHOLD)
-    {
-        newIcon = useDark ? m_iconHighDark : m_iconHigh;
-    }
-    else if (totalSpeed > ACTIVE_THRESHOLD)
+    if (totalSpeed > ACTIVE_THRESHOLD)
     {
         newIcon = useDark ? m_iconActiveDark : m_iconActive;
     }
@@ -645,6 +678,74 @@ void TrayIcon::DrawCheckmark(HDC hdc, const RECT& rc, COLORREF color)
     
     SelectObject(hdc, hOldPen);
     DeleteObject(hPen);
+}
+
+void TrayIcon::StartAnimation()
+{
+    if (m_animating || !m_initialized || !m_hwnd)
+    {
+        return;
+    }
+    
+    m_animating = true;
+    m_animationPhase = 0;
+    
+    // Start 250ms timer for pulsing effect
+    SetTimer(m_hwnd, ANIMATION_TIMER_ID, 250, nullptr);
+}
+
+void TrayIcon::StopAnimation()
+{
+    if (!m_animating)
+    {
+        return;
+    }
+    
+    m_animating = false;
+    m_animationPhase = 0;
+    
+    // Kill animation timer
+    if (m_hwnd)
+    {
+        KillTimer(m_hwnd, ANIMATION_TIMER_ID);
+    }
+}
+
+void TrayIcon::OnAnimationTick()
+{
+    if (!m_animating || !m_initialized)
+    {
+        return;
+    }
+    
+    // Toggle animation phase
+    m_animationPhase = (m_animationPhase + 1) % 2;
+    
+    // Determine theme
+    bool useDark = false;
+    if (m_configRef)
+    {
+        useDark = m_configRef->darkTheme;
+    }
+    else
+    {
+        useDark = ThemeHelper::IsSystemInDarkMode();
+    }
+    
+    // Alternate between active and high icons for pulse effect
+    HICON newIcon;
+    if (m_animationPhase == 0)
+    {
+        newIcon = useDark ? m_iconActiveDark : m_iconActive;
+    }
+    else
+    {
+        newIcon = useDark ? m_iconHighDark : m_iconHigh;
+    }
+    
+    m_notifyIconData.hIcon = newIcon;
+    m_notifyIconData.uFlags = NIF_ICON;
+    Shell_NotifyIconW(NIM_MODIFY, &m_notifyIconData);
 }
 
 } // namespace NetworkMonitor

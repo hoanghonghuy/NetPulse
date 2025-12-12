@@ -288,6 +288,16 @@
 #define IDS_FLOATING_SHOW_SPARKLINE     2106
 #define IDS_BTN_EXPORT_CSV              2107
 
+// Tray Animation settings
+#define IDC_TRAY_ANIMATION_CHECK        2110
+#define IDC_TRAY_ANIMATION_THRESHOLD    2111
+#define IDS_TRAY_ANIMATION_ENABLE       2112
+#define IDS_TRAY_ANIMATION_THRESHOLD    2113
+#define IDC_SETTINGS_GROUP_TRAY         2120
+#define IDC_TRAY_ANIMATION_THRESHOLD_LABEL 2121
+#define IDS_SETTINGS_GROUP_TRAY         2130
+#define IDS_TRAY_ANIMATION_THRESHOLD_LABEL 2131
+
 // ============================================================================
 // STANDARD DIALOG IDS
 // ============================================================================

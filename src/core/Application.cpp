@@ -567,6 +567,13 @@ LRESULT CALLBACK Application::InstanceWindowProc(HWND hwnd, UINT message, WPARAM
                     m_pUpdateCoordinator->OnPingTick();
                 }
             }
+            else if (wParam == 9001) // TrayIcon ANIMATION_TIMER_ID
+            {
+                if (m_pTrayIcon)
+                {
+                    m_pTrayIcon->OnAnimationTick();
+                }
+            }
             return 0;
         }
 

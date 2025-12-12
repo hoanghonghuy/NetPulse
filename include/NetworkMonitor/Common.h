@@ -194,6 +194,10 @@ struct AppConfig
     
     // Phase 2 Features - Floating Window
     bool floatingShowSparkline;      // Show sparkline graph in floating window
+    
+    // Tray Icon Animation
+    bool trayAnimationEnabled;       // Enable tray icon pulse animation
+    int trayAnimationThresholdKB;    // Speed threshold in KB/s to trigger animation
 
     AppConfig()
         : updateInterval(DEFAULT_UPDATE_INTERVAL)
@@ -233,6 +237,8 @@ struct AppConfig
         , floatingClickThrough(false)   // Disabled by default
         , floatingMiniMode(false)       // Normal mode by default
         , floatingShowSparkline(true)   // Show sparkline by default
+        , trayAnimationEnabled(true)    // Enable animation by default
+        , trayAnimationThresholdKB(1024) // 1024 KB/s = 1 MB/s
     {
     }
 
@@ -275,7 +281,9 @@ struct AppConfig
                floatingSnapDistance == other.floatingSnapDistance &&
                floatingClickThrough == other.floatingClickThrough &&
                floatingMiniMode == other.floatingMiniMode &&
-               floatingShowSparkline == other.floatingShowSparkline;
+               floatingShowSparkline == other.floatingShowSparkline &&
+               trayAnimationEnabled == other.trayAnimationEnabled &&
+               trayAnimationThresholdKB == other.trayAnimationThresholdKB;
     }
 
     bool operator!=(const AppConfig& other) const

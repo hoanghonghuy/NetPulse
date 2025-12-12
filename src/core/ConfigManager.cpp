@@ -105,6 +105,10 @@ bool ConfigManager::LoadConfig(AppConfig& config)
     config.floatingShowPing = ReadDWORD(hKey, L"FloatingShowPing", 1) != 0;
     config.floatingShowDataToday = ReadDWORD(hKey, L"FloatingShowDataToday", 1) != 0;
     config.floatingShowSparkline = ReadDWORD(hKey, L"FloatingShowSparkline", 1) != 0;
+    
+    // Tray Animation
+    config.trayAnimationEnabled = ReadDWORD(hKey, L"TrayAnimationEnabled", 1) != 0;
+    config.trayAnimationThresholdKB = static_cast<int>(ReadDWORD(hKey, L"TrayAnimationThresholdKB", 1024));
 
     RegCloseKey(hKey);
     return true;
@@ -184,6 +188,10 @@ bool ConfigManager::SaveConfig(const AppConfig& config)
     success &= WriteDWORD(hKey, L"FloatingShowPing", config.floatingShowPing ? 1 : 0);
     success &= WriteDWORD(hKey, L"FloatingShowDataToday", config.floatingShowDataToday ? 1 : 0);
     success &= WriteDWORD(hKey, L"FloatingShowSparkline", config.floatingShowSparkline ? 1 : 0);
+    
+    // Tray Animation
+    success &= WriteDWORD(hKey, L"TrayAnimationEnabled", config.trayAnimationEnabled ? 1 : 0);
+    success &= WriteDWORD(hKey, L"TrayAnimationThresholdKB", static_cast<DWORD>(config.trayAnimationThresholdKB));
 
     // Save auto-start setting (registry only)
     success &= WriteDWORD(hKey, L"AutoStartAsAdmin", config.autoStartAsAdmin ? 1 : 0);

@@ -155,6 +155,27 @@ private:
     std::function<bool()> m_floatingVisibleProvider; // Floating window visibility provider
     std::function<void()> m_doubleClickCallback;    // Double-click callback
     std::map<UINT, MenuItemData> m_menuItems;       // Owner-draw menu item data
+    
+    // Animation members
+    static const UINT_PTR ANIMATION_TIMER_ID = 9001;
+    bool m_animating;                               // Is animation running
+    int m_animationPhase;                           // Current animation frame (0 or 1)
+    
+    /**
+     * Start animation timer for high traffic pulse effect
+     */
+    void StartAnimation();
+    
+    /**
+     * Stop animation timer and reset to static icon
+     */
+    void StopAnimation();
+    
+public:
+    /**
+     * Handle animation timer tick (called from parent window)
+     */
+    void OnAnimationTick();
 };
 
 } // namespace NetworkMonitor

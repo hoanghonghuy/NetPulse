@@ -251,6 +251,16 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 SetDlgItemTextW(hDlg, IDC_SETTINGS_GROUP_FLOATING, floatingText.c_str());
             }
 
+            // Localize Tray Icon group
+            std::wstring trayGroup = LoadStringResource(IDS_SETTINGS_GROUP_TRAY);
+            if (!trayGroup.empty()) SetDlgItemTextW(hDlg, IDC_SETTINGS_GROUP_TRAY, trayGroup.c_str());
+            
+            std::wstring trayAnim = LoadStringResource(IDS_TRAY_ANIMATION_ENABLE);
+            if (!trayAnim.empty()) SetDlgItemTextW(hDlg, IDC_TRAY_ANIMATION_CHECK, trayAnim.c_str());
+
+            std::wstring trayThres = LoadStringResource(IDS_TRAY_ANIMATION_THRESHOLD_LABEL);
+            if (!trayThres.empty()) SetDlgItemTextW(hDlg, IDC_TRAY_ANIMATION_THRESHOLD_LABEL, trayThres.c_str());
+
             std::wstring floatNet = LoadStringResource(IDS_FLOATING_SHOW_NETWORK);
             if (!floatNet.empty()) SetDlgItemTextW(hDlg, IDC_FLOATING_SHOW_NETWORK_CHECK, floatNet.c_str());
 
@@ -472,6 +482,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_PING_CHECK));
                 makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_DATA_TODAY_CHECK));
                 makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_SPARKLINE_CHECK));
+                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_TRAY_ANIMATION_CHECK));
 
                 // Clear default button to prevent the system from drawing an
                 // initial white default highlight before owner-draw kicks in.
@@ -560,6 +571,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 case IDC_FLOATING_SHOW_PING_CHECK:
                 case IDC_FLOATING_SHOW_DATA_TODAY_CHECK:
                 case IDC_FLOATING_SHOW_SPARKLINE_CHECK:
+                case IDC_TRAY_ANIMATION_CHECK:
                 {
                     if (HIWORD(wParam) == BN_CLICKED)
                     {
@@ -791,7 +803,8 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                     ctlId == IDC_CONNECTION_NOTIFY_CHECK || ctlId == IDC_DATA_USAGE_ENABLE_CHECK ||
                     ctlId == IDC_FLOATING_SHOW_NETWORK_CHECK || ctlId == IDC_FLOATING_SHOW_CPU_CHECK ||
                     ctlId == IDC_FLOATING_SHOW_RAM_CHECK || ctlId == IDC_FLOATING_SHOW_PING_CHECK ||
-                    ctlId == IDC_FLOATING_SHOW_DATA_TODAY_CHECK || ctlId == IDC_FLOATING_SHOW_SPARKLINE_CHECK)
+                    ctlId == IDC_FLOATING_SHOW_DATA_TODAY_CHECK || ctlId == IDC_FLOATING_SHOW_SPARKLINE_CHECK ||
+                    ctlId == IDC_TRAY_ANIMATION_CHECK)
                 {
                     HDC hdc = pDrawItem->hDC;
                     RECT rc = pDrawItem->rcItem;
@@ -1341,6 +1354,32 @@ void SettingsDialog::PopulateDialog(HWND hDlg)
     if (hFloatSparkline) Button_SetCheck(hFloatSparkline, m_configCopy.floatingShowSparkline ? BST_CHECKED : BST_UNCHECKED);
     SetCheckboxState(IDC_FLOATING_SHOW_SPARKLINE_CHECK, m_configCopy.floatingShowSparkline);
 
+    // Initialize Tray Animation checkbox
+    HWND hTrayAnimCheck = GetDlgItem(hDlg, IDC_TRAY_ANIMATION_CHECK);
+    if (hTrayAnimCheck) Button_SetCheck(hTrayAnimCheck, m_configCopy.trayAnimationEnabled ? BST_CHECKED : BST_UNCHECKED);
+    SetCheckboxState(IDC_TRAY_ANIMATION_CHECK, m_configCopy.trayAnimationEnabled);
+    
+    // Initialize Tray Animation threshold combo
+    HWND hTrayAnimThreshold = GetDlgItem(hDlg, IDC_TRAY_ANIMATION_THRESHOLD);
+    if (hTrayAnimThreshold)
+    {
+        ComboBox_ResetContent(hTrayAnimThreshold);
+        // Add threshold options: 256 KB/s, 512 KB/s, 1 MB/s, 2 MB/s, 5 MB/s
+        const int thresholds[] = { 256, 512, 1024, 2048, 5120 };
+        const wchar_t* labels[] = { L"256 KB/s", L"512 KB/s", L"1 MB/s", L"2 MB/s", L"5 MB/s" };
+        int selectedIdx = 2; // default to 1 MB/s
+        for (int i = 0; i < 5; i++)
+        {
+            ComboBox_AddString(hTrayAnimThreshold, labels[i]);
+            ComboBox_SetItemData(hTrayAnimThreshold, i, thresholds[i]);
+            if (m_configCopy.trayAnimationThresholdKB == thresholds[i])
+            {
+                selectedIdx = i;
+            }
+        }
+        ComboBox_SetCurSel(hTrayAnimThreshold, selectedIdx);
+    }
+
     HWND hDataQuota = GetDlgItem(hDlg, IDC_DATA_USAGE_QUOTA_EDIT);
     if (hDataQuota)
     {
@@ -1554,6 +1593,7 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
         tempConfig.floatingShowPing = GetCheckboxState(IDC_FLOATING_SHOW_PING_CHECK);
         tempConfig.floatingShowDataToday = GetCheckboxState(IDC_FLOATING_SHOW_DATA_TODAY_CHECK);
         tempConfig.floatingShowSparkline = GetCheckboxState(IDC_FLOATING_SHOW_SPARKLINE_CHECK);
+        tempConfig.trayAnimationEnabled = GetCheckboxState(IDC_TRAY_ANIMATION_CHECK);
     }
     else
     {
@@ -1563,6 +1603,18 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
         tempConfig.floatingShowPing = (Button_GetCheck(GetDlgItem(hDlg, IDC_FLOATING_SHOW_PING_CHECK)) == BST_CHECKED);
         tempConfig.floatingShowDataToday = (Button_GetCheck(GetDlgItem(hDlg, IDC_FLOATING_SHOW_DATA_TODAY_CHECK)) == BST_CHECKED);
         tempConfig.floatingShowSparkline = (Button_GetCheck(GetDlgItem(hDlg, IDC_FLOATING_SHOW_SPARKLINE_CHECK)) == BST_CHECKED);
+        tempConfig.trayAnimationEnabled = (Button_GetCheck(GetDlgItem(hDlg, IDC_TRAY_ANIMATION_CHECK)) == BST_CHECKED);
+    }
+    
+    // Get tray animation threshold from combo
+    HWND hTrayThreshold = GetDlgItem(hDlg, IDC_TRAY_ANIMATION_THRESHOLD);
+    if (hTrayThreshold)
+    {
+        int sel = ComboBox_GetCurSel(hTrayThreshold);
+        if (sel != CB_ERR)
+        {
+            tempConfig.trayAnimationThresholdKB = static_cast<int>(ComboBox_GetItemData(hTrayThreshold, sel));
+        }
     }
     
     HWND hDataQuota = GetDlgItem(hDlg, IDC_DATA_USAGE_QUOTA_EDIT);
@@ -1756,7 +1808,8 @@ void SettingsDialog::SwitchTab(HWND hDlg, int tabIndex)
         IDC_OVERLAY_COLOR_LABEL, IDC_OVERLAY_COLOR_COMBO,
         IDC_SETTINGS_GROUP_FLOATING,
         IDC_FLOATING_SHOW_NETWORK_CHECK, IDC_FLOATING_SHOW_CPU_CHECK, IDC_FLOATING_SHOW_RAM_CHECK,
-        IDC_FLOATING_SHOW_PING_CHECK, IDC_FLOATING_SHOW_DATA_TODAY_CHECK, IDC_FLOATING_SHOW_SPARKLINE_CHECK
+        IDC_FLOATING_SHOW_PING_CHECK, IDC_FLOATING_SHOW_DATA_TODAY_CHECK, IDC_FLOATING_SHOW_SPARKLINE_CHECK,
+        IDC_SETTINGS_GROUP_TRAY, IDC_TRAY_ANIMATION_CHECK, IDC_TRAY_ANIMATION_THRESHOLD_LABEL, IDC_TRAY_ANIMATION_THRESHOLD
     };
 
     // Advanced tab controls

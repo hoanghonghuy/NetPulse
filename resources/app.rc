@@ -180,6 +180,11 @@ BEGIN
     IDS_FLOATING_SHOW_SPARKLINE          "Sparkline"
     IDS_BTN_EXPORT_CSV                   "Export to CSV..."
     IDS_DATA_USAGE_QUOTA_GB              "Monthly quota (GB):"
+    
+    // Tray Icon Strings
+    IDS_SETTINGS_GROUP_TRAY              "Tray Icon:"
+    IDS_TRAY_ANIMATION_ENABLE            "Pulse Animation"
+    IDS_TRAY_ANIMATION_THRESHOLD_LABEL   "Trigger at:"
 END
 
 // Vietnamese resources
@@ -302,6 +307,11 @@ BEGIN
     IDS_SETTINGS_LABEL_HOTKEY            "Phím tắt:"
     IDS_DATA_USAGE_QUOTA_GB              "Hạn ngạch tháng (GB):"
     IDS_SETTINGS_LABEL_DATA_USAGE_ENABLE "Bật cảnh báo sử dụng dữ liệu"
+
+    // Tray Icon Strings
+    IDS_SETTINGS_GROUP_TRAY              "Biểu tượng khay:"
+    IDS_TRAY_ANIMATION_ENABLE            "Hiệu ứng nhịp đập"
+    IDS_TRAY_ANIMATION_THRESHOLD_LABEL   "Kích hoạt tại:"
     IDS_SETTINGS_GROUP_FLOATING          "Cửa sổ nổi:"
     IDS_FLOATING_SHOW_NETWORK            "Mạng"
     IDS_FLOATING_SHOW_CPU                "CPU"
@@ -802,6 +812,12 @@ BEGIN
     CONTROL         "Ping",IDC_FLOATING_SHOW_PING_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,200,120,30,10
     CONTROL         "Data Today",IDC_FLOATING_SHOW_DATA_TODAY_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,80,135,70,10
     CONTROL         "Sparkline",IDC_FLOATING_SHOW_SPARKLINE_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,165,135,50,10
+    
+    // Tray Icon Group
+    LTEXT           "Tray Icon:",IDC_SETTINGS_GROUP_TRAY,15,152,60,8
+    CONTROL         "Pulse Animation",IDC_TRAY_ANIMATION_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,80,150,70,10
+    LTEXT           "Trigger at:",IDC_TRAY_ANIMATION_THRESHOLD_LABEL,80,167,40,8
+    COMBOBOX        IDC_TRAY_ANIMATION_THRESHOLD,125,165,60,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
     // === ADVANCED TAB (index 2) ===
     LTEXT           "Network Interface:",IDC_SETTINGS_LABEL_MONITOR,15,32,70,8
