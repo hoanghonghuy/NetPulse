@@ -275,6 +275,8 @@
 #define IDC_FLOATING_SHOW_RAM_CHECK     1222
 #define IDC_FLOATING_SHOW_PING_CHECK    1223
 #define IDC_FLOATING_SHOW_DATA_TODAY_CHECK 1224
+#define IDC_FLOATING_SHOW_SPARKLINE_CHECK 1225
+#define IDC_BTN_EXPORT_CSV              1226
 
 // Note: standard strings are defined earlier
 #define IDS_SETTINGS_GROUP_FLOATING     2100
@@ -283,6 +285,8 @@
 #define IDS_FLOATING_SHOW_RAM           2103
 #define IDS_FLOATING_SHOW_PING          2104
 #define IDS_FLOATING_SHOW_DATA_TODAY    2105
+#define IDS_FLOATING_SHOW_SPARKLINE     2106
+#define IDS_BTN_EXPORT_CSV              2107
 
 // ============================================================================
 // STANDARD DIALOG IDS

@@ -471,6 +471,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_RAM_CHECK));
                 makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_PING_CHECK));
                 makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_DATA_TODAY_CHECK));
+                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_SPARKLINE_CHECK));
 
                 // Clear default button to prevent the system from drawing an
                 // initial white default highlight before owner-draw kicks in.
@@ -558,6 +559,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 case IDC_FLOATING_SHOW_RAM_CHECK:
                 case IDC_FLOATING_SHOW_PING_CHECK:
                 case IDC_FLOATING_SHOW_DATA_TODAY_CHECK:
+                case IDC_FLOATING_SHOW_SPARKLINE_CHECK:
                 {
                     if (HIWORD(wParam) == BN_CLICKED)
                     {
@@ -789,7 +791,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                     ctlId == IDC_CONNECTION_NOTIFY_CHECK || ctlId == IDC_DATA_USAGE_ENABLE_CHECK ||
                     ctlId == IDC_FLOATING_SHOW_NETWORK_CHECK || ctlId == IDC_FLOATING_SHOW_CPU_CHECK ||
                     ctlId == IDC_FLOATING_SHOW_RAM_CHECK || ctlId == IDC_FLOATING_SHOW_PING_CHECK ||
-                    ctlId == IDC_FLOATING_SHOW_DATA_TODAY_CHECK)
+                    ctlId == IDC_FLOATING_SHOW_DATA_TODAY_CHECK || ctlId == IDC_FLOATING_SHOW_SPARKLINE_CHECK)
                 {
                     HDC hdc = pDrawItem->hDC;
                     RECT rc = pDrawItem->rcItem;

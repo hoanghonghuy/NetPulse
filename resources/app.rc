@@ -177,6 +177,8 @@ BEGIN
     IDS_FLOATING_SHOW_RAM                "RAM"
     IDS_FLOATING_SHOW_PING               "Ping"
     IDS_FLOATING_SHOW_DATA_TODAY         "Data Today"
+    IDS_FLOATING_SHOW_SPARKLINE          "Sparkline"
+    IDS_BTN_EXPORT_CSV                   "Export to CSV..."
     IDS_DATA_USAGE_QUOTA_GB              "Monthly quota (GB):"
 END
 
@@ -306,6 +308,8 @@ BEGIN
     IDS_FLOATING_SHOW_RAM                "RAM"
     IDS_FLOATING_SHOW_PING               "Ping"
     IDS_FLOATING_SHOW_DATA_TODAY         "Dung lượng hôm nay"
+    IDS_FLOATING_SHOW_SPARKLINE          "Biểu đồ"
+    IDS_BTN_EXPORT_CSV                   "Xuất ra CSV..."
 END
 
 // Japanese resources
@@ -434,6 +438,8 @@ BEGIN
     IDS_FLOATING_SHOW_RAM                "RAM"
     IDS_FLOATING_SHOW_PING               "Ping"
     IDS_FLOATING_SHOW_DATA_TODAY         "本日のデータ"
+    IDS_FLOATING_SHOW_SPARKLINE          "スパークライン"
+    IDS_BTN_EXPORT_CSV                   "CSVにエクスポート..."
 END
 
 // Korean resources
@@ -562,6 +568,8 @@ BEGIN
     IDS_FLOATING_SHOW_RAM                "RAM"
     IDS_FLOATING_SHOW_PING               "Ping"
     IDS_FLOATING_SHOW_DATA_TODAY         "오늘 데이터"
+    IDS_FLOATING_SHOW_SPARKLINE          "스파크라인"
+    IDS_BTN_EXPORT_CSV                   "CSV로 내보내기..."
 END
 
 // Chinese Simplified resources
@@ -690,6 +698,8 @@ BEGIN
     IDS_FLOATING_SHOW_RAM                "内存"
     IDS_FLOATING_SHOW_PING               "Ping"
     IDS_FLOATING_SHOW_DATA_TODAY         "今日流量"
+    IDS_FLOATING_SHOW_SPARKLINE          "迷你图"
+    IDS_BTN_EXPORT_CSV                   "导出为CSV..."
 END
 
 // Switch back to English for the rest of resources
@@ -791,6 +801,7 @@ BEGIN
     CONTROL         "RAM",IDC_FLOATING_SHOW_RAM_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,165,120,30,10
     CONTROL         "Ping",IDC_FLOATING_SHOW_PING_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,200,120,30,10
     CONTROL         "Data Today",IDC_FLOATING_SHOW_DATA_TODAY_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,80,135,70,10
+    CONTROL         "Sparkline",IDC_FLOATING_SHOW_SPARKLINE_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,165,135,50,10
 
     // === ADVANCED TAB (index 2) ===
     LTEXT           "Network Interface:",IDC_SETTINGS_LABEL_MONITOR,15,32,70,8
