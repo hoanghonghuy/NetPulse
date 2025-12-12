@@ -198,6 +198,9 @@ struct AppConfig
     // Tray Icon Animation
     bool trayAnimationEnabled;       // Enable tray icon pulse animation
     int trayAnimationThresholdKB;    // Speed threshold in KB/s to trigger animation
+    
+    // Sparkline Time Range (0=30s, 1=1m, 2=5m)
+    int sparklineTimeRange;          // Time range for sparkline display
 
     AppConfig()
         : updateInterval(DEFAULT_UPDATE_INTERVAL)
@@ -239,6 +242,7 @@ struct AppConfig
         , floatingShowSparkline(true)   // Show sparkline by default
         , trayAnimationEnabled(true)    // Enable animation by default
         , trayAnimationThresholdKB(1024) // 1024 KB/s = 1 MB/s
+        , sparklineTimeRange(0)         // Default 30s
     {
     }
 
@@ -283,7 +287,8 @@ struct AppConfig
                floatingMiniMode == other.floatingMiniMode &&
                floatingShowSparkline == other.floatingShowSparkline &&
                trayAnimationEnabled == other.trayAnimationEnabled &&
-               trayAnimationThresholdKB == other.trayAnimationThresholdKB;
+               trayAnimationThresholdKB == other.trayAnimationThresholdKB &&
+               sparklineTimeRange == other.sparklineTimeRange;
     }
 
     bool operator!=(const AppConfig& other) const

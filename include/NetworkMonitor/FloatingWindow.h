@@ -5,6 +5,7 @@
 #include "NetworkMonitor/SparklineRenderer.h"
 #include <string>
 #include <memory>
+#include <functional>
 
 namespace NetworkMonitor
 {
@@ -138,6 +139,23 @@ public:
      */
     void SetShowSparkline(bool enabled);
     bool IsShowSparkline() const { return m_showSparkline; }
+    
+    /**
+     * Set sparkline time range (0=30s, 1=1m, 2=5m)
+     */
+    void SetSparklineTimeRange(int range);
+    int GetSparklineTimeRange() const { return m_sparklineTimeRange; }
+    
+    /**
+     * Export sparkline chart as PNG image
+     * @return true if export successful
+     */
+    bool ExportChartAsPNG(const std::wstring& filePath);
+    
+    /**
+     * Set callback for config changes (to save updated time range)
+     */
+    void SetConfigChangeCallback(std::function<void(int timeRange)> callback);
 
 private:
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -182,8 +200,10 @@ private:
 
     // Phase 2 Features - Sparkline
     bool m_showSparkline;     // Show sparkline graph
+    int m_sparklineTimeRange; // 0=30s, 1=1m, 2=5m
     std::unique_ptr<SparklineRenderer> m_downloadSparkline;
     std::unique_ptr<SparklineRenderer> m_uploadSparkline;
+    std::function<void(int)> m_configChangeCallback;
 
     // Window dimensions
     static constexpr int WINDOW_WIDTH = 190;

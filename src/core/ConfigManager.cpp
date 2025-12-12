@@ -109,6 +109,9 @@ bool ConfigManager::LoadConfig(AppConfig& config)
     // Tray Animation
     config.trayAnimationEnabled = ReadDWORD(hKey, L"TrayAnimationEnabled", 1) != 0;
     config.trayAnimationThresholdKB = static_cast<int>(ReadDWORD(hKey, L"TrayAnimationThresholdKB", 1024));
+    
+    // Sparkline Time Range
+    config.sparklineTimeRange = static_cast<int>(ReadDWORD(hKey, L"SparklineTimeRange", 0));
 
     RegCloseKey(hKey);
     return true;
@@ -192,6 +195,9 @@ bool ConfigManager::SaveConfig(const AppConfig& config)
     // Tray Animation
     success &= WriteDWORD(hKey, L"TrayAnimationEnabled", config.trayAnimationEnabled ? 1 : 0);
     success &= WriteDWORD(hKey, L"TrayAnimationThresholdKB", static_cast<DWORD>(config.trayAnimationThresholdKB));
+    
+    // Sparkline Time Range
+    success &= WriteDWORD(hKey, L"SparklineTimeRange", static_cast<DWORD>(config.sparklineTimeRange));
 
     // Save auto-start setting (registry only)
     success &= WriteDWORD(hKey, L"AutoStartAsAdmin", config.autoStartAsAdmin ? 1 : 0);

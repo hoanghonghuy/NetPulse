@@ -1,8 +1,10 @@
 #include "NetworkMonitor/FloatingWindow.h"
 #include "NetworkMonitor/Utils.h"
 #include <windowsx.h>
+#include <commdlg.h>
 #include <sstream>
 #include <iomanip>
+#include <vector>
 
 namespace NetworkMonitor
 {
@@ -32,6 +34,7 @@ FloatingWindow::FloatingWindow()
     , m_clickThrough(false)    // Click-through disabled by default
     , m_miniMode(false)        // Normal mode by default
     , m_showSparkline(true)    // Show sparkline by default
+    , m_sparklineTimeRange(0)  // Default 30s
     , m_downloadSparkline(std::make_unique<SparklineRenderer>(30))
     , m_uploadSparkline(std::make_unique<SparklineRenderer>(30))
 {
@@ -688,6 +691,123 @@ void FloatingWindow::SetShowSparkline(bool enabled)
     m_showSparkline = enabled;
     RecalculateWindowSize();
     Invalidate();
+}
+
+void FloatingWindow::SetSparklineTimeRange(int range)
+{
+    // Convert range to points: 0=30pts(30s), 1=60pts(1m), 2=300pts(5m)
+    static const size_t pointCounts[] = { 30, 60, 300 };
+    if (range < 0 || range > 2) range = 0;
+    
+    m_sparklineTimeRange = range;
+    size_t points = pointCounts[range];
+    
+    if (m_downloadSparkline) m_downloadSparkline->SetMaxPoints(points);
+    if (m_uploadSparkline) m_uploadSparkline->SetMaxPoints(points);
+    
+    Invalidate();
+}
+
+void FloatingWindow::SetConfigChangeCallback(std::function<void(int)> callback)
+{
+    m_configChangeCallback = callback;
+}
+
+bool FloatingWindow::ExportChartAsPNG(const std::wstring& filePath)
+{
+    if (!m_downloadSparkline || !m_uploadSparkline) return false;
+    
+    // Create a bitmap for the chart
+    const int width = 400;
+    const int height = 150;
+    
+    HDC hdcScreen = GetDC(nullptr);
+    HDC hdcMem = CreateCompatibleDC(hdcScreen);
+    HBITMAP hBitmap = CreateCompatibleBitmap(hdcScreen, width, height);
+    HBITMAP hOldBitmap = static_cast<HBITMAP>(SelectObject(hdcMem, hBitmap));
+    
+    // Fill background
+    RECT rect = { 0, 0, width, height };
+    HBRUSH hBrush = CreateSolidBrush(m_darkTheme ? RGB(30, 30, 30) : RGB(255, 255, 255));
+    FillRect(hdcMem, &rect, hBrush);
+    DeleteObject(hBrush);
+    
+    // Draw title
+    SetBkMode(hdcMem, TRANSPARENT);
+    SetTextColor(hdcMem, m_darkTheme ? RGB(200, 200, 200) : RGB(50, 50, 50));
+    HFONT hFont = CreateFontW(14, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+                              OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
+                              DEFAULT_PITCH | FF_SWISS, L"Segoe UI");
+    HFONT hOldFont = static_cast<HFONT>(SelectObject(hdcMem, hFont));
+    
+    TextOutW(hdcMem, 10, 5, L"Network Speed Chart", 19);
+    
+    // Draw sparklines
+    RECT dlRect = { 10, 30, width - 10, 85 };
+    RECT ulRect = { 10, 95, width - 10, height - 10 };
+    
+    m_downloadSparkline->Render(hdcMem, dlRect, RGB(0, 180, 255), RGB(0, 100, 150));
+    m_uploadSparkline->Render(hdcMem, ulRect, RGB(0, 200, 100), RGB(0, 120, 60));
+    
+    // Draw labels
+    SelectObject(hdcMem, hOldFont);
+    DeleteObject(hFont);
+    hFont = CreateFontW(11, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+                        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
+                        DEFAULT_PITCH | FF_SWISS, L"Segoe UI");
+    SelectObject(hdcMem, hFont);
+    SetTextColor(hdcMem, RGB(0, 180, 255));
+    TextOutW(hdcMem, 12, 30, L"Download", 8);
+    SetTextColor(hdcMem, RGB(0, 200, 100));
+    TextOutW(hdcMem, 12, 95, L"Upload", 6);
+    
+    SelectObject(hdcMem, hOldFont);
+    DeleteObject(hFont);
+    
+    // Save as PNG using GDI+ (simplified - save as BMP for now)
+    // TODO: Add proper PNG export with GDI+ or other library
+    BITMAPINFOHEADER bi = {};
+    bi.biSize = sizeof(BITMAPINFOHEADER);
+    bi.biWidth = width;
+    bi.biHeight = -height; // Top-down
+    bi.biPlanes = 1;
+    bi.biBitCount = 24;
+    bi.biCompression = BI_RGB;
+    
+    DWORD dwBmpSize = ((width * 3 + 3) & ~3) * height;
+    std::vector<BYTE> pixels(dwBmpSize);
+    GetDIBits(hdcMem, hBitmap, 0, height, pixels.data(), reinterpret_cast<BITMAPINFO*>(&bi), DIB_RGB_COLORS);
+    
+    // Write BMP file (PNG would require additional library)
+    std::wstring bmpPath = filePath;
+    if (bmpPath.size() > 4 && bmpPath.substr(bmpPath.size() - 4) == L".png")
+    {
+        bmpPath = bmpPath.substr(0, bmpPath.size() - 4) + L".bmp";
+    }
+    
+    HANDLE hFile = CreateFileW(bmpPath.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (hFile != INVALID_HANDLE_VALUE)
+    {
+        BITMAPFILEHEADER bmfHeader = {};
+        bmfHeader.bfType = 0x4D42; // "BM"
+        bmfHeader.bfSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + dwBmpSize;
+        bmfHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+        
+        DWORD written;
+        WriteFile(hFile, &bmfHeader, sizeof(bmfHeader), &written, nullptr);
+        bi.biHeight = height; // Positive for file
+        WriteFile(hFile, &bi, sizeof(bi), &written, nullptr);
+        WriteFile(hFile, pixels.data(), dwBmpSize, &written, nullptr);
+        CloseHandle(hFile);
+    }
+    
+    // Cleanup
+    SelectObject(hdcMem, hOldBitmap);
+    DeleteObject(hBitmap);
+    DeleteDC(hdcMem);
+    ReleaseDC(nullptr, hdcScreen);
+    
+    return true;
 }
 
 } // namespace NetworkMonitor

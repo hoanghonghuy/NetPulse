@@ -2,6 +2,19 @@
 
 All notable changes to NetworkMonitor will be documented in this file.
 
+## [1.4.0] - 2025-12-13
+
+### Added
+- **Sparkline Visualization**: Real-time network traffic graph in Floating Window.
+- **Tray Icon Animation**: Visual pulse effect when traffic exceeds configurable threshold.
+- **Chart Export**: Export Dashboard network chart as BMP image (located next to CSV export).
+- **History Export**: Export detailed network usage history to CSV.
+- **Time Range Settings**: Configurable sparkline history duration (30s, 1m, 5m) via Settings > Display.
+
+### Changed
+- **UI Refinement**: Moved sparkline settings from context menu to main Settings dialog for better accessibility and localization.
+- **Localization**: Comprehensive translation support for all new features in 5 languages (EN, VI, JA, KO, ZH-CN).
+
 ## [1.3.1] - 2025-12-10
 
 ### Added

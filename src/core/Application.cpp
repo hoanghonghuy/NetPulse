@@ -241,6 +241,7 @@ bool Application::Initialize(HINSTANCE hInstance)
             m_pFloatingWindow->SetShowPing(m_config.floatingShowPing);
             m_pFloatingWindow->SetShowDataToday(m_config.floatingShowDataToday);
             m_pFloatingWindow->SetShowSparkline(m_config.floatingShowSparkline);
+            m_pFloatingWindow->SetSparklineTimeRange(m_config.sparklineTimeRange);
         }
         
         // Apply Ping Target change
@@ -280,6 +281,13 @@ bool Application::Initialize(HINSTANCE hInstance)
         m_pFloatingWindow->SetShowPing(m_config.floatingShowPing);
         m_pFloatingWindow->SetShowDataToday(m_config.floatingShowDataToday);
         m_pFloatingWindow->SetShowSparkline(m_config.floatingShowSparkline);
+        m_pFloatingWindow->SetSparklineTimeRange(m_config.sparklineTimeRange);
+        
+        // Set callback to save sparkline time range when changed via context menu
+        m_pFloatingWindow->SetConfigChangeCallback([this](int timeRange) {
+            m_config.sparklineTimeRange = timeRange;
+            m_pConfigManager->SaveConfig(m_config);
+        });
         
         // Set position if saved
         if (m_config.floatingWindowX >= 0 && m_config.floatingWindowY >= 0)

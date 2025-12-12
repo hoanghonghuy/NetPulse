@@ -226,7 +226,8 @@
 #define IDC_DEBUG_LOGGING_CHECK         536
 #define IDC_SETTINGS_BUTTON_OPEN_LOG    537
 #define IDC_DASHBOARD_BUTTON_EXPORT     538
-#define IDC_DARK_THEME_CHECK            539
+#define IDC_DASHBOARD_EXPORT_CHART      539
+#define IDC_DARK_THEME_CHECK            570
 #define IDC_MESSAGE_ICON                540
 #define IDC_MESSAGE_TEXT                541
 #define IDC_SETTINGS_LABEL_THEME        542
@@ -297,6 +298,18 @@
 #define IDC_TRAY_ANIMATION_THRESHOLD_LABEL 2121
 #define IDS_SETTINGS_GROUP_TRAY         2130
 #define IDS_TRAY_ANIMATION_THRESHOLD_LABEL 2131
+
+// Sparkline Time Range settings
+#define IDC_SPARKLINE_TIME_RANGE_LABEL  2140
+#define IDC_SPARKLINE_TIME_RANGE_COMBO  2141
+#define IDS_SPARKLINE_TIME_RANGE_LABEL  2150
+#define IDS_SPARKLINE_30S               2151
+#define IDS_SPARKLINE_1M                2152
+#define IDS_SPARKLINE_5M                2153
+
+// Export Chart button
+#define IDC_EXPORT_CHART_BUTTON         2160
+#define IDS_EXPORT_CHART_BUTTON         2161
 
 // ============================================================================
 // STANDARD DIALOG IDS

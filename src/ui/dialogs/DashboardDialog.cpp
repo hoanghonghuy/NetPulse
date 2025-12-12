@@ -166,6 +166,13 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
             {
                 SetDlgItemTextW(hDlg, IDC_DASHBOARD_BUTTON_EXPORT, exportText.c_str());
             }
+            
+            // Export Chart button
+            std::wstring exportChartText = LoadStringResource(IDS_EXPORT_CHART_BUTTON);
+            if (!exportChartText.empty())
+            {
+                SetDlgItemTextW(hDlg, IDC_DASHBOARD_EXPORT_CHART, exportChartText.c_str());
+            }
 
             // Initialize list columns once
             HWND hList = GetDlgItem(hDlg, IDC_RECENT_LIST);
@@ -274,6 +281,7 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                 };
 
                 makeOwnerDraw(GetDlgItem(hDlg, IDC_DASHBOARD_BUTTON_EXPORT));
+                makeOwnerDraw(GetDlgItem(hDlg, IDC_DASHBOARD_EXPORT_CHART));
                 makeOwnerDraw(GetDlgItem(hDlg, IDC_HISTORY_MANAGE));
                 makeOwnerDraw(GetDlgItem(hDlg, IDC_DASHBOARD_REFRESH));
                 makeOwnerDraw(GetDlgItem(hDlg, IDOK));
@@ -362,6 +370,98 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                     return TRUE;
                 }
 
+                case IDC_DASHBOARD_EXPORT_CHART:
+                {
+                    // Export chart as image
+                    wchar_t filePath[MAX_PATH] = {};
+                    
+                    OPENFILENAMEW ofn = {};
+                    ofn.lStructSize = sizeof(ofn);
+                    ofn.hwndOwner = hDlg;
+                    ofn.lpstrFilter = L"BMP Files (*.bmp)\0*.bmp\0All Files\0*.*\0";
+                    ofn.lpstrFile = filePath;
+                    ofn.nMaxFile = MAX_PATH;
+                    ofn.lpstrDefExt = L"bmp";
+                    ofn.Flags = OFN_OVERWRITEPROMPT | OFN_PATHMUSTEXIST;
+                    
+                    // Default filename with date
+                    std::time_t now = std::time(nullptr);
+                    std::tm local = {};
+                    localtime_s(&local, &now);
+                    wchar_t defaultName[64];
+                    wcsftime(defaultName, 64, L"network_chart_%Y%m%d.bmp", &local);
+                    wcscpy_s(filePath, defaultName);
+                    
+                    if (GetSaveFileNameW(&ofn))
+                    {
+                        // Get chart area dimensions
+                        HWND hChart = GetDlgItem(hDlg, IDC_DASHBOARD_CHART);
+                        if (hChart)
+                        {
+                            RECT chartRect;
+                            GetClientRect(hChart, &chartRect);
+                            int width = chartRect.right - chartRect.left;
+                            int height = chartRect.bottom - chartRect.top;
+                            
+                            // Create a bitmap to render chart
+                            HDC hdcScreen = GetDC(nullptr);
+                            HDC hdcMem = CreateCompatibleDC(hdcScreen);
+                            HBITMAP hBitmap = CreateCompatibleBitmap(hdcScreen, width, height);
+                            HBITMAP hOldBitmap = static_cast<HBITMAP>(SelectObject(hdcMem, hBitmap));
+                            
+                            // Draw chart to memory DC
+                            RECT rcDraw = { 0, 0, width, height };
+                            DrawDashboardChart(hdcMem, rcDraw);
+                            
+                            // Save as BMP
+                            BITMAPINFOHEADER bi = {};
+                            bi.biSize = sizeof(BITMAPINFOHEADER);
+                            bi.biWidth = width;
+                            bi.biHeight = height;
+                            bi.biPlanes = 1;
+                            bi.biBitCount = 24;
+                            bi.biCompression = BI_RGB;
+                            
+                            DWORD dwBmpSize = ((width * 3 + 3) & ~3) * height;
+                            std::vector<BYTE> pixels(dwBmpSize);
+                            bi.biHeight = -height; // Top-down for GetDIBits
+                            GetDIBits(hdcMem, hBitmap, 0, height, pixels.data(), reinterpret_cast<BITMAPINFO*>(&bi), DIB_RGB_COLORS);
+                            
+                            HANDLE hFile = CreateFileW(filePath, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+                            if (hFile != INVALID_HANDLE_VALUE)
+                            {
+                                BITMAPFILEHEADER bmfHeader = {};
+                                bmfHeader.bfType = 0x4D42; // "BM"
+                                bmfHeader.bfSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + dwBmpSize;
+                                bmfHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+                                
+                                DWORD written;
+                                WriteFile(hFile, &bmfHeader, sizeof(bmfHeader), &written, nullptr);
+                                bi.biHeight = height; // Positive for file
+                                WriteFile(hFile, &bi, sizeof(bi), &written, nullptr);
+                                WriteFile(hFile, pixels.data(), dwBmpSize, &written, nullptr);
+                                CloseHandle(hFile);
+                                
+                                // Open folder in explorer
+                                std::wstring folder = filePath;
+                                size_t lastSlash = folder.find_last_of(L"\\/");
+                                if (lastSlash != std::wstring::npos)
+                                {
+                                    folder = folder.substr(0, lastSlash);
+                                }
+                                ShellExecuteW(nullptr, L"explore", folder.c_str(), nullptr, nullptr, SW_SHOW);
+                            }
+                            
+                            // Cleanup
+                            SelectObject(hdcMem, hOldBitmap);
+                            DeleteObject(hBitmap);
+                            DeleteDC(hdcMem);
+                            ReleaseDC(nullptr, hdcScreen);
+                        }
+                    }
+                    return TRUE;
+                }
+
                 case IDOK:
                 case IDCANCEL:
                 {
@@ -411,7 +511,7 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
             if (m_pConfig && m_pConfig->darkTheme && pDrawItem->CtlType == ODT_BUTTON)
             {
                 UINT id = pDrawItem->CtlID;
-                if (id == IDC_DASHBOARD_BUTTON_EXPORT || id == IDC_HISTORY_MANAGE || id == IDC_DASHBOARD_REFRESH || id == IDOK)
+                if (id == IDC_DASHBOARD_BUTTON_EXPORT || id == IDC_DASHBOARD_EXPORT_CHART || id == IDC_HISTORY_MANAGE || id == IDC_DASHBOARD_REFRESH || id == IDOK)
                 {
                     HDC hdc = pDrawItem->hDC;
                     RECT rc = pDrawItem->rcItem;

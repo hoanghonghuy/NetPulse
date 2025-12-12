@@ -261,6 +261,10 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
             std::wstring trayThres = LoadStringResource(IDS_TRAY_ANIMATION_THRESHOLD_LABEL);
             if (!trayThres.empty()) SetDlgItemTextW(hDlg, IDC_TRAY_ANIMATION_THRESHOLD_LABEL, trayThres.c_str());
 
+            // Localize Sparkline Time Range settings
+            std::wstring sparklineLabel = LoadStringResource(IDS_SPARKLINE_TIME_RANGE_LABEL);
+            if (!sparklineLabel.empty()) SetDlgItemTextW(hDlg, IDC_SPARKLINE_TIME_RANGE_LABEL, sparklineLabel.c_str());
+
             std::wstring floatNet = LoadStringResource(IDS_FLOATING_SHOW_NETWORK);
             if (!floatNet.empty()) SetDlgItemTextW(hDlg, IDC_FLOATING_SHOW_NETWORK_CHECK, floatNet.c_str());
 
@@ -1379,6 +1383,20 @@ void SettingsDialog::PopulateDialog(HWND hDlg)
         }
         ComboBox_SetCurSel(hTrayAnimThreshold, selectedIdx);
     }
+    
+    // Initialize Sparkline Time Range combo
+    HWND hSparklineTime = GetDlgItem(hDlg, IDC_SPARKLINE_TIME_RANGE_COMBO);
+    if (hSparklineTime)
+    {
+        ComboBox_ResetContent(hSparklineTime);
+        std::wstring opt30s = LoadStringResource(IDS_SPARKLINE_30S);
+        std::wstring opt1m = LoadStringResource(IDS_SPARKLINE_1M);
+        std::wstring opt5m = LoadStringResource(IDS_SPARKLINE_5M);
+        ComboBox_AddString(hSparklineTime, opt30s.empty() ? L"30s" : opt30s.c_str());
+        ComboBox_AddString(hSparklineTime, opt1m.empty() ? L"1m" : opt1m.c_str());
+        ComboBox_AddString(hSparklineTime, opt5m.empty() ? L"5m" : opt5m.c_str());
+        ComboBox_SetCurSel(hSparklineTime, m_configCopy.sparklineTimeRange);
+    }
 
     HWND hDataQuota = GetDlgItem(hDlg, IDC_DATA_USAGE_QUOTA_EDIT);
     if (hDataQuota)
@@ -1617,6 +1635,17 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
         }
     }
     
+    // Get sparkline time range from combo
+    HWND hSparklineTime = GetDlgItem(hDlg, IDC_SPARKLINE_TIME_RANGE_COMBO);
+    if (hSparklineTime)
+    {
+        int sel = ComboBox_GetCurSel(hSparklineTime);
+        if (sel != CB_ERR)
+        {
+            tempConfig.sparklineTimeRange = sel;
+        }
+    }
+    
     HWND hDataQuota = GetDlgItem(hDlg, IDC_DATA_USAGE_QUOTA_EDIT);
     if (hDataQuota)
     {
@@ -1809,7 +1838,8 @@ void SettingsDialog::SwitchTab(HWND hDlg, int tabIndex)
         IDC_SETTINGS_GROUP_FLOATING,
         IDC_FLOATING_SHOW_NETWORK_CHECK, IDC_FLOATING_SHOW_CPU_CHECK, IDC_FLOATING_SHOW_RAM_CHECK,
         IDC_FLOATING_SHOW_PING_CHECK, IDC_FLOATING_SHOW_DATA_TODAY_CHECK, IDC_FLOATING_SHOW_SPARKLINE_CHECK,
-        IDC_SETTINGS_GROUP_TRAY, IDC_TRAY_ANIMATION_CHECK, IDC_TRAY_ANIMATION_THRESHOLD_LABEL, IDC_TRAY_ANIMATION_THRESHOLD
+        IDC_SETTINGS_GROUP_TRAY, IDC_TRAY_ANIMATION_CHECK, IDC_TRAY_ANIMATION_THRESHOLD_LABEL, IDC_TRAY_ANIMATION_THRESHOLD,
+        IDC_SPARKLINE_TIME_RANGE_LABEL, IDC_SPARKLINE_TIME_RANGE_COMBO
     };
 
     // Advanced tab controls

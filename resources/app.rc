@@ -185,6 +185,13 @@ BEGIN
     IDS_SETTINGS_GROUP_TRAY              "Tray Icon:"
     IDS_TRAY_ANIMATION_ENABLE            "Pulse Animation"
     IDS_TRAY_ANIMATION_THRESHOLD_LABEL   "Trigger at:"
+    
+    // Sparkline Settings
+    IDS_SPARKLINE_TIME_RANGE_LABEL       "Chart Time Range:"
+    IDS_SPARKLINE_30S                    "30 seconds"
+    IDS_SPARKLINE_1M                     "1 minute"
+    IDS_SPARKLINE_5M                     "5 minutes"
+    IDS_EXPORT_CHART_BUTTON              "Export Chart..."
 END
 
 // Vietnamese resources
@@ -320,6 +327,13 @@ BEGIN
     IDS_FLOATING_SHOW_DATA_TODAY         "Dung lượng hôm nay"
     IDS_FLOATING_SHOW_SPARKLINE          "Biểu đồ"
     IDS_BTN_EXPORT_CSV                   "Xuất ra CSV..."
+    
+    // Sparkline Settings
+    IDS_SPARKLINE_TIME_RANGE_LABEL       "Thời gian biểu đồ:"
+    IDS_SPARKLINE_30S                    "30 giây"
+    IDS_SPARKLINE_1M                     "1 phút"
+    IDS_SPARKLINE_5M                     "5 phút"
+    IDS_EXPORT_CHART_BUTTON              "Xuất biểu đồ..."
 END
 
 // Japanese resources
@@ -450,6 +464,13 @@ BEGIN
     IDS_FLOATING_SHOW_DATA_TODAY         "本日のデータ"
     IDS_FLOATING_SHOW_SPARKLINE          "スパークライン"
     IDS_BTN_EXPORT_CSV                   "CSVにエクスポート..."
+    
+    // Sparkline Settings
+    IDS_SPARKLINE_TIME_RANGE_LABEL       "チャート時間範囲:"
+    IDS_SPARKLINE_30S                    "30秒"
+    IDS_SPARKLINE_1M                     "1分"
+    IDS_SPARKLINE_5M                     "5分"
+    IDS_EXPORT_CHART_BUTTON              "チャートをエクスポート..."
 END
 
 // Korean resources
@@ -580,6 +601,13 @@ BEGIN
     IDS_FLOATING_SHOW_DATA_TODAY         "오늘 데이터"
     IDS_FLOATING_SHOW_SPARKLINE          "스파크라인"
     IDS_BTN_EXPORT_CSV                   "CSV로 내보내기..."
+    
+    // Sparkline Settings
+    IDS_SPARKLINE_TIME_RANGE_LABEL       "차트 시간 범위:"
+    IDS_SPARKLINE_30S                    "30초"
+    IDS_SPARKLINE_1M                     "1분"
+    IDS_SPARKLINE_5M                     "5분"
+    IDS_EXPORT_CHART_BUTTON              "차트 내보내기..."
 END
 
 // Chinese Simplified resources
@@ -710,6 +738,13 @@ BEGIN
     IDS_FLOATING_SHOW_DATA_TODAY         "今日流量"
     IDS_FLOATING_SHOW_SPARKLINE          "迷你图"
     IDS_BTN_EXPORT_CSV                   "导出为CSV..."
+    
+    // Sparkline Settings
+    IDS_SPARKLINE_TIME_RANGE_LABEL       "图表时间范围:"
+    IDS_SPARKLINE_30S                    "30秒"
+    IDS_SPARKLINE_1M                     "1分钟"
+    IDS_SPARKLINE_5M                     "5分钟"
+    IDS_EXPORT_CHART_BUTTON              "导出图表..."
 END
 
 // Switch back to English for the rest of resources
@@ -816,8 +851,12 @@ BEGIN
     // Tray Icon Group
     LTEXT           "Tray Icon:",IDC_SETTINGS_GROUP_TRAY,15,152,60,8
     CONTROL         "Pulse Animation",IDC_TRAY_ANIMATION_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,80,150,70,10
-    LTEXT           "Trigger at:",IDC_TRAY_ANIMATION_THRESHOLD_LABEL,80,167,40,8
-    COMBOBOX        IDC_TRAY_ANIMATION_THRESHOLD,125,165,60,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Trigger at:",IDC_TRAY_ANIMATION_THRESHOLD_LABEL,155,152,35,8
+    COMBOBOX        IDC_TRAY_ANIMATION_THRESHOLD,195,150,45,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    
+    // Sparkline Settings
+    LTEXT           "Chart Time Range:",IDC_SPARKLINE_TIME_RANGE_LABEL,15,170,70,8
+    COMBOBOX        IDC_SPARKLINE_TIME_RANGE_COMBO,90,168,60,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
     // === ADVANCED TAB (index 2) ===
     LTEXT           "Network Interface:",IDC_SETTINGS_LABEL_MONITOR,15,32,70,8
@@ -865,9 +904,10 @@ BEGIN
     CONTROL         "",IDC_DASHBOARD_CHART,"STATIC",SS_OWNERDRAW | WS_CHILD | WS_VISIBLE | WS_BORDER,7,50,346,60
     CONTROL         "",IDC_RECENT_LIST,"SysListView32",WS_TABSTOP | WS_BORDER | WS_VSCROLL | WS_HSCROLL | LVS_REPORT | LVS_SHOWSELALWAYS,7,115,346,80
     PUSHBUTTON      "Export CSV...",IDC_DASHBOARD_BUTTON_EXPORT,7,200,55,14
-    PUSHBUTTON      "Manage history...",IDC_HISTORY_MANAGE,67,200,76,14
-    PUSHBUTTON      "Refresh",IDC_DASHBOARD_REFRESH,148,200,58,14
-    PUSHBUTTON      "Close",IDOK,210,200,58,14
+    PUSHBUTTON      "Export Chart...",IDC_DASHBOARD_EXPORT_CHART,65,200,55,14
+    PUSHBUTTON      "Manage history...",IDC_HISTORY_MANAGE,125,200,76,14
+    PUSHBUTTON      "Refresh",IDC_DASHBOARD_REFRESH,206,200,50,14
+    PUSHBUTTON      "Close",IDOK,260,200,50,14
 END
 
 IDD_HISTORY_MANAGE_DIALOG DIALOGEX 0, 0, 240, 110
