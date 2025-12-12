@@ -100,14 +100,47 @@ public:
      */
     HWND GetHWND() const { return m_hwnd; }
 
+    // ========== PHASE 1 NEW FEATURES ==========
+    
+    /**
+     * Enable/disable snap-to-edge behavior
+     * When enabled, window will snap to screen edges when dragged within snap distance
+     */
+    void SetSnapToEdge(bool enabled);
+    bool IsSnapToEdge() const { return m_snapToEdge; }
+    
+    /**
+     * Set the snap distance in pixels (default: 20)
+     */
+    void SetSnapDistance(int pixels);
+    int GetSnapDistance() const { return m_snapDistance; }
+    
+    /**
+     * Enable/disable click-through mode
+     * When enabled, mouse clicks pass through the window
+     */
+    void SetClickThrough(bool enabled);
+    bool IsClickThrough() const { return m_clickThrough; }
+    
+    /**
+     * Toggle mini-mode (compact single-line display)
+     */
+    void SetMiniMode(bool enabled);
+    bool IsMiniMode() const { return m_miniMode; }
+    void ToggleMiniMode();
+
 private:
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
     LRESULT HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam);
 
     void RegisterWindowClass(HINSTANCE hInstance);
     void Paint(HDC hdc);
+    void PaintNormal(HDC hdc);
+    void PaintMiniMode(HDC hdc);
     void Invalidate();
     void RecalculateWindowSize();
+    void ApplySnapToEdge(RECT* pRect);
+
 
     HWND m_hwnd;
     HINSTANCE m_hInstance;
@@ -131,9 +164,17 @@ private:
     uint64_t m_todayBytesDown;
     uint64_t m_todayBytesUp;
 
+    // Phase 1 Features
+    bool m_snapToEdge;        // Enable snap-to-edge
+    int m_snapDistance;       // Snap distance in pixels (default: 20)
+    bool m_clickThrough;      // Click-through mode
+    bool m_miniMode;          // Mini/compact mode
+
     // Window dimensions
     static constexpr int WINDOW_WIDTH = 190;
+    static constexpr int WINDOW_WIDTH_MINI = 100;  // Compact width for mini mode
     static constexpr int WINDOW_HEIGHT = 90; // Increased base height, will be dynamic
+    static constexpr int WINDOW_HEIGHT_MINI = 24;  // Single line height for mini mode
     static constexpr int PADDING = 8;
     static constexpr int LINE_HEIGHT = 16;
 

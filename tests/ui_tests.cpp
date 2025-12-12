@@ -1,6 +1,7 @@
 #include "NetworkMonitor/Common.h"
 #include "NetworkMonitor/TrayIcon.h"
 #include "NetworkMonitor/TaskbarOverlay.h"
+#include "NetworkMonitor/FloatingWindow.h"
 #include "TestUtils.h"
 
 #include <windows.h>
@@ -106,6 +107,84 @@ void RunTaskbarOverlayTests()
     overlay.Cleanup();
 
     AssertTrue(true, L"TaskbarOverlay Initialize/Show/Update/Cleanup executed without crash");
+}
+
+// ========== PHASE 1: FLOATING WINDOW TESTS ==========
+
+void RunFloatingWindowTests()
+{
+    LogTestMessage(L"=== FloatingWindow tests ===");
+
+    HINSTANCE hInstance = GetModuleHandleW(nullptr);
+    FloatingWindow floating;
+
+    bool created = floating.Create(hInstance);
+    if (!created)
+    {
+        LogTestMessage(L"[WARN] FloatingWindow.Create failed; skipping further tests");
+        return;
+    }
+
+    // Test: Initial state
+    AssertTrue(!floating.IsVisible(), L"FloatingWindow not visible after Create");
+    AssertTrue(floating.IsSnapToEdge(), L"FloatingWindow snap-to-edge enabled by default");
+    AssertTrue(!floating.IsClickThrough(), L"FloatingWindow click-through disabled by default");
+    AssertTrue(!floating.IsMiniMode(), L"FloatingWindow mini-mode disabled by default");
+    AssertTrue(floating.GetSnapDistance() == 20, L"FloatingWindow default snap distance is 20");
+
+    // Test: Show/Hide
+    floating.Show(true);
+    AssertTrue(floating.IsVisible(), L"FloatingWindow visible after Show(true)");
+    
+    floating.Show(false);
+    AssertTrue(!floating.IsVisible(), L"FloatingWindow not visible after Show(false)");
+
+    // Test: Snap-to-Edge toggle
+    floating.SetSnapToEdge(false);
+    AssertTrue(!floating.IsSnapToEdge(), L"FloatingWindow snap-to-edge disabled after SetSnapToEdge(false)");
+    
+    floating.SetSnapToEdge(true);
+    AssertTrue(floating.IsSnapToEdge(), L"FloatingWindow snap-to-edge enabled after SetSnapToEdge(true)");
+
+    // Test: Snap distance
+    floating.SetSnapDistance(30);
+    AssertTrue(floating.GetSnapDistance() == 30, L"FloatingWindow snap distance changed to 30");
+    
+    floating.SetSnapDistance(-5);  // Invalid value should default to 20
+    AssertTrue(floating.GetSnapDistance() == 20, L"FloatingWindow snap distance defaults to 20 for invalid input");
+
+    // Test: Click-through mode
+    floating.SetClickThrough(true);
+    AssertTrue(floating.IsClickThrough(), L"FloatingWindow click-through enabled after SetClickThrough(true)");
+    
+    floating.SetClickThrough(false);
+    AssertTrue(!floating.IsClickThrough(), L"FloatingWindow click-through disabled after SetClickThrough(false)");
+
+    // Test: Mini-mode
+    floating.SetMiniMode(true);
+    AssertTrue(floating.IsMiniMode(), L"FloatingWindow mini-mode enabled after SetMiniMode(true)");
+    
+    floating.SetMiniMode(false);
+    AssertTrue(!floating.IsMiniMode(), L"FloatingWindow mini-mode disabled after SetMiniMode(false)");
+
+    // Test: ToggleMiniMode
+    floating.ToggleMiniMode();
+    AssertTrue(floating.IsMiniMode(), L"FloatingWindow mini-mode enabled after ToggleMiniMode()");
+    
+    floating.ToggleMiniMode();
+    AssertTrue(!floating.IsMiniMode(), L"FloatingWindow mini-mode disabled after second ToggleMiniMode()");
+
+    // Test: Update methods don't crash
+    floating.UpdateSpeed(1024.0, 512.0, SpeedUnit::KiloBytesPerSecond);
+    floating.UpdateCPU(45.0);
+    floating.UpdateRAM(60.0);
+    floating.UpdatePing(25);
+    floating.UpdateDataToday(1024 * 1024 * 100, 1024 * 1024 * 50);
+
+    floating.Destroy();
+    AssertTrue(floating.GetHWND() == nullptr, L"FloatingWindow HWND is null after Destroy");
+
+    AssertTrue(true, L"FloatingWindow Phase 1 tests completed successfully");
 }
 
 } // namespace NetworkMonitorTests

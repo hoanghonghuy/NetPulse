@@ -185,6 +185,12 @@ struct AppConfig
     bool floatingShowRAM;            // Show RAM usage in floating window
     bool floatingShowPing;           // Show ping latency in floating window
     bool floatingShowDataToday;      // Show today's data usage in floating window
+    
+    // Phase 1 Features - Floating Window
+    bool floatingSnapToEdge;         // Snap floating window to screen edges
+    int floatingSnapDistance;        // Snap distance in pixels (default: 20)
+    bool floatingClickThrough;       // Click-through mode for floating window
+    bool floatingMiniMode;           // Mini/compact mode for floating window
 
     AppConfig()
         : updateInterval(DEFAULT_UPDATE_INTERVAL)
@@ -219,6 +225,10 @@ struct AppConfig
         , floatingShowRAM(true)
         , floatingShowPing(true)
         , floatingShowDataToday(true)
+        , floatingSnapToEdge(true)      // Enable by default
+        , floatingSnapDistance(20)      // Default 20px
+        , floatingClickThrough(false)   // Disabled by default
+        , floatingMiniMode(false)       // Normal mode by default
     {
     }
 
@@ -256,7 +266,11 @@ struct AppConfig
                floatingShowCPU == other.floatingShowCPU &&
                floatingShowRAM == other.floatingShowRAM &&
                floatingShowPing == other.floatingShowPing &&
-               floatingShowDataToday == other.floatingShowDataToday;
+               floatingShowDataToday == other.floatingShowDataToday &&
+               floatingSnapToEdge == other.floatingSnapToEdge &&
+               floatingSnapDistance == other.floatingSnapDistance &&
+               floatingClickThrough == other.floatingClickThrough &&
+               floatingMiniMode == other.floatingMiniMode;
     }
 
     bool operator!=(const AppConfig& other) const

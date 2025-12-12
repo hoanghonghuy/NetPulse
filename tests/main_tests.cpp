@@ -15,6 +15,7 @@ void RunNetworkCalculatorTests();
 void RunConfigManagerTests();
 void RunTrayIconTests();
 void RunTaskbarOverlayTests();
+void RunFloatingWindowTests();
 }
 
 using namespace NetworkMonitorTests;
@@ -30,6 +31,7 @@ int main()
     RunConfigManagerTests();
     RunTrayIconTests();
     RunTaskbarOverlayTests();
+    RunFloatingWindowTests();
 
     int failures = GetFailureCount();
     if (failures == 0)

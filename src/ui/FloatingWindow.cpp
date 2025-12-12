@@ -27,6 +27,10 @@ FloatingWindow::FloatingWindow()
     , m_pingLatency(-1)
     , m_todayBytesDown(0)
     , m_todayBytesUp(0)
+    , m_snapToEdge(true)       // Enable snap-to-edge by default
+    , m_snapDistance(20)       // Default 20px snap distance
+    , m_clickThrough(false)    // Click-through disabled by default
+    , m_miniMode(false)        // Normal mode by default
 {
 }
 
@@ -286,8 +290,25 @@ LRESULT FloatingWindow::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_NCHITTEST:
-        // Allow dragging from anywhere on the window
+        // Allow dragging from anywhere on the window (unless click-through)
+        if (m_clickThrough)
+        {
+            return HTTRANSPARENT;  // Pass clicks through
+        }
         return HTCAPTION;
+
+    case WM_MOVING:
+        // Apply snap-to-edge when dragging
+        if (m_snapToEdge)
+        {
+            ApplySnapToEdge(reinterpret_cast<RECT*>(lParam));
+        }
+        return TRUE;
+
+    case WM_NCLBUTTONDBLCLK:
+        // Double-click to toggle mini-mode
+        ToggleMiniMode();
+        return 0;
 
     case WM_ERASEBKGND:
         return 1; // We handle background in WM_PAINT
@@ -302,6 +323,60 @@ LRESULT FloatingWindow::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 }
 
 void FloatingWindow::Paint(HDC hdc)
+{
+    if (m_miniMode)
+    {
+        PaintMiniMode(hdc);
+    }
+    else
+    {
+        PaintNormal(hdc);
+    }
+}
+
+void FloatingWindow::PaintMiniMode(HDC hdc)
+{
+    RECT rc;
+    GetClientRect(m_hwnd, &rc);
+
+    // Colors
+    COLORREF bgColor = m_darkTheme ? RGB(30, 30, 30) : RGB(245, 245, 245);
+    COLORREF downColor = m_darkTheme ? RGB(0, 200, 255) : RGB(0, 120, 180);
+
+    // Fill background
+    HBRUSH hBgBrush = CreateSolidBrush(bgColor);
+    FillRect(hdc, &rc, hBgBrush);
+    DeleteObject(hBgBrush);
+
+    // Draw thin border
+    HPEN hBorderPen = CreatePen(PS_SOLID, 1, m_darkTheme ? RGB(80, 80, 80) : RGB(180, 180, 180));
+    HPEN hOldPen = (HPEN)SelectObject(hdc, hBorderPen);
+    HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, GetStockObject(NULL_BRUSH));
+    RoundRect(hdc, rc.left, rc.top, rc.right, rc.bottom, 4, 4);
+    SelectObject(hdc, hOldBrush);
+    SelectObject(hdc, hOldPen);
+    DeleteObject(hBorderPen);
+
+    // Create smaller font for mini mode
+    HFONT hFont = CreateFontW(
+        12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+        DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+        CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Segoe UI"
+    );
+    HFONT hOldFont = (HFONT)SelectObject(hdc, hFont);
+    SetBkMode(hdc, TRANSPARENT);
+
+    // Show primary metric: download speed (most relevant)
+    std::wstring text = L"\u2193" + FormatSpeed(m_downloadSpeed, m_speedUnit);
+    
+    SetTextColor(hdc, downColor);
+    TextOutW(hdc, 4, 4, text.c_str(), static_cast<int>(text.length()));
+
+    SelectObject(hdc, hOldFont);
+    DeleteObject(hFont);
+}
+
+void FloatingWindow::PaintNormal(HDC hdc)
 {
     RECT rc;
     GetClientRect(m_hwnd, &rc);
@@ -441,20 +516,128 @@ void FloatingWindow::Paint(HDC hdc)
 
 void FloatingWindow::RecalculateWindowSize()
 {
-    int visibleRows = 0;
+    int newWidth, newHeight;
     
-    if (m_showNetwork) visibleRows++;
-    if (m_showCPU || m_showRAM) visibleRows++;
-    if (m_showPing || m_showDataToday) visibleRows++;
-    
-    int newHeight = (PADDING * 2) + (visibleRows * LINE_HEIGHT);
+    if (m_miniMode)
+    {
+        // Mini mode: single compact line
+        newWidth = WINDOW_WIDTH_MINI;
+        newHeight = WINDOW_HEIGHT_MINI;
+    }
+    else
+    {
+        // Normal mode: calculate based on visible rows
+        int visibleRows = 0;
+        
+        if (m_showNetwork) visibleRows++;
+        if (m_showCPU || m_showRAM) visibleRows++;
+        if (m_showPing || m_showDataToday) visibleRows++;
+        
+        newWidth = WINDOW_WIDTH;
+        newHeight = (PADDING * 2) + (visibleRows * LINE_HEIGHT);
+    }
     
     // Resize window but keep position
     if (m_hwnd)
     {
-        SetWindowPos(m_hwnd, nullptr, 0, 0, WINDOW_WIDTH, newHeight, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+        SetWindowPos(m_hwnd, nullptr, 0, 0, newWidth, newHeight, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
     }
 }
 
+// ========== PHASE 1: SNAP-TO-EDGE ==========
+
+void FloatingWindow::ApplySnapToEdge(RECT* pRect)
+{
+    if (!pRect) return;
+    
+    // Get work area (excludes taskbar)
+    RECT workArea;
+    SystemParametersInfo(SPI_GETWORKAREA, 0, &workArea, 0);
+    
+    int windowWidth = pRect->right - pRect->left;
+    int windowHeight = pRect->bottom - pRect->top;
+    
+    // Snap to left edge
+    if (abs(pRect->left - workArea.left) < m_snapDistance)
+    {
+        pRect->left = workArea.left;
+        pRect->right = pRect->left + windowWidth;
+    }
+    
+    // Snap to right edge
+    if (abs(pRect->right - workArea.right) < m_snapDistance)
+    {
+        pRect->right = workArea.right;
+        pRect->left = pRect->right - windowWidth;
+    }
+    
+    // Snap to top edge
+    if (abs(pRect->top - workArea.top) < m_snapDistance)
+    {
+        pRect->top = workArea.top;
+        pRect->bottom = pRect->top + windowHeight;
+    }
+    
+    // Snap to bottom edge
+    if (abs(pRect->bottom - workArea.bottom) < m_snapDistance)
+    {
+        pRect->bottom = workArea.bottom;
+        pRect->top = pRect->bottom - windowHeight;
+    }
+}
+
+void FloatingWindow::SetSnapToEdge(bool enabled)
+{
+    m_snapToEdge = enabled;
+}
+
+void FloatingWindow::SetSnapDistance(int pixels)
+{
+    m_snapDistance = (pixels > 0) ? pixels : 20;
+}
+
+// ========== PHASE 1: CLICK-THROUGH MODE ==========
+
+void FloatingWindow::SetClickThrough(bool enabled)
+{
+    if (m_clickThrough == enabled) return;
+    
+    m_clickThrough = enabled;
+    
+    if (m_hwnd)
+    {
+        LONG_PTR exStyle = GetWindowLongPtrW(m_hwnd, GWL_EXSTYLE);
+        
+        if (enabled)
+        {
+            // Add WS_EX_TRANSPARENT to pass clicks through
+            exStyle |= WS_EX_TRANSPARENT;
+        }
+        else
+        {
+            // Remove WS_EX_TRANSPARENT
+            exStyle &= ~WS_EX_TRANSPARENT;
+        }
+        
+        SetWindowLongPtrW(m_hwnd, GWL_EXSTYLE, exStyle);
+    }
+}
+
+// ========== PHASE 1: MINI-MODE ==========
+
+void FloatingWindow::SetMiniMode(bool enabled)
+{
+    if (m_miniMode == enabled) return;
+    
+    m_miniMode = enabled;
+    RecalculateWindowSize();
+    Invalidate();
+}
+
+void FloatingWindow::ToggleMiniMode()
+{
+    SetMiniMode(!m_miniMode);
+}
 
 } // namespace NetworkMonitor
+
