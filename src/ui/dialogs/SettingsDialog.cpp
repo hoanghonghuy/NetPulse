@@ -1336,6 +1336,11 @@ void SettingsDialog::PopulateDialog(HWND hDlg)
     if (hFloatData) Button_SetCheck(hFloatData, m_configCopy.floatingShowDataToday ? BST_CHECKED : BST_UNCHECKED);
     SetCheckboxState(IDC_FLOATING_SHOW_DATA_TODAY_CHECK, m_configCopy.floatingShowDataToday);
 
+    // Initialize Sparkline checkbox
+    HWND hFloatSparkline = GetDlgItem(hDlg, IDC_FLOATING_SHOW_SPARKLINE_CHECK);
+    if (hFloatSparkline) Button_SetCheck(hFloatSparkline, m_configCopy.floatingShowSparkline ? BST_CHECKED : BST_UNCHECKED);
+    SetCheckboxState(IDC_FLOATING_SHOW_SPARKLINE_CHECK, m_configCopy.floatingShowSparkline);
+
     HWND hDataQuota = GetDlgItem(hDlg, IDC_DATA_USAGE_QUOTA_EDIT);
     if (hDataQuota)
     {
@@ -1548,6 +1553,7 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
         tempConfig.floatingShowRAM = GetCheckboxState(IDC_FLOATING_SHOW_RAM_CHECK);
         tempConfig.floatingShowPing = GetCheckboxState(IDC_FLOATING_SHOW_PING_CHECK);
         tempConfig.floatingShowDataToday = GetCheckboxState(IDC_FLOATING_SHOW_DATA_TODAY_CHECK);
+        tempConfig.floatingShowSparkline = GetCheckboxState(IDC_FLOATING_SHOW_SPARKLINE_CHECK);
     }
     else
     {
@@ -1556,6 +1562,7 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
         tempConfig.floatingShowRAM = (Button_GetCheck(GetDlgItem(hDlg, IDC_FLOATING_SHOW_RAM_CHECK)) == BST_CHECKED);
         tempConfig.floatingShowPing = (Button_GetCheck(GetDlgItem(hDlg, IDC_FLOATING_SHOW_PING_CHECK)) == BST_CHECKED);
         tempConfig.floatingShowDataToday = (Button_GetCheck(GetDlgItem(hDlg, IDC_FLOATING_SHOW_DATA_TODAY_CHECK)) == BST_CHECKED);
+        tempConfig.floatingShowSparkline = (Button_GetCheck(GetDlgItem(hDlg, IDC_FLOATING_SHOW_SPARKLINE_CHECK)) == BST_CHECKED);
     }
     
     HWND hDataQuota = GetDlgItem(hDlg, IDC_DATA_USAGE_QUOTA_EDIT);
@@ -1613,6 +1620,7 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
     if (tempConfig.floatingShowRAM != m_configCopy.floatingShowRAM) LogDebug(L"Settings Changed: floatingShowRAM");
     if (tempConfig.floatingShowPing != m_configCopy.floatingShowPing) LogDebug(L"Settings Changed: floatingShowPing");
     if (tempConfig.floatingShowDataToday != m_configCopy.floatingShowDataToday) LogDebug(L"Settings Changed: floatingShowDataToday");
+    if (tempConfig.floatingShowSparkline != m_configCopy.floatingShowSparkline) LogDebug(L"Settings Changed: floatingShowSparkline");
 
     // Capture old auto-start state before updating m_configCopy
     bool oldAutoStart = m_configCopy.autoStart;

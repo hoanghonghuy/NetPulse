@@ -104,6 +104,7 @@ bool ConfigManager::LoadConfig(AppConfig& config)
     config.floatingShowRAM = ReadDWORD(hKey, L"FloatingShowRAM", 1) != 0;
     config.floatingShowPing = ReadDWORD(hKey, L"FloatingShowPing", 1) != 0;
     config.floatingShowDataToday = ReadDWORD(hKey, L"FloatingShowDataToday", 1) != 0;
+    config.floatingShowSparkline = ReadDWORD(hKey, L"FloatingShowSparkline", 1) != 0;
 
     RegCloseKey(hKey);
     return true;
@@ -182,6 +183,7 @@ bool ConfigManager::SaveConfig(const AppConfig& config)
     success &= WriteDWORD(hKey, L"FloatingShowRAM", config.floatingShowRAM ? 1 : 0);
     success &= WriteDWORD(hKey, L"FloatingShowPing", config.floatingShowPing ? 1 : 0);
     success &= WriteDWORD(hKey, L"FloatingShowDataToday", config.floatingShowDataToday ? 1 : 0);
+    success &= WriteDWORD(hKey, L"FloatingShowSparkline", config.floatingShowSparkline ? 1 : 0);
 
     // Save auto-start setting (registry only)
     success &= WriteDWORD(hKey, L"AutoStartAsAdmin", config.autoStartAsAdmin ? 1 : 0);

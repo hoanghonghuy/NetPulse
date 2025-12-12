@@ -130,6 +130,14 @@ public:
     void SetMiniMode(bool enabled);
     bool IsMiniMode() const { return m_miniMode; }
     void ToggleMiniMode();
+    
+    // ========== PHASE 2 FEATURES ==========
+    
+    /**
+     * Enable/disable sparkline graph display
+     */
+    void SetShowSparkline(bool enabled);
+    bool IsShowSparkline() const { return m_showSparkline; }
 
 private:
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);

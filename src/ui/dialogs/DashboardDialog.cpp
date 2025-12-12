@@ -8,6 +8,8 @@
 #include "../../../resources/resource.h"
 #include <windowsx.h>
 #include <commctrl.h>
+#include <commdlg.h>
+#include <shellapi.h>
 #include <uxtheme.h>
 #include <algorithm>
 #include <sstream>
@@ -158,6 +160,13 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                 SetDlgItemTextW(hDlg, IDOK, closeText.c_str());
             }
 
+            // Export CSV button
+            std::wstring exportText = LoadStringResource(IDS_BTN_EXPORT_CSV);
+            if (!exportText.empty())
+            {
+                SetDlgItemTextW(hDlg, IDC_DASHBOARD_BUTTON_EXPORT, exportText.c_str());
+            }
+
             // Initialize list columns once
             HWND hList = GetDlgItem(hDlg, IDC_RECENT_LIST);
             if (hList)
@@ -264,6 +273,7 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                     }
                 };
 
+                makeOwnerDraw(GetDlgItem(hDlg, IDC_DASHBOARD_BUTTON_EXPORT));
                 makeOwnerDraw(GetDlgItem(hDlg, IDC_HISTORY_MANAGE));
                 makeOwnerDraw(GetDlgItem(hDlg, IDC_DASHBOARD_REFRESH));
                 makeOwnerDraw(GetDlgItem(hDlg, IDOK));
@@ -302,6 +312,53 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                     dlg.Show(hDlg, m_pConfig);
                     // After user modifies history, refresh dashboard view
                     PostMessageW(hDlg, WM_COMMAND, MAKEWPARAM(IDC_DASHBOARD_REFRESH, 0), 0);
+                    return TRUE;
+                }
+
+                case IDC_DASHBOARD_BUTTON_EXPORT:
+                {
+                    // Show save file dialog
+                    wchar_t filePath[MAX_PATH] = {};
+                    
+                    OPENFILENAMEW ofn = {};
+                    ofn.lStructSize = sizeof(ofn);
+                    ofn.hwndOwner = hDlg;
+                    ofn.lpstrFilter = L"CSV Files (*.csv)\0*.csv\0All Files\0*.*\0";
+                    ofn.lpstrFile = filePath;
+                    ofn.nMaxFile = MAX_PATH;
+                    ofn.lpstrDefExt = L"csv";
+                    ofn.Flags = OFN_OVERWRITEPROMPT | OFN_PATHMUSTEXIST;
+                    
+                    // Default filename with date
+                    std::time_t now = std::time(nullptr);
+                    std::tm local = {};
+                    localtime_s(&local, &now);
+                    wchar_t defaultName[64];
+                    wcsftime(defaultName, 64, L"network_history_%Y%m%d.csv", &local);
+                    wcscpy_s(filePath, defaultName);
+                    
+                    if (GetSaveFileNameW(&ofn))
+                    {
+                        // Export to CSV
+                        HistoryLogger& logger = HistoryLogger::Instance();
+                        const std::wstring* ifaceFilter = nullptr;
+                        if (m_pConfig && !m_pConfig->selectedInterface.empty())
+                        {
+                            ifaceFilter = &m_pConfig->selectedInterface;
+                        }
+                        
+                        if (logger.ExportToCSV(filePath, ifaceFilter, 0))
+                        {
+                            // Success - open folder in explorer
+                            std::wstring folder = filePath;
+                            size_t lastSlash = folder.find_last_of(L"\\/");
+                            if (lastSlash != std::wstring::npos)
+                            {
+                                folder = folder.substr(0, lastSlash);
+                            }
+                            ShellExecuteW(nullptr, L"explore", folder.c_str(), nullptr, nullptr, SW_SHOW);
+                        }
+                    }
                     return TRUE;
                 }
 
@@ -354,7 +411,7 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
             if (m_pConfig && m_pConfig->darkTheme && pDrawItem->CtlType == ODT_BUTTON)
             {
                 UINT id = pDrawItem->CtlID;
-                if (id == IDC_HISTORY_MANAGE || id == IDC_DASHBOARD_REFRESH || id == IDOK)
+                if (id == IDC_DASHBOARD_BUTTON_EXPORT || id == IDC_HISTORY_MANAGE || id == IDC_DASHBOARD_REFRESH || id == IDOK)
                 {
                     HDC hdc = pDrawItem->hDC;
                     RECT rc = pDrawItem->rcItem;

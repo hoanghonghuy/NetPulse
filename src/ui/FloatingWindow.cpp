@@ -679,5 +679,16 @@ void FloatingWindow::ToggleMiniMode()
     SetMiniMode(!m_miniMode);
 }
 
+// ========== PHASE 2: SPARKLINE ==========
+
+void FloatingWindow::SetShowSparkline(bool enabled)
+{
+    if (m_showSparkline == enabled) return;
+    
+    m_showSparkline = enabled;
+    RecalculateWindowSize();
+    Invalidate();
+}
+
 } // namespace NetworkMonitor
 
