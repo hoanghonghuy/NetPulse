@@ -32,3 +32,4 @@ docs/
 notes/
 
 .agent/
+build_log*.txt
