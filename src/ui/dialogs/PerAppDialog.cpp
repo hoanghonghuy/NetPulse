@@ -147,6 +147,29 @@ INT_PTR PerAppDialog::InstanceDialogProc(HWND hDlg, UINT message, WPARAM wParam,
         return TRUE;
 
     case WM_CTLCOLORDLG:
+        if (m_pConfig && m_pConfig->darkTheme)
+        {
+            HDC hdc = reinterpret_cast<HDC>(wParam);
+            HBRUSH hBrush = DialogThemeHelper::HandleControlColor(hdc, true);
+            
+            // Draw border around ListView (replaced system border)
+            if (m_hList)
+            {
+                 RECT rcList;
+                 GetWindowRect(m_hList, &rcList);
+                 MapWindowPoints(NULL, hDlg, (LPPOINT)&rcList, 2);
+                 InflateRect(&rcList, 1, 1);
+                 
+                 // Use lighter border for better visibility in dark mode
+                 HBRUSH borderBrush = CreateSolidBrush(RGB(100, 100, 100));
+                 FrameRect(hdc, &rcList, borderBrush);
+                 DeleteObject(borderBrush);
+            }
+            
+            return reinterpret_cast<INT_PTR>(hBrush);
+        }
+        break;
+
     case WM_CTLCOLORSTATIC:
     case WM_CTLCOLORBTN:
     case WM_CTLCOLOREDIT:
@@ -182,8 +205,20 @@ void PerAppDialog::InitializeDialog(HWND hDlg)
     // Determine theme from config (not system theme!)
     bool darkTheme = (m_pConfig && m_pConfig->darkTheme);
     
+    // Enable dark mode for the window FIRST (required before DwmSetWindowAttribute)
+    if (darkTheme)
+    {
+        ThemeHelper::AllowDarkModeForWindow(hDlg, true);
+    }
+    
+    // Apply dark title bar (like Dashboard, Settings dialogs)
+    ThemeHelper::ApplyDarkTitleBar(hDlg, darkTheme);
+    
     // Apply DialogThemeHelper for consistent theming with Settings/Dashboard
-    DialogThemeHelper::ApplyToDialog(hDlg, darkTheme);
+    // DialogThemeHelper::ApplyToDialog(hDlg, darkTheme); // REMOVED: Breaks dark title bar
+    if (darkTheme) {
+        DialogThemeHelper::SetThinWindowBorder(hDlg);
+    }
     
     // Get list view handle
     m_hList = GetDlgItem(hDlg, IDC_PERAPP_LIST);
@@ -192,52 +227,61 @@ void PerAppDialog::InitializeDialog(HWND hDlg)
         return;
     }
 
-    // Set extended list view styles
+    // Set extended list view styles - Remove GRIDLINES for cleaner modern look
     ListView_SetExtendedListViewStyle(m_hList, 
-        LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER | LVS_EX_GRIDLINES | LVS_EX_HEADERDRAGDROP);
+        LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER | LVS_EX_HEADERDRAGDROP);
 
     // Create image list for icons
     m_hImageList = ImageList_Create(16, 16, ILC_COLOR32 | ILC_MASK, 10, 10);
     ListView_SetImageList(m_hList, m_hImageList, LVSIL_SMALL);
 
+
+
+
     // Add columns
     LVCOLUMNW lvc = {0};
-    lvc.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM;
+    lvc.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM | LVCF_FMT; // Added LVCF_FMT
 
     lvc.iSubItem = 0;
     std::wstring colApp = LoadStringResource(IDS_PERAPP_COL_APPLICATION);
     lvc.pszText = const_cast<LPWSTR>(colApp.c_str());
     lvc.cx = 160;
+    lvc.fmt = LVCFMT_LEFT;
     ListView_InsertColumn(m_hList, 0, &lvc);
 
     lvc.iSubItem = 1;
     std::wstring colPid = LoadStringResource(IDS_PERAPP_COL_PID);
     lvc.pszText = const_cast<LPWSTR>(colPid.c_str());
     lvc.cx = 55;
+    lvc.fmt = LVCFMT_RIGHT; // Numeric -> Right
     ListView_InsertColumn(m_hList, 1, &lvc);
 
     lvc.iSubItem = 2;
     std::wstring colTcp = LoadStringResource(IDS_PERAPP_COL_TCP);
     lvc.pszText = const_cast<LPWSTR>(colTcp.c_str());
     lvc.cx = 45;
+    lvc.fmt = LVCFMT_RIGHT;
     ListView_InsertColumn(m_hList, 2, &lvc);
 
     lvc.iSubItem = 3;
     std::wstring colUdp = LoadStringResource(IDS_PERAPP_COL_UDP);
     lvc.pszText = const_cast<LPWSTR>(colUdp.c_str());
     lvc.cx = 45;
+    lvc.fmt = LVCFMT_RIGHT;
     ListView_InsertColumn(m_hList, 3, &lvc);
 
     lvc.iSubItem = 4;
     std::wstring colSent = LoadStringResource(IDS_PERAPP_COL_SENT);
     lvc.pszText = const_cast<LPWSTR>(colSent.c_str());
     lvc.cx = 80;
+    lvc.fmt = LVCFMT_RIGHT;
     ListView_InsertColumn(m_hList, 4, &lvc);
 
     lvc.iSubItem = 5;
     std::wstring colReceived = LoadStringResource(IDS_PERAPP_COL_RECEIVED);
     lvc.pszText = const_cast<LPWSTR>(colReceived.c_str());
     lvc.cx = 80;
+    lvc.fmt = LVCFMT_RIGHT;
     ListView_InsertColumn(m_hList, 5, &lvc);
 
     // NOW apply theme (after ListView is created and columns added)
@@ -356,7 +400,8 @@ void PerAppDialog::ApplyTheme(HWND hDlg)
 {
     if (m_pConfig && m_pConfig->darkTheme)
     {
-        DialogThemeHelper::ApplyToDialog(hDlg, true);
+        // Apply thin window border (fixes white frame issue)
+        DialogThemeHelper::SetThinWindowBorder(hDlg);
         
         // Apply dark theme to list view
         if (m_hList)
@@ -366,18 +411,25 @@ void PerAppDialog::ApplyTheme(HWND hDlg)
             // Use DarkMode_Explorer theme for dark scrollbars
             SetWindowTheme(m_hList, L"DarkMode_Explorer", nullptr);
             
+            // Remove border styles to eliminate white frame
+            LONG_PTR style = GetWindowLongPtrW(m_hList, GWL_STYLE);
+            style &= ~WS_BORDER;
+            SetWindowLongPtrW(m_hList, GWL_STYLE, style);
+            
+            LONG_PTR exStyle = GetWindowLongPtrW(m_hList, GWL_EXSTYLE);
+            exStyle &= ~WS_EX_CLIENTEDGE;
+            SetWindowLongPtrW(m_hList, GWL_EXSTYLE, exStyle);
+            
+            // Force style update
+            SetWindowPos(m_hList, nullptr, 0, 0, 0, 0, 
+                         SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+            
             // Set explicit colors for ListView
             ListView_SetBkColor(m_hList, RGB(30, 30, 30));      // Dark background
             ListView_SetTextBkColor(m_hList, RGB(30, 30, 30));  // Dark text background
             ListView_SetTextColor(m_hList, RGB(220, 220, 220)); // Light text
             
-            // Apply dark theme to header control - DON'T use SetWindowTheme as it blocks custom draw
-            HWND hHeader = ListView_GetHeader(m_hList);
-            if (hHeader)
-            {
-                ThemeHelper::ApplyDarkThemeToControl(hHeader, true);
-                // DO NOT call SetWindowTheme here - it prevents NM_CUSTOMDRAW from working
-            }
+            // Note: Header subclass is set in InitializeDialog, no need to duplicate here
         }
     }
     else
@@ -391,6 +443,17 @@ void PerAppDialog::ApplyTheme(HWND hDlg)
             // Reset ListView to light theme
             ThemeHelper::ApplyDarkThemeToControl(m_hList, false);
             SetWindowTheme(m_hList, L"Explorer", nullptr);
+            
+            // Restore borders for light mode
+            LONG_PTR style = GetWindowLongPtrW(m_hList, GWL_STYLE);
+            style |= WS_BORDER;
+            SetWindowLongPtrW(m_hList, GWL_STYLE, style);
+            
+            // Note: WS_EX_CLIENTEDGE is usually default for SysListView32 but not strictly required if WS_BORDER looks ok.
+            // Let's rely on default behavior or just add it back if needed.
+            
+            SetWindowPos(m_hList, nullptr, 0, 0, 0, 0, 
+                         SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
             
             ListView_SetBkColor(m_hList, RGB(255, 255, 255));      // White background
             ListView_SetTextBkColor(m_hList, RGB(255, 255, 255));  // White text background
@@ -458,7 +521,16 @@ LRESULT CALLBACK PerAppDialog::HeaderSubclassProc(HWND hwnd, UINT msg, WPARAM wP
             RECT textRect = itemRect;
             textRect.left += 5;   // Small padding
             textRect.right -= 5;
-            DrawTextW(hdc, text, -1, &textRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+            
+            // Determine alignment based on column index
+            UINT format = DT_LEFT; // Default for app name
+            // Align numeric columns to right (matches column definition)
+            if (i > 0) 
+            {
+                format = DT_RIGHT; 
+            }
+            
+            DrawTextW(hdc, text, -1, &textRect, format | DT_VCENTER | DT_SINGLELINE);
         }
         
         EndPaint(hwnd, &ps);

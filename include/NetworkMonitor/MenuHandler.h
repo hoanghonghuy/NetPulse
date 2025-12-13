@@ -45,6 +45,7 @@ public:
     void SetShowSettingsCallback(ShowDialogCallback callback);
     void SetShowDashboardCallback(ShowDialogCallback callback);
     void SetShowAboutCallback(ShowDialogCallback callback);
+    void SetShowSpeedTestCallback(ShowDialogCallback callback);
     void SetExitCallback(ExitCallback callback);
     void SetUpdateTimerCallback(UpdateTimerCallback callback);
     void SetToggleFloatingWindowCallback(ToggleFloatingWindowCallback callback);
@@ -66,6 +67,7 @@ private:
     ShowDialogCallback m_showSettingsCallback;
     ShowDialogCallback m_showDashboardCallback;
     ShowDialogCallback m_showAboutCallback;
+    ShowDialogCallback m_showSpeedTestCallback;
     ExitCallback m_exitCallback;
     UpdateTimerCallback m_updateTimerCallback;
     ToggleFloatingWindowCallback m_toggleFloatingWindowCallback;

@@ -5,6 +5,10 @@ All notable changes to NetworkMonitor will be documented in this file.
 ## [1.4.0] - 2025-12-13
 
 ### Added
+- **VPN & Proxy Detection (Phase 3)**: Automatically detects VPN connections and proxy settings.
+  - Shows VPN/Proxy indicator in Floating Window with color-coded status.
+  - Displays current public IP address with periodic updates (configurable interval).
+  - Detects popular VPN adapters: OpenVPN, WireGuard, NordVPN, Tailscale, etc.
 - **Sparkline Visualization**: Real-time network traffic graph in Floating Window.
 - **Tray Icon Animation**: Visual pulse effect when traffic exceeds configurable threshold.
 - **Chart Export**: Export Dashboard network chart as BMP image (located next to CSV export).

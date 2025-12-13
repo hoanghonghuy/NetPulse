@@ -233,8 +233,21 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                     ListView_SetTextBkColor(hList, RGB(24, 24, 24));
                     ListView_SetTextColor(hList, DialogThemeHelper::DARK_TEXT);
 
-                    // Apply dark theme with dark scrollbars
+                    // Apply dark theme with dark scrollbars (DarkMode_Explorer)
                     ThemeHelper::ApplyDarkThemeToControl(hList, true);
+                    
+                    // Remove border styles to eliminate white frame
+                    LONG_PTR style = GetWindowLongPtrW(hList, GWL_STYLE);
+                    style &= ~WS_BORDER;
+                    SetWindowLongPtrW(hList, GWL_STYLE, style);
+                    
+                    LONG_PTR exStyle = GetWindowLongPtrW(hList, GWL_EXSTYLE);
+                    exStyle &= ~WS_EX_CLIENTEDGE;
+                    SetWindowLongPtrW(hList, GWL_EXSTYLE, exStyle);
+                    
+                    // Force style update
+                    SetWindowPos(hList, nullptr, 0, 0, 0, 0, 
+                                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 
                     // Subclass the list header so we can paint it fully dark.
                     HWND hHeader = ListView_GetHeader(hList);
@@ -255,10 +268,30 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                     }
 
                 }
+                
+                // Apply dark theme to chart control
+                if (m_pConfig && m_pConfig->darkTheme)
+                {
+                    HWND hChart = GetDlgItem(hDlg, IDC_DASHBOARD_CHART);
+                    if (hChart)
+                    {
+                        // Remove system border styles
+                        LONG_PTR style = GetWindowLongPtrW(hChart, GWL_STYLE);
+                        style &= ~(WS_BORDER | SS_SUNKEN);
+                        SetWindowLongPtrW(hChart, GWL_STYLE, style);
+                        
+                        SetWindowPos(hChart, nullptr, 0, 0, 0, 0, 
+                                     SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+                                     
+                        // Note: Custom draw already handles drawing a dark border
+                    }
+                }
             }
+
 
             // For dark theme, make bottom buttons owner-drawn so we can
             // render dark backgrounds consistently.
+            
             if (m_pConfig && m_pConfig->darkTheme)
             {
                 auto makeOwnerDraw = [](HWND hButton)
@@ -489,6 +522,23 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                 SetTextColor(hdc, DialogThemeHelper::DARK_TEXT);
                 SetBkMode(hdc, TRANSPARENT);
 
+                // Draw border around ListView (replaced system border)
+                if (message == WM_CTLCOLORDLG)
+                {
+                    HWND hList = GetDlgItem(hDlg, IDC_RECENT_LIST);
+                    if (hList)
+                    {
+                         RECT rcList;
+                         GetWindowRect(hList, &rcList);
+                         MapWindowPoints(NULL, hDlg, (LPPOINT)&rcList, 2);
+                         InflateRect(&rcList, 1, 1);
+                         
+                         HBRUSH borderBrush = CreateSolidBrush(DialogThemeHelper::DARK_BORDER);
+                         FrameRect(hdc, &rcList, borderBrush);
+                         DeleteObject(borderBrush);
+                    }
+                }
+
                 return reinterpret_cast<INT_PTR>(darkBrush);
             }
             break;
@@ -511,7 +561,9 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
             if (m_pConfig && m_pConfig->darkTheme && pDrawItem->CtlType == ODT_BUTTON)
             {
                 UINT id = pDrawItem->CtlID;
-                if (id == IDC_DASHBOARD_BUTTON_EXPORT || id == IDC_DASHBOARD_EXPORT_CHART || id == IDC_HISTORY_MANAGE || id == IDC_DASHBOARD_REFRESH || id == IDOK)
+                if (id == IDC_DASHBOARD_BUTTON_EXPORT || id == IDC_DASHBOARD_EXPORT_CHART || 
+                    id == IDC_HISTORY_MANAGE || id == IDC_DASHBOARD_REFRESH || id == IDOK ||
+                    id == IDC_SPEED_TEST_BUTTON)
                 {
                     HDC hdc = pDrawItem->hDC;
                     RECT rc = pDrawItem->rcItem;
@@ -912,3 +964,4 @@ LRESULT CALLBACK DashboardDialog::HeaderWndProc(HWND hwnd, UINT msg, WPARAM wPar
 }
 
 } // namespace NetworkMonitor
+

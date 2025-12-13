@@ -6,22 +6,23 @@ This document tracks planned features and improvements for future development.
 
 ## 🔥 New Features
 
-### 1. VPN & Proxy Detection
-- [ ] Detect when connected via VPN/Proxy and display indicator
-- [ ] Display current public IP (periodic update)
-- **Priority**: Medium
+### 1. VPN & Proxy Detection (Phase 3)
+- [x] ✅ Detect when connected via VPN/Proxy and display indicator
+- [x] ✅ Display current public IP (periodic update)
+- **Priority**: High (Phase 3)
 - **Complexity**: Medium
 
-### 2. Integrated Bandwidth Speed Test
+### 2. Integrated Bandwidth Speed Test (Phase 3)
 - [ ] "Test Speed" button in Dashboard to test actual speed
 - [ ] Save speed test history for comparison
-- **Priority**: Medium
+- **Priority**: High (Phase 3)
 - **Complexity**: High
 
 ### 3. Advanced Network Graphs
 - [x] ✅ Live real-time chart in Floating Window (mini graph/sparkline) (Phase 2)
-- [ ] Sparklines for recent 30s/1m/5m speeds
-- [x] ✅ Export chart to PNG/CSV (Phase 2)
+- [x] ✅ Sparkline Settings (Phase 2)
+- [x] ✅ Export chart to BMP (Phase 2)
+- [ ] Network Quality Score (NQS) (Phase 3)
 - **Priority**: High
 - **Complexity**: Medium
 

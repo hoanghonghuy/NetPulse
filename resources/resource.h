@@ -56,6 +56,7 @@
 #define IDD_HISTORY_MANAGE_DIALOG       304
 #define IDD_MESSAGE_DIALOG              305
 #define IDD_PERAPP_DIALOG               306
+#define IDD_SPEED_TEST_DIALOG           307
 
 // Per-App Dialog Controls
 #define IDC_PERAPP_LIST                 3060
@@ -310,6 +311,42 @@
 // Export Chart button
 #define IDC_EXPORT_CHART_BUTTON         2160
 #define IDS_EXPORT_CHART_BUTTON         2161
+
+// Phase 3: VPN/Proxy Detection settings
+#define IDC_FLOATING_SHOW_VPN_CHECK     2170
+#define IDC_FLOATING_SHOW_IP_CHECK      2171
+#define IDS_FLOATING_SHOW_VPN_STATUS    2180
+#define IDS_FLOATING_SHOW_PUBLIC_IP     2181
+
+// Phase 3: Speed Test
+#define IDC_SPEED_TEST_BUTTON           2200
+#define IDC_SPEED_TEST_PROGRESS         2201
+#define IDC_SPEED_DOWNLOAD_LABEL        2202
+#define IDC_SPEED_DOWNLOAD_VALUE        2203
+#define IDC_SPEED_UPLOAD_LABEL          2204
+#define IDC_SPEED_UPLOAD_VALUE          2205
+#define IDC_SPEED_PING_LABEL            2206
+#define IDC_SPEED_PING_VALUE            2207
+#define IDC_SPEED_HISTORY_BUTTON        2208
+#define IDC_SPEED_STATUS_LABEL          2209
+#define IDC_SPEED_HISTORY_LIST          2210
+#define IDC_SPEED_START_BUTTON          2211
+#define IDC_SPEED_RESULT_GROUP          2212
+
+#define IDS_SPEED_TEST_BUTTON           2220
+#define IDS_SPEED_TESTING               2221
+#define IDS_SPEED_DOWNLOAD              2222
+#define IDS_SPEED_UPLOAD                2223
+#define IDS_SPEED_PING                  2224
+#define IDS_SPEED_HISTORY               2225
+#define IDS_SPEED_TEST_FAILED           2226
+#define IDS_SPEED_TEST_COMPLETE         2227
+#define IDS_SPEED_CANCEL                2228
+#define IDS_SPEED_TEST_DIALOG_TITLE     2229
+
+// Menu item for Speed Test
+#define IDM_SPEED_TEST                  2250
+#define IDS_MENU_SPEED_TEST             2251
 
 // ============================================================================
 // STANDARD DIALOG IDS

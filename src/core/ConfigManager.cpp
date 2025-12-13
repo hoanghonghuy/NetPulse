@@ -113,6 +113,11 @@ bool ConfigManager::LoadConfig(AppConfig& config)
     // Sparkline Time Range
     config.sparklineTimeRange = static_cast<int>(ReadDWORD(hKey, L"SparklineTimeRange", 0));
 
+    // Phase 3: VPN/Proxy Detection
+    config.floatingShowVpnStatus = ReadDWORD(hKey, L"FloatingShowVpnStatus", 1) != 0;
+    config.floatingShowPublicIP = ReadDWORD(hKey, L"FloatingShowPublicIP", 1) != 0;
+    config.publicIPUpdateIntervalMs = ReadDWORD(hKey, L"PublicIPUpdateIntervalMs", 300000);  // 5 min default
+
     RegCloseKey(hKey);
     return true;
 }
@@ -198,6 +203,11 @@ bool ConfigManager::SaveConfig(const AppConfig& config)
     
     // Sparkline Time Range
     success &= WriteDWORD(hKey, L"SparklineTimeRange", static_cast<DWORD>(config.sparklineTimeRange));
+
+    // Phase 3: VPN/Proxy Detection
+    success &= WriteDWORD(hKey, L"FloatingShowVpnStatus", config.floatingShowVpnStatus ? 1 : 0);
+    success &= WriteDWORD(hKey, L"FloatingShowPublicIP", config.floatingShowPublicIP ? 1 : 0);
+    success &= WriteDWORD(hKey, L"PublicIPUpdateIntervalMs", config.publicIPUpdateIntervalMs);
 
     // Save auto-start setting (registry only)
     success &= WriteDWORD(hKey, L"AutoStartAsAdmin", config.autoStartAsAdmin ? 1 : 0);

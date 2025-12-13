@@ -71,6 +71,11 @@ public:
     void ShowPerApp();
 
     /**
+     * Show Speed Test dialog
+     */
+    void ShowSpeedTest();
+
+    /**
      * Show About dialog
      */
     void ShowAbout();
@@ -93,6 +98,7 @@ private:
     HWND m_hDashboardDialog;
     HWND m_hHistoryDialog;
     HWND m_hPerAppDialog;
+    HWND m_hSpeedTestDialog;
 };
 
 } // namespace NetworkMonitor

@@ -72,6 +72,7 @@ constexpr int MAX_HISTORY_AUTO_TRIM_DAYS = 365;
 // Timer IDs
 #define TIMER_UPDATE_NETWORK 3001
 #define TIMER_PING 3002
+#define TIMER_VPN_UPDATE 3003  // Phase 3: VPN/Proxy detection
 
 // Hotkey IDs
 #define HOTKEY_TOGGLE_OVERLAY 4001
@@ -202,6 +203,11 @@ struct AppConfig
     // Sparkline Time Range (0=30s, 1=1m, 2=5m)
     int sparklineTimeRange;          // Time range for sparkline display
 
+    // Phase 3 Features - VPN/Proxy Detection
+    bool floatingShowVpnStatus;      // Show VPN indicator in floating window
+    bool floatingShowPublicIP;       // Show public IP in floating window
+    UINT publicIPUpdateIntervalMs;   // Public IP update interval (default: 5 min)
+
     AppConfig()
         : updateInterval(DEFAULT_UPDATE_INTERVAL)
         , displayUnit(SpeedUnit::KiloBytesPerSecond)
@@ -243,6 +249,9 @@ struct AppConfig
         , trayAnimationEnabled(true)    // Enable animation by default
         , trayAnimationThresholdKB(1024) // 1024 KB/s = 1 MB/s
         , sparklineTimeRange(0)         // Default 30s
+        , floatingShowVpnStatus(true)   // Show VPN status by default
+        , floatingShowPublicIP(true)    // Show public IP by default
+        , publicIPUpdateIntervalMs(300000) // 5 minutes default
     {
     }
 
@@ -288,7 +297,10 @@ struct AppConfig
                floatingShowSparkline == other.floatingShowSparkline &&
                trayAnimationEnabled == other.trayAnimationEnabled &&
                trayAnimationThresholdKB == other.trayAnimationThresholdKB &&
-               sparklineTimeRange == other.sparklineTimeRange;
+               sparklineTimeRange == other.sparklineTimeRange &&
+               floatingShowVpnStatus == other.floatingShowVpnStatus &&
+               floatingShowPublicIP == other.floatingShowPublicIP &&
+               publicIPUpdateIntervalMs == other.publicIPUpdateIntervalMs;
     }
 
     bool operator!=(const AppConfig& other) const

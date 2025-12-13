@@ -4,6 +4,7 @@
 #include "NetworkMonitor/DashboardDialog.h"
 #include "NetworkMonitor/HistoryDialog.h"
 #include "NetworkMonitor/PerAppDialog.h"
+#include "NetworkMonitor/SpeedTestDialog.h"
 #include "NetworkMonitor/HistoryLogger.h"
 #include "NetworkMonitor/ThemeHelper.h"
 #include "NetworkMonitor/UpdateCoordinator.h"
@@ -23,6 +24,7 @@ DialogManager::DialogManager()
     , m_hDashboardDialog(nullptr)
     , m_hHistoryDialog(nullptr)
     , m_hPerAppDialog(nullptr)
+    , m_hSpeedTestDialog(nullptr)
 {
 }
 
@@ -264,6 +266,27 @@ void DialogManager::ShowPerApp()
     dlg.Show(m_parentWindow, m_pConfig);
 
     m_hPerAppDialog = nullptr;
+}
+
+void DialogManager::ShowSpeedTest()
+{
+    if (!m_pConfig)
+    {
+        return;
+    }
+
+    // If dialog is already open, bring it to foreground
+    if (m_hSpeedTestDialog && IsWindow(m_hSpeedTestDialog))
+    {
+        BringDialogToForeground(m_hSpeedTestDialog);
+        return;
+    }
+
+    SpeedTestDialog dlg;
+    dlg.SetDialogHandleStorage(&m_hSpeedTestDialog);
+    dlg.Show(m_parentWindow, m_pConfig);
+
+    m_hSpeedTestDialog = nullptr;
 }
 
 void DialogManager::ShowAbout()

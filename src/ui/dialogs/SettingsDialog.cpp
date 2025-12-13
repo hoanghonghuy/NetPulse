@@ -17,16 +17,138 @@ namespace NetworkMonitor
 static WNDPROC s_originalTabProc = nullptr;
 static LRESULT CALLBACK DarkTabProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    if (msg == WM_ERASEBKGND)
+    // Handle WM_PAINT to completely replace system drawing
+    if (msg == WM_PAINT)
     {
-        HDC hdc = reinterpret_cast<HDC>(wParam);
-        RECT rc;
-        GetClientRect(hwnd, &rc);
-        HBRUSH hBrush = CreateSolidBrush(DialogThemeHelper::DARK_BACKGROUND);
-        FillRect(hdc, &rc, hBrush);
-        DeleteObject(hBrush);
-        return TRUE;
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hwnd, &ps);
+        
+        // 1. Fill entire background with dark color
+        RECT rcClient;
+        GetClientRect(hwnd, &rcClient);
+        HBRUSH bgBrush = CreateSolidBrush(DialogThemeHelper::DARK_BACKGROUND);
+        FillRect(hdc, &rcClient, bgBrush);
+        DeleteObject(bgBrush);
+
+        // 2. Calculate drawing areas
+        RECT displayRect = rcClient;
+        TabCtrl_AdjustRect(hwnd, FALSE, &displayRect);
+        
+        int tabCount = TabCtrl_GetItemCount(hwnd);
+        int sel = TabCtrl_GetCurSel(hwnd);
+        
+        COLORREF borderColor = DialogThemeHelper::DARK_BORDER; // RGB(58, 60, 67)
+        HBRUSH borderBrush = CreateSolidBrush(borderColor);
+        
+        // 3. Draw Page Border (Content Area) - STRICT 1px THIN
+        // We draw 1px line *around* the displayRect, not filling the whole margin.
+        
+        // Left (1px line at displayRect.left - 1)
+        RECT leftBorder = { displayRect.left - 1, displayRect.top, displayRect.left, displayRect.bottom };
+        FillRect(hdc, &leftBorder, borderBrush);
+        
+        // Right (1px line at displayRect.right)
+        RECT rightBorder = { displayRect.right, displayRect.top, displayRect.right + 1, displayRect.bottom };
+        FillRect(hdc, &rightBorder, borderBrush);
+        
+        // Bottom (1px line at displayRect.bottom)
+        RECT bottomBorder = { displayRect.left - 1, displayRect.bottom, displayRect.right + 1, displayRect.bottom + 1 };
+        FillRect(hdc, &bottomBorder, borderBrush);
+        
+        // Top - segments skipping active tab
+        RECT selRect = {0};
+        if (sel >= 0 && sel < tabCount)
+        {
+            TabCtrl_GetItemRect(hwnd, sel, &selRect);
+        }
+        
+        // Top Left Segment
+        if (selRect.left > displayRect.left)
+        {
+            // Draw from content left edge to selected tab left edge
+            RECT topLeftBorder = { displayRect.left - 1, displayRect.top - 1, selRect.left, displayRect.top };
+            FillRect(hdc, &topLeftBorder, borderBrush);
+        }
+        else if (selRect.left <= displayRect.left)
+        {
+             // If selected tab starts before or at content edge, essentially no top-left border 
+             // (or just the tiny corner pixel if needed, but usually fine to skip)
+        }
+        
+        // Top Right Segment
+        if (selRect.right < displayRect.right)
+        {
+            // Draw from selected tab right to content right edge
+            RECT topRightBorder = { selRect.right, displayRect.top - 1, displayRect.right + 1, displayRect.top };
+            FillRect(hdc, &topRightBorder, borderBrush);
+        }
+
+        DeleteObject(borderBrush);
+        
+        // 4. Draw Tabs
+        HFONT hFont = (HFONT)SendMessage(hwnd, WM_GETFONT, 0, 0);
+        HGDIOBJ oldFont = SelectObject(hdc, hFont);
+        
+        SetBkMode(hdc, TRANSPARENT);
+        
+        for (int i = 0; i < tabCount; ++i)
+        {
+            RECT rcItem;
+            TabCtrl_GetItemRect(hwnd, i, &rcItem);
+            
+            bool isSel = (i == sel);
+            // Match Unikey: Selected tab matches content background (DARK_BACKGROUND)
+            // Unselected tab is slightly lighter/different (DARK_PANEL) to stand out as "behind"
+            COLORREF itemBg = isSel ? DialogThemeHelper::DARK_BACKGROUND : DialogThemeHelper::DARK_PANEL; 
+            COLORREF textColor = DialogThemeHelper::DARK_TEXT;
+            
+            // Draw Tab Background
+            HBRUSH itemBrush = CreateSolidBrush(itemBg);
+            FillRect(hdc, &rcItem, itemBrush);
+            DeleteObject(itemBrush);
+            
+            // Draw Tab Border
+            if (isSel)
+            {
+                 HBRUSH tabBorderBrush = CreateSolidBrush(borderColor);
+                 // Left
+                 RECT l = { rcItem.left, rcItem.top, rcItem.left + 1, rcItem.bottom + 1 }; // Extend to bottom to cover connection point partially? No, keep standard.
+                 FillRect(hdc, &l, tabBorderBrush);
+                 // Top
+                 RECT t = { rcItem.left, rcItem.top, rcItem.right, rcItem.top + 1 };
+                 FillRect(hdc, &t, tabBorderBrush);
+                 // Right
+                 RECT r = { rcItem.right - 1, rcItem.top, rcItem.right, rcItem.bottom + 1 };
+                 FillRect(hdc, &r, tabBorderBrush);
+                 DeleteObject(tabBorderBrush);
+                 
+                 // Remove blue highlight to match Unikey's flat style
+            }
+            else
+            {
+                 // Unselected tabs also need a border to look defined
+                 HBRUSH tabBorderBrush = CreateSolidBrush(borderColor);
+                 FrameRect(hdc, &rcItem, tabBorderBrush);
+                 DeleteObject(tabBorderBrush);
+            }
+            
+            // Draw Text
+            wchar_t text[64] = {0};
+            TCITEMW tci = { TCIF_TEXT };
+            tci.pszText = text;
+            tci.cchTextMax = 64;
+            TabCtrl_GetItem(hwnd, i, &tci);
+            
+            SetTextColor(hdc, textColor);
+            DrawTextW(hdc, text, -1, &rcItem, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+        }
+        
+        SelectObject(hdc, oldFont);
+        EndPaint(hwnd, &ps);
+        return 0;
     }
+    
+    // For other messages, use default
     return CallWindowProc(s_originalTabProc, hwnd, msg, wParam, lParam);
 }
 
@@ -65,22 +187,23 @@ static LRESULT CALLBACK DarkComboBoxProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
                 FrameRect(hdc, &btnRect, hBorder);
                 DeleteObject(hBorder);
 
-                // Draw dropdown arrow (triangle pointing down)
+                // Draw dropdown arrow (chevron pointing down)
                 int cx = (btnRect.left + btnRect.right) / 2;
                 int cy = (btnRect.top + btnRect.bottom) / 2;
 
                 POINT arrow[3] = {
-                    {cx - 4, cy - 2},
-                    {cx + 4, cy - 2},
-                    {cx, cy + 3}
+                    {cx - 3, cy - 1},
+                    {cx, cy + 2},
+                    {cx + 3, cy - 1}
                 };
 
+                // Use 2px pen for better visibility/boldness
                 HBRUSH arrowBrush = CreateSolidBrush(arrowColor);
-                HPEN arrowPen = CreatePen(PS_SOLID, 1, arrowColor);
+                HPEN arrowPen = CreatePen(PS_SOLID, 2, arrowColor);
                 HBRUSH oldBrush = (HBRUSH)SelectObject(hdc, arrowBrush);
                 HPEN oldPen = (HPEN)SelectObject(hdc, arrowPen);
 
-                Polygon(hdc, arrow, 3);
+                Polyline(hdc, arrow, 3);
 
                 SelectObject(hdc, oldBrush);
                 SelectObject(hdc, oldPen);
@@ -486,6 +609,8 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_PING_CHECK));
                 makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_DATA_TODAY_CHECK));
                 makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_SPARKLINE_CHECK));
+                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_VPN_CHECK));
+                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_IP_CHECK));
                 makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_TRAY_ANIMATION_CHECK));
 
                 // Clear default button to prevent the system from drawing an
@@ -575,6 +700,8 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 case IDC_FLOATING_SHOW_PING_CHECK:
                 case IDC_FLOATING_SHOW_DATA_TODAY_CHECK:
                 case IDC_FLOATING_SHOW_SPARKLINE_CHECK:
+                case IDC_FLOATING_SHOW_VPN_CHECK:
+                case IDC_FLOATING_SHOW_IP_CHECK:
                 case IDC_TRAY_ANIMATION_CHECK:
                 {
                     if (HIWORD(wParam) == BN_CLICKED)
@@ -693,7 +820,13 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                     (ctrlId == IDC_DISPLAY_UNIT_COMBO) ||
                     (ctrlId == IDC_INTERFACE_COMBO) ||
                     (ctrlId == IDC_HISTORY_AUTO_TRIM_COMBO) ||
-                    (ctrlId == IDC_THEME_MODE_COMBO);
+                    (ctrlId == IDC_THEME_MODE_COMBO) ||
+                    (ctrlId == IDC_PING_INTERVAL_COMBO) ||
+                    (ctrlId == IDC_HOTKEY_COMBO) ||
+                    (ctrlId == IDC_OVERLAY_FONT_SIZE_COMBO) ||
+                    (ctrlId == IDC_OVERLAY_COLOR_COMBO) ||
+                    (ctrlId == IDC_TRAY_ANIMATION_THRESHOLD) ||
+                    (ctrlId == IDC_SPARKLINE_TIME_RANGE_COMBO);
 
                 if (message == WM_CTLCOLORLISTBOX || message == WM_CTLCOLOREDIT || isComboArea)
                 {
@@ -808,6 +941,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                     ctlId == IDC_FLOATING_SHOW_NETWORK_CHECK || ctlId == IDC_FLOATING_SHOW_CPU_CHECK ||
                     ctlId == IDC_FLOATING_SHOW_RAM_CHECK || ctlId == IDC_FLOATING_SHOW_PING_CHECK ||
                     ctlId == IDC_FLOATING_SHOW_DATA_TODAY_CHECK || ctlId == IDC_FLOATING_SHOW_SPARKLINE_CHECK ||
+                    ctlId == IDC_FLOATING_SHOW_VPN_CHECK || ctlId == IDC_FLOATING_SHOW_IP_CHECK ||
                     ctlId == IDC_TRAY_ANIMATION_CHECK)
                 {
                     HDC hdc = pDrawItem->hDC;
@@ -1286,6 +1420,8 @@ void SettingsDialog::PopulateDialog(HWND hDlg)
         HWND hHotkeyTheme = GetDlgItem(hDlg, IDC_HOTKEY_COMBO);
         HWND hFontSizeTheme = GetDlgItem(hDlg, IDC_OVERLAY_FONT_SIZE_COMBO);
         HWND hOverlayColorTheme = GetDlgItem(hDlg, IDC_OVERLAY_COLOR_COMBO);
+        HWND hTrayThresholdTheme = GetDlgItem(hDlg, IDC_TRAY_ANIMATION_THRESHOLD);
+        HWND hSparklineTimeTheme = GetDlgItem(hDlg, IDC_SPARKLINE_TIME_RANGE_COMBO);
 
         if (hLangTheme)    ThemeHelper::ApplyDarkThemeToControl(hLangTheme, true);
         if (hIntTheme)     ThemeHelper::ApplyDarkThemeToControl(hIntTheme, true);
@@ -1297,6 +1433,8 @@ void SettingsDialog::PopulateDialog(HWND hDlg)
         if (hHotkeyTheme)  ThemeHelper::ApplyDarkThemeToControl(hHotkeyTheme, true);
         if (hFontSizeTheme) ThemeHelper::ApplyDarkThemeToControl(hFontSizeTheme, true);
         if (hOverlayColorTheme) ThemeHelper::ApplyDarkThemeToControl(hOverlayColorTheme, true);
+        if (hTrayThresholdTheme) ThemeHelper::ApplyDarkThemeToControl(hTrayThresholdTheme, true);
+        if (hSparklineTimeTheme) ThemeHelper::ApplyDarkThemeToControl(hSparklineTimeTheme, true);
 
         // Subclass comboboxes to draw dark dropdown button
         auto subclassComboBox = [](HWND hCombo)
@@ -1319,6 +1457,8 @@ void SettingsDialog::PopulateDialog(HWND hDlg)
         subclassComboBox(hHotkeyTheme);
         subclassComboBox(hFontSizeTheme);
         subclassComboBox(hOverlayColorTheme);
+        subclassComboBox(hTrayThresholdTheme);
+        subclassComboBox(hSparklineTimeTheme);
     }
 
     // === Data Usage Alerts ===
@@ -1357,6 +1497,16 @@ void SettingsDialog::PopulateDialog(HWND hDlg)
     HWND hFloatSparkline = GetDlgItem(hDlg, IDC_FLOATING_SHOW_SPARKLINE_CHECK);
     if (hFloatSparkline) Button_SetCheck(hFloatSparkline, m_configCopy.floatingShowSparkline ? BST_CHECKED : BST_UNCHECKED);
     SetCheckboxState(IDC_FLOATING_SHOW_SPARKLINE_CHECK, m_configCopy.floatingShowSparkline);
+
+    // Initialize VPN Status checkbox (Phase 3)
+    HWND hFloatVpn = GetDlgItem(hDlg, IDC_FLOATING_SHOW_VPN_CHECK);
+    if (hFloatVpn) Button_SetCheck(hFloatVpn, m_configCopy.floatingShowVpnStatus ? BST_CHECKED : BST_UNCHECKED);
+    SetCheckboxState(IDC_FLOATING_SHOW_VPN_CHECK, m_configCopy.floatingShowVpnStatus);
+
+    // Initialize Public IP checkbox (Phase 3)
+    HWND hFloatIP = GetDlgItem(hDlg, IDC_FLOATING_SHOW_IP_CHECK);
+    if (hFloatIP) Button_SetCheck(hFloatIP, m_configCopy.floatingShowPublicIP ? BST_CHECKED : BST_UNCHECKED);
+    SetCheckboxState(IDC_FLOATING_SHOW_IP_CHECK, m_configCopy.floatingShowPublicIP);
 
     // Initialize Tray Animation checkbox
     HWND hTrayAnimCheck = GetDlgItem(hDlg, IDC_TRAY_ANIMATION_CHECK);
@@ -1404,6 +1554,26 @@ void SettingsDialog::PopulateDialog(HWND hDlg)
         wchar_t buf[32];
         swprintf_s(buf, L"%.1f", m_configCopy.dataQuotaGB);
         SetWindowTextW(hDataQuota, buf);
+    }
+
+    // Force repaint of all comboboxes after population to apply dark theme arrow
+    if (m_configCopy.darkTheme)
+    {
+        const UINT comboIds[] = {
+            IDC_LANGUAGE_COMBO, IDC_UPDATE_INTERVAL_COMBO, IDC_DISPLAY_UNIT_COMBO,
+            IDC_INTERFACE_COMBO, IDC_HISTORY_AUTO_TRIM_COMBO, IDC_THEME_MODE_COMBO,
+            IDC_PING_INTERVAL_COMBO, IDC_HOTKEY_COMBO, IDC_OVERLAY_FONT_SIZE_COMBO,
+            IDC_OVERLAY_COLOR_COMBO, IDC_TRAY_ANIMATION_THRESHOLD, IDC_SPARKLINE_TIME_RANGE_COMBO
+        };
+        for (UINT id : comboIds)
+        {
+            HWND hCombo = GetDlgItem(hDlg, id);
+            if (hCombo)
+            {
+                InvalidateRect(hCombo, nullptr, TRUE);
+                UpdateWindow(hCombo);
+            }
+        }
     }
 }
 
@@ -1612,6 +1782,8 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
         tempConfig.floatingShowDataToday = GetCheckboxState(IDC_FLOATING_SHOW_DATA_TODAY_CHECK);
         tempConfig.floatingShowSparkline = GetCheckboxState(IDC_FLOATING_SHOW_SPARKLINE_CHECK);
         tempConfig.trayAnimationEnabled = GetCheckboxState(IDC_TRAY_ANIMATION_CHECK);
+        tempConfig.floatingShowVpnStatus = GetCheckboxState(IDC_FLOATING_SHOW_VPN_CHECK);
+        tempConfig.floatingShowPublicIP = GetCheckboxState(IDC_FLOATING_SHOW_IP_CHECK);
     }
     else
     {
@@ -1622,6 +1794,8 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
         tempConfig.floatingShowDataToday = (Button_GetCheck(GetDlgItem(hDlg, IDC_FLOATING_SHOW_DATA_TODAY_CHECK)) == BST_CHECKED);
         tempConfig.floatingShowSparkline = (Button_GetCheck(GetDlgItem(hDlg, IDC_FLOATING_SHOW_SPARKLINE_CHECK)) == BST_CHECKED);
         tempConfig.trayAnimationEnabled = (Button_GetCheck(GetDlgItem(hDlg, IDC_TRAY_ANIMATION_CHECK)) == BST_CHECKED);
+        tempConfig.floatingShowVpnStatus = (Button_GetCheck(GetDlgItem(hDlg, IDC_FLOATING_SHOW_VPN_CHECK)) == BST_CHECKED);
+        tempConfig.floatingShowPublicIP = (Button_GetCheck(GetDlgItem(hDlg, IDC_FLOATING_SHOW_IP_CHECK)) == BST_CHECKED);
     }
     
     // Get tray animation threshold from combo
@@ -1838,6 +2012,7 @@ void SettingsDialog::SwitchTab(HWND hDlg, int tabIndex)
         IDC_SETTINGS_GROUP_FLOATING,
         IDC_FLOATING_SHOW_NETWORK_CHECK, IDC_FLOATING_SHOW_CPU_CHECK, IDC_FLOATING_SHOW_RAM_CHECK,
         IDC_FLOATING_SHOW_PING_CHECK, IDC_FLOATING_SHOW_DATA_TODAY_CHECK, IDC_FLOATING_SHOW_SPARKLINE_CHECK,
+        IDC_FLOATING_SHOW_VPN_CHECK, IDC_FLOATING_SHOW_IP_CHECK,
         IDC_SETTINGS_GROUP_TRAY, IDC_TRAY_ANIMATION_CHECK, IDC_TRAY_ANIMATION_THRESHOLD_LABEL, IDC_TRAY_ANIMATION_THRESHOLD,
         IDC_SPARKLINE_TIME_RANGE_LABEL, IDC_SPARKLINE_TIME_RANGE_COMBO
     };

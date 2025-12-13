@@ -166,6 +166,7 @@ BEGIN
     IDS_PERAPP_BUTTON_CLOSE          "Close"
     IDS_MENU_FLOATING_WINDOW         "Floating Window"
     IDS_MENU_PERAPP                  "Per-App Usage..."
+    IDS_MENU_SPEED_TEST              "Speed Test..."
     IDS_SETTINGS_LABEL_OVERLAY_FONT_SIZE "Overlay Font Size:"
     IDS_SETTINGS_LABEL_OVERLAY_COLORS    "Overlay Colors:"
     IDS_SETTINGS_LABEL_PING_TARGET       "Ping Target:"
@@ -192,6 +193,19 @@ BEGIN
     IDS_SPARKLINE_1M                     "1 minute"
     IDS_SPARKLINE_5M                     "5 minutes"
     IDS_EXPORT_CHART_BUTTON              "Export Chart..."
+    IDS_FLOATING_SHOW_VPN_STATUS         "VPN"
+    IDS_FLOATING_SHOW_PUBLIC_IP          "IP"
+    
+    // Speed Test strings
+    IDS_SPEED_TEST_BUTTON                "Test Speed"
+    IDS_SPEED_TESTING                    "Testing..."
+    IDS_SPEED_DOWNLOAD                   "Download:"
+    IDS_SPEED_UPLOAD                     "Upload:"
+    IDS_SPEED_PING                       "Ping:"
+    IDS_SPEED_HISTORY                    "History"
+    IDS_SPEED_TEST_FAILED                "Speed test failed"
+    IDS_SPEED_TEST_COMPLETE              "Test complete"
+    IDS_SPEED_CANCEL                     "Cancel"
 END
 
 // Vietnamese resources
@@ -307,6 +321,7 @@ BEGIN
     IDS_PERAPP_BUTTON_CLOSE          "Đóng"
     IDS_MENU_FLOATING_WINDOW         "Cửa sổ nổi"
     IDS_MENU_PERAPP                  "Sử dụng theo ứng dụng..."
+    IDS_MENU_SPEED_TEST              "Kiểm tra tốc độ..."
     IDS_SETTINGS_LABEL_OVERLAY_FONT_SIZE "Cỡ chữ overlay:"
     IDS_SETTINGS_LABEL_OVERLAY_COLORS    "Màu overlay:"
     IDS_SETTINGS_LABEL_PING_TARGET       "Địa chỉ ping:"
@@ -334,6 +349,19 @@ BEGIN
     IDS_SPARKLINE_1M                     "1 phút"
     IDS_SPARKLINE_5M                     "5 phút"
     IDS_EXPORT_CHART_BUTTON              "Xuất biểu đồ..."
+    IDS_FLOATING_SHOW_VPN_STATUS         "VPN"
+    IDS_FLOATING_SHOW_PUBLIC_IP          "IP"
+    
+    // Speed Test strings
+    IDS_SPEED_TEST_BUTTON                "Kiểm tra tốc độ"
+    IDS_SPEED_TESTING                    "Đang kiểm tra..."
+    IDS_SPEED_DOWNLOAD                   "Tải xuống:"
+    IDS_SPEED_UPLOAD                     "Tải lên:"
+    IDS_SPEED_PING                       "Ping:"
+    IDS_SPEED_HISTORY                    "Lịch sử"
+    IDS_SPEED_TEST_FAILED                "Kiểm tra tốc độ thất bại"
+    IDS_SPEED_TEST_COMPLETE              "Hoàn tất"
+    IDS_SPEED_CANCEL                     "Hủy"
 END
 
 // Japanese resources
@@ -449,6 +477,7 @@ BEGIN
     IDS_PERAPP_BUTTON_CLOSE          "閉じる"
     IDS_MENU_FLOATING_WINDOW         "フローティングウィンドウ"
     IDS_MENU_PERAPP                  "アプリ別使用状況..."
+    IDS_MENU_SPEED_TEST              "スピードテスト..."
     IDS_SETTINGS_LABEL_OVERLAY_FONT_SIZE "オーバーレイフォントサイズ:"
     IDS_SETTINGS_LABEL_OVERLAY_COLORS    "オーバーレイの色:"
     IDS_SETTINGS_LABEL_PING_TARGET       "Pingターゲット:"
@@ -471,6 +500,19 @@ BEGIN
     IDS_SPARKLINE_1M                     "1分"
     IDS_SPARKLINE_5M                     "5分"
     IDS_EXPORT_CHART_BUTTON              "チャートをエクスポート..."
+    IDS_FLOATING_SHOW_VPN_STATUS         "VPN"
+    IDS_FLOATING_SHOW_PUBLIC_IP          "IP"
+    
+    // Speed Test strings
+    IDS_SPEED_TEST_BUTTON                "速度テスト"
+    IDS_SPEED_TESTING                    "テスト中..."
+    IDS_SPEED_DOWNLOAD                   "ダウンロード:"
+    IDS_SPEED_UPLOAD                     "アップロード:"
+    IDS_SPEED_PING                       "Ping:"
+    IDS_SPEED_HISTORY                    "履歴"
+    IDS_SPEED_TEST_FAILED                "速度テスト失敗"
+    IDS_SPEED_TEST_COMPLETE              "完了"
+    IDS_SPEED_CANCEL                     "キャンセル"
 END
 
 // Korean resources
@@ -586,6 +628,7 @@ BEGIN
     IDS_PERAPP_BUTTON_CLOSE          "닫기"
    IDS_MENU_FLOATING_WINDOW         "플로팅 창"
     IDS_MENU_PERAPP                  "앱별 사용량..."
+    IDS_MENU_SPEED_TEST              "속도 테스트..."
     IDS_SETTINGS_LABEL_OVERLAY_FONT_SIZE "오버레이 글꼴 크기:"
     IDS_SETTINGS_LABEL_OVERLAY_COLORS    "오버레이 색상:"
     IDS_SETTINGS_LABEL_PING_TARGET       "Ping 대상:"
@@ -608,6 +651,19 @@ BEGIN
     IDS_SPARKLINE_1M                     "1분"
     IDS_SPARKLINE_5M                     "5분"
     IDS_EXPORT_CHART_BUTTON              "차트 내보내기..."
+    IDS_FLOATING_SHOW_VPN_STATUS         "VPN"
+    IDS_FLOATING_SHOW_PUBLIC_IP          "IP"
+    
+    // Speed Test strings
+    IDS_SPEED_TEST_BUTTON                "속도 테스트"
+    IDS_SPEED_TESTING                    "테스트 중..."
+    IDS_SPEED_DOWNLOAD                   "다운로드:"
+    IDS_SPEED_UPLOAD                     "업로드:"
+    IDS_SPEED_PING                       "Ping:"
+    IDS_SPEED_HISTORY                    "기록"
+    IDS_SPEED_TEST_FAILED                "속도 테스트 실패"
+    IDS_SPEED_TEST_COMPLETE              "완료"
+    IDS_SPEED_CANCEL                     "취소"
 END
 
 // Chinese Simplified resources
@@ -723,6 +779,7 @@ BEGIN
     IDS_PERAPP_BUTTON_CLOSE          "关闭"
     IDS_MENU_FLOATING_WINDOW         "浮动窗口"
     IDS_MENU_PERAPP                  "应用程序使用情况..."
+    IDS_MENU_SPEED_TEST              "速度测试..."
     IDS_SETTINGS_LABEL_OVERLAY_FONT_SIZE "覆盖层字体大小:"
     IDS_SETTINGS_LABEL_OVERLAY_COLORS    "覆盖层颜色:"
     IDS_SETTINGS_LABEL_PING_TARGET       "Ping目标:"
@@ -745,6 +802,19 @@ BEGIN
     IDS_SPARKLINE_1M                     "1分钟"
     IDS_SPARKLINE_5M                     "5分钟"
     IDS_EXPORT_CHART_BUTTON              "导出图表..."
+    IDS_FLOATING_SHOW_VPN_STATUS         "VPN"
+    IDS_FLOATING_SHOW_PUBLIC_IP          "IP"
+    
+    // Speed Test strings
+    IDS_SPEED_TEST_BUTTON                "测速"
+    IDS_SPEED_TESTING                    "测试中..."
+    IDS_SPEED_DOWNLOAD                   "下载:"
+    IDS_SPEED_UPLOAD                     "上传:"
+    IDS_SPEED_PING                       "Ping:"
+    IDS_SPEED_HISTORY                    "历史"
+    IDS_SPEED_TEST_FAILED                "测速失败"
+    IDS_SPEED_TEST_COMPLETE              "完成"
+    IDS_SPEED_CANCEL                     "取消"
 END
 
 // Switch back to English for the rest of resources
@@ -846,7 +916,9 @@ BEGIN
     CONTROL         "RAM",IDC_FLOATING_SHOW_RAM_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,165,120,30,10
     CONTROL         "Ping",IDC_FLOATING_SHOW_PING_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,200,120,30,10
     CONTROL         "Data Today",IDC_FLOATING_SHOW_DATA_TODAY_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,80,135,70,10
-    CONTROL         "Sparkline",IDC_FLOATING_SHOW_SPARKLINE_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,165,135,50,10
+    CONTROL         "Sparkline",IDC_FLOATING_SHOW_SPARKLINE_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,155,135,50,10
+    CONTROL         "VPN",IDC_FLOATING_SHOW_VPN_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,210,135,30,10
+    CONTROL         "IP",IDC_FLOATING_SHOW_IP_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,245,135,20,10
     
     // Tray Icon Group
     LTEXT           "Tray Icon:",IDC_SETTINGS_GROUP_TRAY,15,152,60,8
@@ -887,14 +959,14 @@ STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSM
 CAPTION "Network Usage Dashboard"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    // Today (left)
+    // Today (left column)
     LTEXT           "Today:",IDC_DASHBOARD_LABEL_TODAY,7,7,60,8
     LTEXT           "Download:",IDC_DASHBOARD_LABEL_DOWNLOAD_T,15,20,50,8
     LTEXT           "",IDC_TODAY_DOWN,70,20,100,8
     LTEXT           "Upload:",IDC_DASHBOARD_LABEL_UPLOAD_T,15,33,50,8
     LTEXT           "",IDC_TODAY_UP,70,33,100,8
 
-    // This month (right, same band)
+    // This month (right column)
     LTEXT           "This month:",IDC_DASHBOARD_LABEL_MONTH,180,7,70,8
     LTEXT           "Download:",IDC_DASHBOARD_LABEL_DOWNLOAD_M,180,20,60,8
     LTEXT           "",IDC_MONTH_DOWN,260,20,90,8
@@ -920,6 +992,34 @@ BEGIN
     PUSHBUTTON      "Keep last 30 days",IDC_HISTORY_KEEP_30,7,42,90,14
     PUSHBUTTON      "Keep last 90 days",IDC_HISTORY_KEEP_90,7,60,90,14
     PUSHBUTTON      "Close",IDCANCEL,170,86,60,14
+END
+
+// Speed Test Dialog
+IDD_SPEED_TEST_DIALOG DIALOGEX 0, 0, 280, 200
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Speed Test"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    // Start button and progress bar
+    PUSHBUTTON      "Start Test",IDC_SPEED_START_BUTTON,95,10,90,18
+    CONTROL         "",IDC_SPEED_TEST_PROGRESS,"msctls_progress32",PBS_SMOOTH | WS_BORDER,40,32,200,12
+    LTEXT           "",IDC_SPEED_STATUS_LABEL,95,48,90,10,SS_CENTER
+    
+    // Results group box
+    GROUPBOX        "Results",IDC_SPEED_RESULT_GROUP,10,62,260,50
+    LTEXT           "Download:",IDC_SPEED_DOWNLOAD_LABEL,20,77,40,10
+    LTEXT           "--",IDC_SPEED_DOWNLOAD_VALUE,65,77,60,10
+    LTEXT           "Upload:",IDC_SPEED_UPLOAD_LABEL,130,77,35,10
+    LTEXT           "--",IDC_SPEED_UPLOAD_VALUE,168,77,60,10
+    LTEXT           "Ping:",IDC_SPEED_PING_LABEL,20,92,25,10
+    LTEXT           "--",IDC_SPEED_PING_VALUE,65,92,60,10
+    
+    // History list
+    LTEXT           "History:",IDC_STATIC,10,118,30,10
+    CONTROL         "",IDC_SPEED_HISTORY_LIST,"SysListView32",WS_TABSTOP | WS_BORDER | LVS_REPORT | LVS_SINGLESEL,10,130,260,45
+    
+    // Close button
+    PUSHBUTTON      "Close",IDCANCEL,210,180,60,14
 END
 
 // Generic message dialog used for dark-themed message boxes

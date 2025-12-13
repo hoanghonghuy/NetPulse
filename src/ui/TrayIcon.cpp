@@ -494,6 +494,7 @@ HMENU TrayIcon::CreateContextMenu(const AppConfig& config, bool overlayVisible, 
     AddMenuItem(hMenu, IDM_SETTINGS, LoadStringResource(IDS_MENU_SETTINGS));
     AddMenuItem(hMenu, IDM_DASHBOARD, LoadStringResource(IDS_MENU_DASHBOARD));
     AddMenuItem(hMenu, IDM_PERAPP, LoadStringResource(IDS_MENU_PERAPP));
+    AddMenuItem(hMenu, IDM_SPEED_TEST, LoadStringResource(IDS_MENU_SPEED_TEST));
     AddMenuItem(hMenu, IDM_ABOUT, LoadStringResource(IDS_MENU_ABOUT));
     
     AddMenuItem(hMenu, 9997, L"", false, true); // Separator

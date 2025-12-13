@@ -14,6 +14,7 @@
 #include "NetworkMonitor/LanguageManager.h"
 #include "NetworkMonitor/FloatingWindow.h"
 #include "NetworkMonitor/SystemMonitor.h"
+#include "NetworkMonitor/VpnProxyDetector.h"
 #include <windows.h>
 #include <memory>
 
@@ -52,6 +53,7 @@ public:
     void ShowHistoryDialog();
     void ShowAboutDialog();
     void ShowPerAppDialog();
+    void ShowSpeedTestDialog();
     void OnTaskbarOverlayRightClick();
 
     // Menu command handling (delegated to MenuHandler)
@@ -83,6 +85,7 @@ private:
     std::unique_ptr<LanguageManager> m_pLanguageManager;
     std::unique_ptr<FloatingWindow> m_pFloatingWindow;
     std::unique_ptr<SystemMonitor> m_pSystemMonitor;
+    std::unique_ptr<VpnProxyDetector> m_pVpnDetector;  // Phase 3: VPN/Proxy detection
 
     // Application state
     AppConfig m_config;

@@ -4,6 +4,7 @@
 #include "NetworkMonitor/Common.h"
 #include "NetworkMonitor/HistoryLogger.h"
 #include <vector>
+#include <memory>
 
 namespace NetworkMonitor
 {
@@ -47,3 +48,4 @@ private:
 } // namespace NetworkMonitor
 
 #endif // NETWORK_MONITOR_DASHBOARD_DIALOG_H
+

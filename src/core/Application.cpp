@@ -189,6 +189,7 @@ bool Application::Initialize(HINSTANCE hInstance)
         }
     });
     m_pMenuHandler->SetShowPerAppCallback([this]() { ShowPerAppDialog(); });
+    m_pMenuHandler->SetShowSpeedTestCallback([this]() { ShowSpeedTestDialog(); });
 
     // Create and initialize UpdateCoordinator
     m_pUpdateCoordinator = std::make_unique<UpdateCoordinator>();
@@ -262,6 +263,17 @@ bool Application::Initialize(HINSTANCE hInstance)
         {
             m_pTrayIcon->RefreshIcon(m_config.darkTheme);
         }
+        
+        // Apply VPN/Proxy settings (Phase 3)
+        if (m_pFloatingWindow)
+        {
+            m_pFloatingWindow->SetShowVpnStatus(m_config.floatingShowVpnStatus);
+            m_pFloatingWindow->SetShowPublicIP(m_config.floatingShowPublicIP);
+        }
+        if (m_pVpnDetector)
+        {
+            m_pVpnDetector->SetPublicIPUpdateInterval(m_config.publicIPUpdateIntervalMs);
+        }
     });
 
     // Create and initialize SystemMonitor for CPU/RAM
@@ -302,6 +314,29 @@ bool Application::Initialize(HINSTANCE hInstance)
     {
         LogDebug(L"Application::Initialize: FloatingWindow create failed, continuing without it");
         m_pFloatingWindow.reset();
+    }
+
+    // Create and initialize VPN/Proxy detector (Phase 3)
+    m_pVpnDetector = std::make_unique<VpnProxyDetector>();
+    if (m_pVpnDetector->Initialize())
+    {
+        // Set update interval from config
+        m_pVpnDetector->SetPublicIPUpdateInterval(m_config.publicIPUpdateIntervalMs);
+        
+        // Apply VPN display settings to floating window
+        if (m_pFloatingWindow)
+        {
+            m_pFloatingWindow->SetShowVpnStatus(m_config.floatingShowVpnStatus);
+            m_pFloatingWindow->SetShowPublicIP(m_config.floatingShowPublicIP);
+        }
+        
+        // Start VPN update timer (30 seconds for VPN detection, IP uses its own rate limiting)
+        SetTimer(m_hwnd, TIMER_VPN_UPDATE, 30000, nullptr);
+    }
+    else
+    {
+        LogDebug(L"Application::Initialize: VpnProxyDetector init failed, continuing without VPN detection");
+        m_pVpnDetector.reset();
     }
 
     m_initialized = true;
@@ -390,6 +425,14 @@ void Application::Cleanup()
         m_pSystemMonitor.reset();
     }
 
+    // Cleanup VPN detector (Phase 3)
+    if (m_pVpnDetector)
+    {
+        KillTimer(m_hwnd, TIMER_VPN_UPDATE);
+        m_pVpnDetector->Cleanup();
+        m_pVpnDetector.reset();
+    }
+
     // Cleanup config manager
     m_pConfigManager.reset();
 
@@ -469,6 +512,14 @@ void Application::ShowPerAppDialog()
     if (m_pDialogManager)
     {
         m_pDialogManager->ShowPerApp();
+    }
+}
+
+void Application::ShowSpeedTestDialog()
+{
+    if (m_pDialogManager)
+    {
+        m_pDialogManager->ShowSpeedTest();
     }
 }
 
@@ -573,6 +624,23 @@ LRESULT CALLBACK Application::InstanceWindowProc(HWND hwnd, UINT message, WPARAM
                 if (m_pUpdateCoordinator)
                 {
                     m_pUpdateCoordinator->OnPingTick();
+                }
+            }
+            else if (wParam == TIMER_VPN_UPDATE)  // Phase 3: VPN update
+            {
+                if (m_pVpnDetector)
+                {
+                    m_pVpnDetector->Update();
+                    
+                    // Update floating window with VPN status
+                    if (m_pFloatingWindow && m_pFloatingWindow->IsVisible())
+                    {
+                        m_pFloatingWindow->UpdateVpnStatus(
+                            m_pVpnDetector->IsVpnActive(),
+                            m_pVpnDetector->IsProxyActive()
+                        );
+                        m_pFloatingWindow->UpdatePublicIP(m_pVpnDetector->GetPublicIP());
+                    }
                 }
             }
             else if (wParam == 9001) // TrayIcon ANIMATION_TIMER_ID

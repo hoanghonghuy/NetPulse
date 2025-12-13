@@ -84,6 +84,11 @@ set(HEADER_FILES
     include/NetworkMonitor/PerAppDialog.h
     include/NetworkMonitor/EtwNetworkMonitor.h
     include/NetworkMonitor/SparklineRenderer.h
+    include/NetworkMonitor/VpnProxyDetector.h
+    include/NetworkMonitor/SpeedTester.h
+    include/NetworkMonitor/SpeedTestHistory.h
+    include/NetworkMonitor/Interfaces/IVpnProxyProvider.h
+    include/NetworkMonitor/Interfaces/ISpeedTestProvider.h
 )
 
 # Source files
@@ -115,6 +120,9 @@ set(SOURCE_FILES
     src/ui/dialogs/PerAppDialog.cpp
     src/core/EtwNetworkMonitor.cpp
     src/ui/SparklineRenderer.cpp
+    src/core/VpnProxyDetector.cpp
+    src/core/SpeedTester.cpp
+    src/core/SpeedTestHistory.cpp
     third_party/sqlite/sqlite3.c
 )
 
@@ -168,6 +176,7 @@ target_link_libraries(${PROJECT_NAME}
         Dwmapi.lib      # Desktop Window Manager API (for taskbar overlay)
         d3d11.lib       # Direct3D 11
         dxgi.lib        # DirectX Graphics Infrastructure
+        winhttp.lib     # HTTP API (for public IP fetching)
 )
 
 # ============================================================================
@@ -234,93 +243,9 @@ endif()
 # IMGUI STANDALONE APP (Optional - for testing modern UI)
 # ============================================================================
 
-option(BUILD_IMGUI_APP "Build standalone ImGui application for testing" OFF)
+# option(BUILD_IMGUI_APP "Build standalone ImGui application for testing" OFF)
+# Legacy ImGui integration temporarily disabled in build system
 
-if(BUILD_IMGUI_APP)
-    # Define source files for ImGui app (exclude original main.cpp, use main_imgui.cpp)
-    set(IMGUI_APP_SOURCES
-        src/entry/main_imgui.cpp
-        src/core/Application.cpp
-        src/core/Utils.cpp
-        src/core/NetworkCalculator.cpp
-        src/core/NetworkMonitor.cpp
-        src/core/ConfigManager.cpp
-        src/core/PingMonitor.cpp
-        src/core/HotkeyManager.cpp
-        src/core/MenuHandler.cpp
-        src/core/UpdateCoordinator.cpp
-        src/core/LanguageManager.cpp
-        src/core/DataUsageMonitor.cpp
-        src/core/SystemMonitor.cpp
-        src/core/HistoryLogger.cpp
-        src/core/PerAppMonitor.cpp
-        src/core/EtwNetworkMonitor.cpp
-        src/ui/TrayIcon.cpp
-        src/ui/TaskbarOverlay.cpp
-        src/ui/FloatingWindow.cpp
-        src/ui/ThemeHelper.cpp
-        src/ui/DialogThemeHelper.cpp
-        src/ui/DialogManager.cpp
-        src/ui/ImGuiApp.cpp
-        src/ui/ImGuiDashboard.cpp
-        src/ui/ImGuiSettings.cpp
-        src/ui/ImGuiPerApp.cpp
-        src/ui/ImGuiHistory.cpp
-        src/ui/ImGuiMainMenu.cpp
-        src/ui/ImGuiFloatingWindow.cpp
-        src/ui/ImGuiTrayIcon.cpp
-        src/ui/dialogs/SettingsDialog.cpp
-        src/ui/dialogs/DashboardDialog.cpp
-        src/ui/dialogs/HistoryDialog.cpp
-        src/ui/dialogs/PerAppDialog.cpp
-        third_party/sqlite/sqlite3.c
-    )
-
-    add_executable(NetworkMonitorImGui WIN32
-        ${HEADER_FILES}
-        ${IMGUI_APP_SOURCES}
-        ${IMGUI_SOURCE_FILES}
-        ${RESOURCE_FILES}
-    )
-
-    target_compile_definitions(NetworkMonitorImGui PRIVATE IMGUI_APP_STANDALONE)
-
-    target_include_directories(NetworkMonitorImGui
-        PRIVATE
-            ${CMAKE_CURRENT_SOURCE_DIR}/include
-            ${CMAKE_CURRENT_SOURCE_DIR}/resources
-            ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sqlite
-            ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui
-            ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/backends
-    )
-
-    target_link_libraries(NetworkMonitorImGui
-        PRIVATE
-            Iphlpapi.lib
-            shell32.lib
-            advapi32.lib
-            comctl32.lib
-            Dwmapi.lib
-            d3d11.lib
-            dxgi.lib
-    )
-
-    if(MSVC)
-        set_target_properties(NetworkMonitorImGui PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
-        set_source_files_properties(third_party/sqlite/sqlite3.c PROPERTIES COMPILE_FLAGS "/wd4996")
-        set_source_files_properties(
-            third_party/imgui/imgui.cpp
-            third_party/imgui/imgui_draw.cpp
-            third_party/imgui/imgui_tables.cpp
-            third_party/imgui/imgui_widgets.cpp
-            third_party/imgui/backends/imgui_impl_dx11.cpp
-            third_party/imgui/backends/imgui_impl_win32.cpp
-            PROPERTIES COMPILE_FLAGS "/wd4244 /wd4127 /wd4456 /wd4457 /wd4702"
-        )
-    endif()
-
-    message(STATUS "Building ImGui standalone app: NetworkMonitorImGui.exe")
-endif()
 
 # ============================================================================
 # PRINT CONFIGURATION SUMMARY

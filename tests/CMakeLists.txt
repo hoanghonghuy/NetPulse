@@ -12,6 +12,8 @@ set(TEST_SOURCES
     network_calculator_tests.cpp
     config_manager_tests.cpp
     ui_tests.cpp
+    vpn_detection_tests.cpp
+    speed_test_tests.cpp
     ../src/core/HistoryLogger.cpp
     ../src/core/NetworkMonitor.cpp
     ../src/core/NetworkCalculator.cpp
@@ -36,6 +38,10 @@ set(TEST_SOURCES
     ../src/core/PerAppMonitor.cpp
     ../src/core/EtwNetworkMonitor.cpp
     ../src/ui/SparklineRenderer.cpp
+    ../src/core/VpnProxyDetector.cpp
+    ../src/core/SpeedTester.cpp
+    ../src/core/SpeedTestHistory.cpp
+    ../src/ui/dialogs/SpeedTestDialog.cpp
     ../third_party/sqlite/sqlite3.c
 )
 
@@ -62,7 +68,9 @@ if(MSVC)
             shell32.lib
             advapi32.lib
             comctl32.lib
+            comctl32.lib
             Dwmapi.lib
+            winhttp.lib
     )
 
     # Suppress deprecated GetVersionEx warnings in third-party SQLite only

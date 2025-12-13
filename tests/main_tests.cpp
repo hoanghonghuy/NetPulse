@@ -16,6 +16,8 @@ void RunConfigManagerTests();
 void RunTrayIconTests();
 void RunTaskbarOverlayTests();
 void RunFloatingWindowTests();
+void RunVpnProxyDetectorTests();
+void RunSpeedTestTests();
 }
 
 using namespace NetworkMonitorTests;
@@ -32,6 +34,8 @@ int main()
     RunTrayIconTests();
     RunTaskbarOverlayTests();
     RunFloatingWindowTests();
+    RunVpnProxyDetectorTests();
+    RunSpeedTestTests();
 
     int failures = GetFailureCount();
     if (failures == 0)

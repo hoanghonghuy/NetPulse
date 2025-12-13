@@ -37,6 +37,10 @@ FloatingWindow::FloatingWindow()
     , m_sparklineTimeRange(0)  // Default 30s
     , m_downloadSparkline(std::make_unique<SparklineRenderer>(30))
     , m_uploadSparkline(std::make_unique<SparklineRenderer>(30))
+    , m_showVpnStatus(true)    // Show VPN status by default
+    , m_showPublicIP(true)     // Show public IP by default
+    , m_isVpnActive(false)
+    , m_isProxyActive(false)
 {
 }
 
@@ -547,6 +551,54 @@ void FloatingWindow::PaintNormal(HDC hdc)
         y += LINE_HEIGHT;
     }
 
+    // Draw VPN Status and Public IP (Phase 3)
+    if (m_showVpnStatus || m_showPublicIP)
+    {
+        int startX = PADDING;
+        
+        // Draw VPN/Proxy indicator
+        if (m_showVpnStatus)
+        {
+            wchar_t vpnBuf[32];
+            COLORREF vpnColor;
+            
+            if (m_isVpnActive)
+            {
+                wcscpy_s(vpnBuf, L"VPN: ON");
+                vpnColor = m_darkTheme ? RGB(0, 220, 100) : RGB(0, 150, 60);
+            }
+            else if (m_isProxyActive)
+            {
+                wcscpy_s(vpnBuf, L"Proxy: ON");
+                vpnColor = m_darkTheme ? RGB(255, 200, 50) : RGB(200, 140, 0);
+            }
+            else
+            {
+                wcscpy_s(vpnBuf, L"VPN: OFF");
+                vpnColor = m_darkTheme ? RGB(128, 128, 128) : RGB(150, 150, 150);
+            }
+            
+            SetTextColor(hdc, vpnColor);
+            TextOutW(hdc, startX, y, vpnBuf, static_cast<int>(wcslen(vpnBuf)));
+            
+            if (m_showPublicIP)
+            {
+                startX += 85; // Offset for IP (aligned with Upload/RAM/Data Today)
+            }
+        }
+        
+        // Draw Public IP
+        if (m_showPublicIP && !m_publicIP.empty())
+        {
+            std::wstring ipStr = L"IP: " + m_publicIP;
+            COLORREF ipColor = m_darkTheme ? RGB(180, 180, 180) : RGB(100, 100, 100);
+            SetTextColor(hdc, ipColor);
+            TextOutW(hdc, startX, y, ipStr.c_str(), static_cast<int>(ipStr.length()));
+        }
+        
+        y += LINE_HEIGHT;
+    }
+
     SelectObject(hdc, hOldFont);
     DeleteObject(hFont);
 }
@@ -569,6 +621,7 @@ void FloatingWindow::RecalculateWindowSize()
         if (m_showNetwork) visibleRows++;
         if (m_showCPU || m_showRAM) visibleRows++;
         if (m_showPing || m_showDataToday) visibleRows++;
+        if (m_showVpnStatus || m_showPublicIP) visibleRows++;  // Phase 3: VPN row
         
         newWidth = WINDOW_WIDTH;
         newHeight = (PADDING * 2) + (visibleRows * LINE_HEIGHT);
@@ -810,5 +863,53 @@ bool FloatingWindow::ExportChartAsPNG(const std::wstring& filePath)
     return true;
 }
 
+// ========== PHASE 3: VPN/PROXY DETECTION ==========
+
+void FloatingWindow::UpdateVpnStatus(bool isVpnActive, bool isProxyActive)
+{
+    if (m_isVpnActive != isVpnActive || m_isProxyActive != isProxyActive)
+    {
+        m_isVpnActive = isVpnActive;
+        m_isProxyActive = isProxyActive;
+        if (m_showVpnStatus)
+        {
+            Invalidate();
+        }
+    }
+}
+
+void FloatingWindow::UpdatePublicIP(const std::wstring& ip)
+{
+    if (m_publicIP != ip)
+    {
+        m_publicIP = ip;
+        if (m_showPublicIP)
+        {
+            Invalidate();
+        }
+    }
+}
+
+void FloatingWindow::SetShowVpnStatus(bool show)
+{
+    if (m_showVpnStatus != show)
+    {
+        m_showVpnStatus = show;
+        RecalculateWindowSize();
+        Invalidate();
+    }
+}
+
+void FloatingWindow::SetShowPublicIP(bool show)
+{
+    if (m_showPublicIP != show)
+    {
+        m_showPublicIP = show;
+        RecalculateWindowSize();
+        Invalidate();
+    }
+}
+
 } // namespace NetworkMonitor
+
 

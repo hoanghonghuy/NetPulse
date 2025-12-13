@@ -157,6 +157,29 @@ public:
      */
     void SetConfigChangeCallback(std::function<void(int timeRange)> callback);
 
+    // ========== PHASE 3 FEATURES ==========
+    
+    /**
+     * Update VPN connection status
+     * @param isVpnActive true if VPN is connected
+     * @param isProxyActive true if proxy is enabled
+     */
+    void UpdateVpnStatus(bool isVpnActive, bool isProxyActive);
+    
+    /**
+     * Update public IP address display
+     * @param ip Public IP string, empty if unavailable
+     */
+    void UpdatePublicIP(const std::wstring& ip);
+    
+    /**
+     * Configure VPN/IP display
+     */
+    void SetShowVpnStatus(bool show);
+    void SetShowPublicIP(bool show);
+    bool IsShowVpnStatus() const { return m_showVpnStatus; }
+    bool IsShowPublicIP() const { return m_showPublicIP; }
+
 private:
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
     LRESULT HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam);
@@ -204,6 +227,13 @@ private:
     std::unique_ptr<SparklineRenderer> m_downloadSparkline;
     std::unique_ptr<SparklineRenderer> m_uploadSparkline;
     std::function<void(int)> m_configChangeCallback;
+
+    // Phase 3 Features - VPN/Proxy Detection
+    bool m_showVpnStatus;     // Show VPN indicator
+    bool m_showPublicIP;      // Show public IP
+    bool m_isVpnActive;       // Current VPN status
+    bool m_isProxyActive;     // Current proxy status
+    std::wstring m_publicIP;  // Current public IP
 
     // Window dimensions
     static constexpr int WINDOW_WIDTH = 190;

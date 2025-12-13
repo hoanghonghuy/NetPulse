@@ -165,6 +165,9 @@ void ThemeHelper::ApplyDarkTitleBar(HWND hwnd, bool enable)
 {
     if (!hwnd) return;
 
+    // IMPORTANT: Must enable dark mode for window BEFORE DwmSetWindowAttribute
+    AllowDarkModeForWindow(hwnd, enable);
+    
     BOOL value = enable ? TRUE : FALSE;
     
     // Try the modern attribute first (Windows 11, Win 10 20H1+)

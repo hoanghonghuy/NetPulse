@@ -66,6 +66,11 @@ void MenuHandler::SetShowPerAppCallback(ShowDialogCallback callback)
     m_showPerAppCallback = callback;
 }
 
+void MenuHandler::SetShowSpeedTestCallback(ShowDialogCallback callback)
+{
+    m_showSpeedTestCallback = callback;
+}
+
 void MenuHandler::HandleCommand(UINT menuId)
 {
     if (!m_pConfig)
@@ -120,6 +125,10 @@ void MenuHandler::HandleCommand(UINT menuId)
 
         case IDM_PERAPP:
             if (m_showPerAppCallback) m_showPerAppCallback();
+            break;
+
+        case IDM_SPEED_TEST:
+            if (m_showSpeedTestCallback) m_showSpeedTestCallback();
             break;
 
         case IDM_ABOUT:
