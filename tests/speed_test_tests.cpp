@@ -35,8 +35,8 @@ void TestSpeedTesterPingMeasurement()
     
     SpeedTester tester;
     
-    // MeasurePing should return a value (might be -1 if no internet)
-    int ping = tester.MeasurePing();
+    // MeasurePing requires a host
+    int ping = tester.MeasurePing(L"8.8.8.8");
     
     LogTestMessage((L"    Ping result: " + std::to_wstring(ping) + L" ms").c_str());
     
@@ -58,10 +58,13 @@ void TestSpeedTesterRunTestBasic()
     bool progressCalled = false;
     int lastProgress = -1;
     
-    SpeedTestResult result = tester.RunTest([&progressCalled, &lastProgress](int progress) {
+    // RunTest returns void, results come via callback or GetLastResult
+    tester.RunTest([&progressCalled, &lastProgress](int progress, const std::wstring& /*status*/) {
         progressCalled = true;
         lastProgress = progress;
     });
+    
+    SpeedTestResult result = tester.GetLastResult();
     
     LogTestMessage((L"    Download: " + std::to_wstring(result.downloadMbps) + L" Mbps").c_str());
     LogTestMessage((L"    Upload: " + std::to_wstring(result.uploadMbps) + L" Mbps").c_str());
@@ -86,6 +89,7 @@ void TestSpeedTestHistoryAddAndGet()
     LogTestMessage(L"  Running TestSpeedTestHistoryAddAndGet...");
     
     SpeedTestHistory history;
+    history.ClearHistory(); // Start clean
     
     // Create test result
     SpeedTestResult result1;
@@ -109,6 +113,7 @@ void TestSpeedTestHistoryOrdering()
     LogTestMessage(L"  Running TestSpeedTestHistoryOrdering...");
     
     SpeedTestHistory history;
+    history.ClearHistory(); // Start clean
     
     // Add multiple results in sequence
     for (int i = 1; i <= 5; i++)
@@ -126,10 +131,9 @@ void TestSpeedTestHistoryOrdering()
     auto historyList = history.GetHistory();
     AssertTrue(historyList.size() == 5, L"History should have 5 items");
     
-    // First item in vector should be oldest (add order)
-    // To show newest first in UI, use rbegin()
-    AssertTrue(historyList[0].downloadMbps == 10.0, L"First item should be oldest (10 Mbps)");
-    AssertTrue(historyList[4].downloadMbps == 50.0, L"Last item should be newest (50 Mbps)");
+    // First item in vector should be NEWEST (inserted at begin)
+    AssertTrue(historyList[0].downloadMbps == 50.0, L"First item should be newest (50 Mbps)");
+    AssertTrue(historyList[4].downloadMbps == 10.0, L"Last item should be oldest (10 Mbps)");
 }
 
 void TestSpeedTestHistoryLimit()
@@ -137,6 +141,7 @@ void TestSpeedTestHistoryLimit()
     LogTestMessage(L"  Running TestSpeedTestHistoryLimit...");
     
     SpeedTestHistory history;
+    history.ClearHistory(); // Start clean
     
     // Add more than default limit (100 entries)
     for (int i = 0; i < 150; i++)
@@ -162,6 +167,7 @@ void TestSpeedTestHistoryGetLatest()
     LogTestMessage(L"  Running TestSpeedTestHistoryGetLatest...");
     
     SpeedTestHistory history;
+    history.ClearHistory(); // Start clean
     
     // Add 10 results
     for (int i = 1; i <= 10; i++)
@@ -176,15 +182,16 @@ void TestSpeedTestHistoryGetLatest()
         history.AddResult(result);
     }
     
-    auto latest = history.GetLatest();
-    if (latest.has_value())
+    auto historyList = history.GetHistory(1);
+    if (!historyList.empty())
     {
-        AssertTrue(latest->downloadMbps == 100.0, L"Latest should have download 100 Mbps");
-        AssertTrue(latest->pingMs == 100, L"Latest should have ping 100 ms");
+        const auto& latest = historyList[0];
+        AssertTrue(latest.downloadMbps == 100.0, L"Latest should have download 100 Mbps");
+        AssertTrue(latest.pingMs == 100, L"Latest should have ping 100 ms");
     }
     else
     {
-        AssertTrue(false, L"GetLatest should return a value when history not empty");
+        AssertTrue(false, L"GetHistory(1) should return a value when history not empty");
     }
 }
 
@@ -193,6 +200,7 @@ void TestSpeedTestHistoryClear()
     LogTestMessage(L"  Running TestSpeedTestHistoryClear...");
     
     SpeedTestHistory history;
+    history.ClearHistory(); // Start clean
     
     // Add some results
     SpeedTestResult result;
@@ -207,7 +215,7 @@ void TestSpeedTestHistoryClear()
     
     AssertTrue(history.GetHistory().size() == 2, L"Should have 2 items before clear");
     
-    history.Clear();
+    history.ClearHistory();
     
     AssertTrue(history.GetHistory().empty(), L"History should be empty after clear");
 }

@@ -98,6 +98,7 @@ set(SOURCE_FILES
     src/ui/dialogs/SettingsDialog.cpp
     src/ui/dialogs/DashboardDialog.cpp
     src/ui/dialogs/HistoryDialog.cpp
+    src/ui/dialogs/SpeedTestDialog.cpp
     src/core/Utils.cpp
     src/core/NetworkCalculator.cpp
     src/core/NetworkMonitor.cpp

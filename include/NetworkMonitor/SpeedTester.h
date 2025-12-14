@@ -26,7 +26,7 @@ public:
     SpeedTestResult GetLastResult() const override;
     void SetResultCallback(std::function<void(const SpeedTestResult&)> callback) override;
     
-private:
+public: // Exposed for unit tests
     // Test execution
     void RunTest(std::function<void(int progress, const std::wstring& status)> progressCallback);
     
@@ -35,6 +35,7 @@ private:
     double MeasureDownloadSpeed(std::function<void(int progress, const std::wstring& status)> progressCallback);
     double MeasureUploadSpeed(std::function<void(int progress, const std::wstring& status)> progressCallback);
     
+private:
     // HTTP helpers using WinHTTP
     bool HttpDownload(const std::wstring& host, const std::wstring& path, 
                       size_t expectedBytes, double& speedMbps,
