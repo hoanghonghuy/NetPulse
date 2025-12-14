@@ -2,6 +2,22 @@
 
 All notable changes to NetworkMonitor will be documented in this file.
 
+## [1.5.0] - 2025-12-14
+
+### Added
+- **Integrated Bandwidth Speed Test**: Perform download, upload, and ping tests directly within the application.
+- **Full Localization**: Complete translation support for all UI elements across 5 languages.
+- **GDI Resource Optimization**: Comprehensive audit and cleanup of GDI objects for better stability.
+
+### Changed
+- **UI Standardization**: Unified Dark Mode theming for buttons, lists, and tabs using `DialogThemeHelper`.
+- **Unit Testing**: Updated test suite for better isolation and API alignment.
+- **CI/CD**: Fixed build pipeline reliability issues.
+
+### Fixed
+- Reserved linker errors in build system.
+- Corrected various minor UI inconsistencies in Dark Mode.
+
 ## [1.4.0] - 2025-12-13
 
 ### Added

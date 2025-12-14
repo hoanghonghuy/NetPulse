@@ -11,7 +11,7 @@ cmake_minimum_required(VERSION 3.15)
 # ============================================================================
 
 project(NetworkMonitor
-    VERSION 1.0.0
+    VERSION 1.5.0
     DESCRIPTION "Network Traffic Monitor for Windows System Tray"
     LANGUAGES C CXX
 )
