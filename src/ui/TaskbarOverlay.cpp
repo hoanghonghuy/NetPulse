@@ -1,3 +1,5 @@
+// NOTE: This class manages its own GDI resources (Fonts, Brushes, Bitmaps) for performance and stability.
+// Refactoring to shared helpers is discouraged to avoid object lifetime issues.
 #include "NetworkMonitor/TaskbarOverlay.h"
 #include "NetworkMonitor/Utils.h"
 #include "../../resources/resource.h"
