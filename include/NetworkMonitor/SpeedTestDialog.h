@@ -73,7 +73,7 @@ private:
     bool OnDrawItem(DRAWITEMSTRUCT* pDrawItem);
 
     // Helpers
-    std::wstring LoadStringResource(UINT id);
+
 
 private:
     HWND m_hDlg = nullptr;

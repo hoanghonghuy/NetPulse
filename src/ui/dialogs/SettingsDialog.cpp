@@ -26,9 +26,7 @@ static LRESULT CALLBACK DarkTabProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
         // 1. Fill entire background with dark color
         RECT rcClient;
         GetClientRect(hwnd, &rcClient);
-        HBRUSH bgBrush = CreateSolidBrush(DialogThemeHelper::DARK_BACKGROUND);
-        FillRect(hdc, &rcClient, bgBrush);
-        DeleteObject(bgBrush);
+        DialogThemeHelper::FillDarkBackground(hdc, rcClient);
 
         // 2. Calculate drawing areas
         RECT displayRect = rcClient;
@@ -174,9 +172,9 @@ static LRESULT CALLBACK DarkComboBoxProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
                 RECT btnRect = cbi.rcButton;
 
                 // Draw dark button background
-                COLORREF btnBg = RGB(50, 50, 50);
-                COLORREF btnBorder = RGB(80, 80, 80);
-                COLORREF arrowColor = RGB(200, 200, 200);
+                COLORREF btnBg = DialogThemeHelper::DARK_BUTTON_BACKGROUND;
+                COLORREF btnBorder = DialogThemeHelper::DARK_BUTTON_BORDER;
+                COLORREF arrowColor = DialogThemeHelper::DARK_TEXT;
 
                 HBRUSH hBrush = CreateSolidBrush(btnBg);
                 FillRect(hdc, &btnRect, hBrush);
@@ -775,9 +773,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                     case CDDS_PREERASE:
                     {
                         // Fill entire tab control area with dark background
-                        HBRUSH hBrush = CreateSolidBrush(DialogThemeHelper::DARK_BACKGROUND);
-                        FillRect(pNMCD->hdc, &pNMCD->rc, hBrush);
-                        DeleteObject(hBrush);
+                        DialogThemeHelper::FillDarkBackground(pNMCD->hdc, pNMCD->rc);
                         return CDRF_SKIPDEFAULT;
                     }
                 }
@@ -792,9 +788,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 HDC hdc = reinterpret_cast<HDC>(wParam);
                 RECT rc;
                 GetClientRect(hDlg, &rc);
-                HBRUSH hBrush = CreateSolidBrush(DialogThemeHelper::DARK_BACKGROUND);
-                FillRect(hdc, &rc, hBrush);
-                DeleteObject(hBrush);
+                DialogThemeHelper::FillDarkBackground(hdc, rc);
                 return TRUE;
             }
             break;
@@ -857,80 +851,14 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                     if (id == IDC_SETTINGS_BUTTON_OPEN_LOG || id == IDOK || 
                         id == IDC_SETTINGS_BUTTON_APPLY || id == IDCANCEL)
                     {
-                        HDC hdc = pDrawItem->hDC;
-                        RECT rc = pDrawItem->rcItem;
-
-                        bool pressed = (pDrawItem->itemState & ODS_SELECTED) != 0;
-                        bool focused = (pDrawItem->itemState & ODS_FOCUS) != 0;
-                        bool disabled = (pDrawItem->itemState & ODS_DISABLED) != 0;
-
-                        COLORREF backColor = pressed ? RGB(50, 50, 50) : RGB(40, 40, 40);
-                        COLORREF borderColor = RGB(90, 90, 90);
-                        COLORREF textColor = disabled ? RGB(160, 160, 160) : DialogThemeHelper::DARK_TEXT;
-
-                        HBRUSH hBrush = CreateSolidBrush(backColor);
-                        FillRect(hdc, &rc, hBrush);
-                        DeleteObject(hBrush);
-
-                        // Draw only the frame so we don't overwrite the
-                        // dark background we just filled.
-                        HBRUSH hBorder = CreateSolidBrush(borderColor);
-                        FrameRect(hdc, &rc, hBorder);
-                        DeleteObject(hBorder);
-
-                        wchar_t text[128] = {0};
-                        GetWindowTextW(pDrawItem->hwndItem, text, static_cast<int>(std::size(text)));
-
-                        SetBkMode(hdc, TRANSPARENT);
-                        SetTextColor(hdc, textColor);
-
-                        RECT textRc = rc;
-                        InflateRect(&textRc, -4, -2);
-                        DrawTextW(hdc, text, -1, &textRc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-
-                        if (focused)
-                        {
-                            RECT focusRc = rc;
-                            InflateRect(&focusRc, -3, -3);
-                            DrawFocusRect(hdc, &focusRc);
-                        }
-
+                        DialogThemeHelper::DrawButton(pDrawItem, true);
                         return TRUE;
                     }
                 }
                 // Handle Tab Control owner-draw
                 else if (pDrawItem->CtlType == ODT_TAB)
                 {
-                    HDC hdc = pDrawItem->hDC;
-                    RECT rc = pDrawItem->rcItem;
-                    bool selected = (pDrawItem->itemState & ODS_SELECTED) != 0;
-
-                    // Dark background for tab
-                    COLORREF backColor = selected ? DialogThemeHelper::DARK_BACKGROUND_SELECTED : DialogThemeHelper::DARK_BACKGROUND;
-                    COLORREF textColor = DialogThemeHelper::DARK_TEXT;
-
-                    HBRUSH hBrush = CreateSolidBrush(backColor);
-                    FillRect(hdc, &rc, hBrush);
-                    DeleteObject(hBrush);
-
-                    // Draw border
-                    HBRUSH hBorder = CreateSolidBrush(RGB(70, 70, 70));
-                    FrameRect(hdc, &rc, hBorder);
-                    DeleteObject(hBorder);
-
-                    // Get tab text
-                    TCITEM tci = {};
-                    wchar_t text[64] = {};
-                    tci.mask = TCIF_TEXT;
-                    tci.pszText = text;
-                    tci.cchTextMax = static_cast<int>(std::size(text));
-                    TabCtrl_GetItem(pDrawItem->hwndItem, pDrawItem->itemID, &tci);
-
-                    // Draw text
-                    SetBkMode(hdc, TRANSPARENT);
-                    SetTextColor(hdc, textColor);
-                    DrawTextW(hdc, text, -1, &rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-
+                    DialogThemeHelper::DrawTabItem(pDrawItem, true);
                     return TRUE;
                 }
                 // Handle Checkbox owner-draw
@@ -2006,7 +1934,7 @@ void SettingsDialog::SwitchTab(HWND hDlg, int tabIndex)
     const int displayControls[] = {
         IDC_SETTINGS_LABEL_THEME, IDC_THEME_MODE_COMBO,
         IDC_SETTINGS_LABEL_INTERVAL, IDC_UPDATE_INTERVAL_COMBO,
-        IDC_DISPLAY_UNIT_LABEL, IDC_DISPLAY_UNIT_COMBO,
+        IDC_SETTINGS_LABEL_SPEED_UNIT, IDC_DISPLAY_UNIT_COMBO,
         IDC_FONT_SIZE_LABEL, IDC_OVERLAY_FONT_SIZE_COMBO,
         IDC_OVERLAY_COLOR_LABEL, IDC_OVERLAY_COLOR_COMBO,
         IDC_SETTINGS_GROUP_FLOATING,

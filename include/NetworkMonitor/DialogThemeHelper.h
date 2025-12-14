@@ -21,6 +21,12 @@ public:
     static constexpr COLORREF DARK_BORDER = RGB(58, 60, 67);          // #3a3c43
     static constexpr COLORREF DARK_BACKGROUND_SELECTED = RGB(43, 45, 49); // Same as Panel
 
+    // Button specific colors (Matches SettingsDialog legacy style)
+    static constexpr COLORREF DARK_BUTTON_BACKGROUND = RGB(40, 40, 40);
+    static constexpr COLORREF DARK_BUTTON_PRESSED = RGB(50, 50, 50);
+    static constexpr COLORREF DARK_BUTTON_BORDER = RGB(90, 90, 90);
+    static constexpr COLORREF DARK_TEXT_DISABLED = RGB(160, 160, 160);
+
     // Light theme colors
     static constexpr COLORREF LIGHT_BACKGROUND = RGB(255, 255, 255);
     static constexpr COLORREF LIGHT_TEXT = RGB(0, 0, 0);
@@ -72,6 +78,20 @@ public:
      * @param darkTheme true to apply dark theme
      */
     static void ApplyToDialog(HWND hDlg, bool darkTheme);
+
+    /**
+     * Apply dark theme to a header control (Subclassing)
+     * @param hHeader Header control handle
+     * @param darkTheme true to apply dark theme
+     */
+    static void ApplyDarkHeader(HWND hHeader, bool darkTheme);
+
+    /**
+     * Apply dark theme to a ListView control
+     * @param hList ListView handle
+     * @param darkTheme true to apply dark theme
+     */
+    static void ApplyDarkListView(HWND hList, bool darkTheme);
 
     /**
      * Cleanup cached resources (call on application exit)

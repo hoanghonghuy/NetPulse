@@ -22,13 +22,7 @@
 namespace NetworkMonitor
 {
 
-namespace
-{
-    // Property names for associating original WndProc and DashboardDialog
-    // instance with the header control.
-    const wchar_t* HEADER_OLDPROC_PROP = L"NM_DASHBOARD_HEADER_OLDPROC";
-    const wchar_t* HEADER_THIS_PROP    = L"NM_DASHBOARD_HEADER_THIS";
-}
+
 
 DashboardDialog::DashboardDialog()
     : m_hDialog(nullptr)
@@ -227,47 +221,8 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                 col.fmt = LVCFMT_RIGHT;
                 ListView_InsertColumn(hList, 3, &col);
 
-                if (m_pConfig && m_pConfig->darkTheme)
-                {
-                    ListView_SetBkColor(hList, RGB(24, 24, 24));
-                    ListView_SetTextBkColor(hList, RGB(24, 24, 24));
-                    ListView_SetTextColor(hList, DialogThemeHelper::DARK_TEXT);
-
-                    // Apply dark theme with dark scrollbars (DarkMode_Explorer)
-                    ThemeHelper::ApplyDarkThemeToControl(hList, true);
-                    
-                    // Remove border styles to eliminate white frame
-                    LONG_PTR style = GetWindowLongPtrW(hList, GWL_STYLE);
-                    style &= ~WS_BORDER;
-                    SetWindowLongPtrW(hList, GWL_STYLE, style);
-                    
-                    LONG_PTR exStyle = GetWindowLongPtrW(hList, GWL_EXSTYLE);
-                    exStyle &= ~WS_EX_CLIENTEDGE;
-                    SetWindowLongPtrW(hList, GWL_EXSTYLE, exStyle);
-                    
-                    // Force style update
-                    SetWindowPos(hList, nullptr, 0, 0, 0, 0, 
-                                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-
-                    // Subclass the list header so we can paint it fully dark.
-                    HWND hHeader = ListView_GetHeader(hList);
-                    if (hHeader)
-                    {
-                        WNDPROC oldProc = reinterpret_cast<WNDPROC>(
-                            GetWindowLongPtrW(hHeader, GWLP_WNDPROC));
-                        SetPropW(hHeader, HEADER_OLDPROC_PROP,
-                                 reinterpret_cast<HANDLE>(oldProc));
-                        SetPropW(hHeader, HEADER_THIS_PROP,
-                                 reinterpret_cast<HANDLE>(this));
-
-                        SetWindowLongPtrW(hHeader, GWLP_WNDPROC,
-                                          reinterpret_cast<LONG_PTR>(HeaderWndProc));
-
-                        // Apply dark theme to header as well
-                        ThemeHelper::ApplyDarkThemeToControl(hHeader, true);
-                    }
-
-                }
+                // Apply consistent theme to ListView
+                DialogThemeHelper::ApplyDarkListView(hList, m_pConfig && m_pConfig->darkTheme);
                 
                 // Apply dark theme to chart control
                 if (m_pConfig && m_pConfig->darkTheme)
@@ -565,46 +520,7 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                     id == IDC_HISTORY_MANAGE || id == IDC_DASHBOARD_REFRESH || id == IDOK ||
                     id == IDC_SPEED_TEST_BUTTON)
                 {
-                    HDC hdc = pDrawItem->hDC;
-                    RECT rc = pDrawItem->rcItem;
-
-                    bool pressed = (pDrawItem->itemState & ODS_SELECTED) != 0;
-                    bool focused = (pDrawItem->itemState & ODS_FOCUS) != 0;
-                    bool disabled = (pDrawItem->itemState & ODS_DISABLED) != 0;
-
-                    COLORREF backColor = pressed ? RGB(50, 50, 50) : RGB(40, 40, 40);
-                    COLORREF borderColor = RGB(90, 90, 90);
-                    COLORREF textColor = disabled ? RGB(160, 160, 160) : DialogThemeHelper::DARK_TEXT;
-
-                    // Fill background
-                    HBRUSH hBrush = CreateSolidBrush(backColor);
-                    FillRect(hdc, &rc, hBrush);
-                    DeleteObject(hBrush);
-
-                    // Draw border only, keep dark background
-                    HBRUSH hBorder = CreateSolidBrush(borderColor);
-                    FrameRect(hdc, &rc, hBorder);
-                    DeleteObject(hBorder);
-
-                    // Draw button text
-                    wchar_t text[128] = {0};
-                    GetWindowTextW(pDrawItem->hwndItem, text, static_cast<int>(std::size(text)));
-
-                    SetBkMode(hdc, TRANSPARENT);
-                    SetTextColor(hdc, textColor);
-
-                    RECT textRc = rc;
-                    InflateRect(&textRc, -4, -2);
-                    DrawTextW(hdc, text, -1, &textRc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-
-                    // Focus rectangle
-                    if (focused)
-                    {
-                        RECT focusRc = rc;
-                        InflateRect(&focusRc, -3, -3);
-                        DrawFocusRect(hdc, &focusRc);
-                    }
-
+                    DialogThemeHelper::DrawButton(pDrawItem, true);
                     return TRUE;
                 }
             }
@@ -850,118 +766,7 @@ void DashboardDialog::CenterDialogOnScreen(HWND hDlg)
     CenterWindowOnScreen(hDlg);
 }
 
-LRESULT CALLBACK DashboardDialog::HeaderWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-    WNDPROC oldProc = reinterpret_cast<WNDPROC>(GetPropW(hwnd, HEADER_OLDPROC_PROP));
-    DashboardDialog* pThis = reinterpret_cast<DashboardDialog*>(
-        GetPropW(hwnd, HEADER_THIS_PROP));
 
-    if (msg == WM_NCDESTROY)
-    {
-        if (oldProc)
-        {
-            SetWindowLongPtrW(hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(oldProc));
-        }
-        RemovePropW(hwnd, HEADER_OLDPROC_PROP);
-        RemovePropW(hwnd, HEADER_THIS_PROP);
-
-        return oldProc ? CallWindowProcW(oldProc, hwnd, msg, wParam, lParam)
-                       : DefWindowProcW(hwnd, msg, wParam, lParam);
-    }
-
-    // If we don't have a dialog instance or config, fall back to original proc
-    if (!(pThis && pThis->m_pConfig && pThis->m_pConfig->darkTheme))
-    {
-        return oldProc ? CallWindowProcW(oldProc, hwnd, msg, wParam, lParam)
-                       : DefWindowProcW(hwnd, msg, wParam, lParam);
-    }
-
-    switch (msg)
-    {
-    case WM_ERASEBKGND:
-        // We'll handle background in WM_PAINT
-        return 1;
-
-    case WM_PAINT:
-    {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hwnd, &ps);
-        if (!hdc)
-        {
-            break;
-        }
-
-        RECT rcClient;
-        GetClientRect(hwnd, &rcClient);
-
-        // Fill entire header background dark
-        HBRUSH hBack = CreateSolidBrush(DialogThemeHelper::DARK_BACKGROUND);
-        FillRect(hdc, &rcClient, hBack);
-        DeleteObject(hBack);
-
-        int count = static_cast<int>(SendMessageW(hwnd, HDM_GETITEMCOUNT, 0, 0));
-        for (int i = 0; i < count; ++i)
-        {
-            RECT rcItem;
-            if (!SendMessageW(hwnd, HDM_GETITEMRECT, static_cast<WPARAM>(i),
-                              reinterpret_cast<LPARAM>(&rcItem)))
-            {
-                continue;
-            }
-
-            WCHAR text[128] = {0};
-            HDITEMW item = {};
-            item.mask = HDI_TEXT | HDI_FORMAT;
-            item.pszText = text;
-            item.cchTextMax = static_cast<int>(sizeof(text) / sizeof(text[0]));
-
-            if (!SendMessageW(hwnd, HDM_GETITEMW, static_cast<WPARAM>(i),
-                              reinterpret_cast<LPARAM>(&item)))
-            {
-                continue;
-            }
-
-            SetBkMode(hdc, TRANSPARENT);
-            SetTextColor(hdc, DialogThemeHelper::DARK_TEXT);
-
-            RECT rcText = rcItem;
-            rcText.left += 4;
-
-            UINT align = DT_SINGLELINE | DT_VCENTER;
-            if (item.fmt & HDF_CENTER)
-            {
-                align |= DT_CENTER;
-            }
-            else if (item.fmt & HDF_RIGHT)
-            {
-                align |= DT_RIGHT;
-            }
-            else
-            {
-                align |= DT_LEFT;
-            }
-
-            DrawTextW(hdc, text, -1, &rcText, align);
-        }
-
-        // Bottom border line
-        HPEN hPen = CreatePen(PS_SOLID, 1, RGB(90, 90, 90));
-        HPEN hOldPen = reinterpret_cast<HPEN>(SelectObject(hdc, hPen));
-        MoveToEx(hdc, rcClient.left, rcClient.bottom - 1, nullptr);
-        LineTo(hdc, rcClient.right, rcClient.bottom - 1);
-        SelectObject(hdc, hOldPen);
-        DeleteObject(hPen);
-
-        EndPaint(hwnd, &ps);
-        return 0;
-    }
-    default:
-        break;
-    }
-
-    return oldProc ? CallWindowProcW(oldProc, hwnd, msg, wParam, lParam)
-                   : DefWindowProcW(hwnd, msg, wParam, lParam);
-}
 
 } // namespace NetworkMonitor
 

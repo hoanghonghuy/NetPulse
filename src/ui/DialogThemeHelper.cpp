@@ -1,9 +1,13 @@
 #include "NetworkMonitor/DialogThemeHelper.h"
+#include "NetworkMonitor/ThemeHelper.h"
 #include <uxtheme.h>
 #include <dwmapi.h>
 
 #pragma comment(lib, "uxtheme.lib")
 #pragma comment(lib, "dwmapi.lib")
+#pragma comment(lib, "comctl32.lib")
+
+#include <commctrl.h>
 
 namespace NetworkMonitor
 {
@@ -33,9 +37,7 @@ HBRUSH DialogThemeHelper::HandleControlColor(HDC hdc, bool darkTheme)
 
 void DialogThemeHelper::FillDarkBackground(HDC hdc, const RECT& rect)
 {
-    HBRUSH hBrush = CreateSolidBrush(DARK_BACKGROUND);
-    FillRect(hdc, &rect, hBrush);
-    DeleteObject(hBrush);
+    FillRect(hdc, &rect, GetDarkBackgroundBrush());
 }
 
 void DialogThemeHelper::DrawButton(DRAWITEMSTRUCT* pDrawItem, bool darkTheme)
@@ -47,23 +49,43 @@ void DialogThemeHelper::DrawButton(DRAWITEMSTRUCT* pDrawItem, bool darkTheme)
 
     HDC hdc = pDrawItem->hDC;
     RECT rc = pDrawItem->rcItem;
+    
     bool isPressed = (pDrawItem->itemState & ODS_SELECTED) != 0;
+    bool isDisabled = (pDrawItem->itemState & ODS_DISABLED) != 0;
+    bool isFocused = (pDrawItem->itemState & ODS_FOCUS) != 0;
 
     // Draw background
-    COLORREF bgColor = isPressed ? DARK_BACKGROUND_SELECTED : DARK_BACKGROUND;
+    COLORREF bgColor = isPressed ? DARK_BUTTON_PRESSED : DARK_BUTTON_BACKGROUND;
     HBRUSH hBrush = CreateSolidBrush(bgColor);
     FillRect(hdc, &rc, hBrush);
     DeleteObject(hBrush);
 
-    // NO border drawing - cleaner look
-    
+    // Draw border
+    HBRUSH hBorder = CreateSolidBrush(DARK_BUTTON_BORDER);
+    FrameRect(hdc, &rc, hBorder);
+    DeleteObject(hBorder);
+
     // Draw text
     wchar_t text[256] = {0};
     GetWindowTextW(pDrawItem->hwndItem, text, 256);
 
     SetBkMode(hdc, TRANSPARENT);
-    SetTextColor(hdc, DARK_TEXT);
-    DrawTextW(hdc, text, -1, &rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+    SetTextColor(hdc, isDisabled ? DARK_TEXT_DISABLED : DARK_TEXT);
+    
+    // Adjust text rect if needed (e.g. slight offset when pressed?) 
+    // SettingsDialog didn't do this, simply centered.
+    // SettingsDialog used InflateRect(&textRc, -4, -2) which we can keep for safety/padding.
+    RECT textRc = rc;
+    InflateRect(&textRc, -4, -2);
+    DrawTextW(hdc, text, -1, &textRc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+    
+    // Draw focus rect if needed
+    if (isFocused)
+    {
+        RECT focusRc = rc;
+        InflateRect(&focusRc, -3, -3);
+        DrawFocusRect(hdc, &focusRc);
+    }
 }
 
 void DialogThemeHelper::DrawTabItem(DRAWITEMSTRUCT* pDrawItem, bool darkTheme)
@@ -168,6 +190,158 @@ void DialogThemeHelper::Cleanup()
     {
         DeleteObject(s_darkBrush);
         s_darkBrush = nullptr;
+    }
+}
+
+
+// Header subclass procedure for dark theme
+static LRESULT CALLBACK HeaderSubclassProc(HWND hwnd, UINT msg, WPARAM wParam,
+    LPARAM lParam, UINT_PTR /*uIdSubclass*/,
+    DWORD_PTR /*dwRefData*/)
+{
+    if (msg == WM_PAINT)
+    {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hwnd, &ps);
+
+        // Get client rect
+        RECT rc;
+        GetClientRect(hwnd, &rc);
+
+        // Fill dark background
+        DialogThemeHelper::FillDarkBackground(hdc, rc);
+
+        // Draw bottom border only (NO column separators!)
+        HPEN hPen = CreatePen(PS_SOLID, 1, RGB(60, 60, 60));
+        HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
+        MoveToEx(hdc, rc.left, rc.bottom - 1, nullptr);
+        LineTo(hdc, rc.right, rc.bottom - 1);
+        SelectObject(hdc, hOldPen);
+        DeleteObject(hPen);
+
+        // Set text colors
+        SetTextColor(hdc, DialogThemeHelper::DARK_TEXT);
+        SetBkMode(hdc, TRANSPARENT);
+
+        // Draw header items WITHOUT separators
+        int itemCount = Header_GetItemCount(hwnd);
+        for (int i = 0; i < itemCount; i++)
+        {
+            RECT itemRect;
+            Header_GetItemRect(hwnd, i, &itemRect);
+
+            // Get item text
+            HDITEMW hdi = { 0 };
+            hdi.mask = HDI_TEXT | HDI_FORMAT; // Added HDI_FORMAT to get alignment
+            wchar_t text[256];
+            hdi.pszText = text;
+            hdi.cchTextMax = 256;
+            Header_GetItem(hwnd, i, &hdi);
+
+            // Draw text centered/aligned WITHOUT any borders
+            RECT textRect = itemRect;
+            textRect.left += 5;   // Small padding
+            textRect.right -= 5;
+
+            // Determine alignment from item format
+            UINT format = DT_LEFT;
+            if (hdi.fmt & HDF_CENTER) format = DT_CENTER;
+            else if (hdi.fmt & HDF_RIGHT) format = DT_RIGHT;
+
+            DrawTextW(hdc, text, -1, &textRect, format | DT_VCENTER | DT_SINGLELINE);
+        }
+
+        EndPaint(hwnd, &ps);
+        return 0;
+    }
+    
+    // Allow clean removal
+    if (msg == WM_NCDESTROY)
+    {
+        RemoveWindowSubclass(hwnd, HeaderSubclassProc, 0);
+    }
+
+    return DefSubclassProc(hwnd, msg, wParam, lParam);
+}
+
+void DialogThemeHelper::ApplyDarkHeader(HWND hHeader, bool darkTheme)
+{
+    if (!hHeader) return;
+
+    if (darkTheme)
+    {
+        // Set subclass
+        SetWindowSubclass(hHeader, HeaderSubclassProc, 0, 0);
+    }
+    else
+    {
+        // Remove subclass
+        RemoveWindowSubclass(hHeader, HeaderSubclassProc, 0);
+    }
+}
+
+void DialogThemeHelper::ApplyDarkListView(HWND hList, bool darkTheme)
+{
+    if (!hList) return;
+
+    if (darkTheme)
+    {
+        // Colors
+        ListView_SetBkColor(hList, DARK_PANEL);
+        ListView_SetTextBkColor(hList, DARK_PANEL);
+        ListView_SetTextColor(hList, DARK_TEXT);
+
+        // Scrollbars and Theme
+        ThemeHelper::ApplyDarkThemeToControl(hList, true);
+        SetWindowTheme(hList, L"DarkMode_Explorer", nullptr);
+
+        // Remove borders for cleaner look
+        LONG_PTR style = GetWindowLongPtrW(hList, GWL_STYLE);
+        style &= ~WS_BORDER;
+        SetWindowLongPtrW(hList, GWL_STYLE, style);
+
+        LONG_PTR exStyle = GetWindowLongPtrW(hList, GWL_EXSTYLE);
+        exStyle &= ~WS_EX_CLIENTEDGE;
+        SetWindowLongPtrW(hList, GWL_EXSTYLE, exStyle);
+
+        // Force frame update
+        SetWindowPos(hList, nullptr, 0, 0, 0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+
+        // Header
+        HWND hHeader = ListView_GetHeader(hList);
+        if (hHeader)
+        {
+            ApplyDarkHeader(hHeader, true);
+        }
+    }
+    else
+    {
+        // Colors
+        ListView_SetBkColor(hList, LIGHT_BACKGROUND);
+        ListView_SetTextBkColor(hList, LIGHT_BACKGROUND);
+        ListView_SetTextColor(hList, LIGHT_TEXT);
+
+        // Scrollbars and Theme
+        ThemeHelper::ApplyDarkThemeToControl(hList, false);
+        SetWindowTheme(hList, L"Explorer", nullptr);
+
+        // Restore borders
+        LONG_PTR style = GetWindowLongPtrW(hList, GWL_STYLE);
+        style |= WS_BORDER;
+        SetWindowLongPtrW(hList, GWL_STYLE, style);
+
+        // Force frame update
+        SetWindowPos(hList, nullptr, 0, 0, 0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+
+        // Header
+        HWND hHeader = ListView_GetHeader(hList);
+        if (hHeader)
+        {
+            ApplyDarkHeader(hHeader, false);
+            SetWindowTheme(hHeader, L"ItemsView", nullptr);
+        }
     }
 }
 

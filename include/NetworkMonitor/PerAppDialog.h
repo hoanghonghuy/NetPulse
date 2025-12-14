@@ -40,9 +40,7 @@ private:
     void ApplyTheme(HWND hDlg);
     
     // Header subclass for custom painting
-    static LRESULT CALLBACK HeaderSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, 
-                                               LPARAM lParam, UINT_PTR uIdSubclass, 
-                                               DWORD_PTR dwRefData);
+
 
     std::unique_ptr<PerAppMonitor> m_pMonitor;
     HWND m_hList;

@@ -1,6 +1,7 @@
 #include "NetworkMonitor/TrayIcon.h"
 #include "NetworkMonitor/Utils.h"
 #include "NetworkMonitor/ThemeHelper.h"
+#include "NetworkMonitor/DialogThemeHelper.h"
 #include "../../resources/resource.h"
 
 namespace NetworkMonitor
@@ -617,10 +618,10 @@ void TrayIcon::HandleMenuDrawItem(LPDRAWITEMSTRUCT pDraw)
     // Colors based on theme
     // Colors based on theme (EVKey "Professional Dark")
     // Values match DialogThemeHelper::DARK_...
-    COLORREF bgColor = darkTheme ? RGB(32, 34, 37) : RGB(255, 255, 255);
-    COLORREF textColor = darkTheme ? RGB(242, 243, 245) : RGB(0, 0, 0);
-    COLORREF selectBg = darkTheme ? RGB(43, 45, 49) : RGB(200, 220, 240);
-    COLORREF separatorColor = darkTheme ? RGB(58, 60, 67) : RGB(200, 200, 200);
+    COLORREF bgColor = darkTheme ? DialogThemeHelper::DARK_BACKGROUND : RGB(255, 255, 255);
+    COLORREF textColor = darkTheme ? DialogThemeHelper::DARK_TEXT : RGB(0, 0, 0);
+    COLORREF selectBg = darkTheme ? DialogThemeHelper::DARK_BACKGROUND_SELECTED : RGB(200, 220, 240);
+    COLORREF separatorColor = darkTheme ? DialogThemeHelper::DARK_BORDER : RGB(200, 200, 200);
     
     if (itemData.separator)
     {

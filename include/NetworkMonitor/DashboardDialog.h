@@ -34,8 +34,7 @@ private:
     void DrawDashboardChart(HDC hdc, const RECT& rc);
     void CenterDialogOnScreen(HWND hDlg);
 
-    // Custom draw handler for the list header when dark theme is enabled
-    static LRESULT CALLBACK HeaderWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 
     // Member variables
     HWND m_hDialog;

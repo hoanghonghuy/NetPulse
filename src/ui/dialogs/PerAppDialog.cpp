@@ -105,32 +105,9 @@ INT_PTR PerAppDialog::InstanceDialogProc(HWND hDlg, UINT message, WPARAM wParam,
             if (pDrawItem->CtlType == ODT_BUTTON)
             {
                 UINT id = pDrawItem->CtlID;
-                if (id == IDC_PERAPP_REFRESH || id == IDOK)
+                if (id == IDC_PERAPP_REFRESH || id == IDOK || id == IDCANCEL)
                 {
-                    HDC hdc = pDrawItem->hDC;
-                    RECT rc = pDrawItem->rcItem;
-
-                    bool pressed = (pDrawItem->itemState & ODS_SELECTED) != 0;
-                    bool focused = (pDrawItem->itemState & ODS_FOCUS) != 0;
-                    bool disabled = (pDrawItem->itemState & ODS_DISABLED) != 0;
-                    (void)focused; // May use for future focus indicator
-
-                    COLORREF backColor = pressed ? RGB(50, 50, 50) : RGB(40, 40, 40);
-                    COLORREF textColor = disabled ? RGB(160, 160, 160) : DialogThemeHelper::DARK_TEXT;
-
-                    // Fill background
-                    HBRUSH hBrush = CreateSolidBrush(backColor);
-                    FillRect(hdc, &rc, hBrush);
-                    DeleteObject(hBrush);
-
-                    // No border for cleaner appearance
-
-                    // Draw text
-                    wchar_t text[64] = {0};
-                    GetWindowTextW(pDrawItem->hwndItem, text, _countof(text));
-                    SetTextColor(hdc, textColor);
-                    SetBkMode(hdc, TRANSPARENT);
-                    DrawTextW(hdc, text, -1, &rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+                    DialogThemeHelper::DrawButton(pDrawItem, true);
 
                     return TRUE;
                 }
@@ -187,20 +164,8 @@ INT_PTR PerAppDialog::InstanceDialogProc(HWND hDlg, UINT message, WPARAM wParam,
 
 void PerAppDialog::InitializeDialog(HWND hDlg)
 {
-    // Center dialog on PRIMARY MONITOR (not parent window)
-    RECT rcDlg;
-    GetWindowRect(hDlg, &rcDlg);
-    int dlgWidth = rcDlg.right - rcDlg.left;
-    int dlgHeight = rcDlg.bottom - rcDlg.top;
-    
-    // Get primary monitor work area (excludes taskbar)
-    RECT rcWork;
-    SystemParametersInfoW(SPI_GETWORKAREA, 0, &rcWork, 0);
-    
-    int x = rcWork.left + ((rcWork.right - rcWork.left) - dlgWidth) / 2;
-    int y = rcWork.top + ((rcWork.bottom - rcWork.top) - dlgHeight) / 2;
-    
-    SetWindowPos(hDlg, nullptr, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+    // Center dialog on PRIMARY MONITOR
+    CenterWindowOnScreen(hDlg);
 
     // Determine theme from config (not system theme!)
     bool darkTheme = (m_pConfig && m_pConfig->darkTheme);
@@ -288,11 +253,7 @@ void PerAppDialog::InitializeDialog(HWND hDlg)
     ApplyTheme(hDlg);
     
     // Subclass header for custom dark mode painting
-    HWND hHeader = ListView_GetHeader(m_hList);
-    if (hHeader)
-    {
-        SetWindowSubclass(hHeader, HeaderSubclassProc, 0, (DWORD_PTR)this);
-    }
+
 
     // Initialize monitor
     m_pMonitor->Initialize();
@@ -404,32 +365,10 @@ void PerAppDialog::ApplyTheme(HWND hDlg)
         DialogThemeHelper::SetThinWindowBorder(hDlg);
         
         // Apply dark theme to list view
+        // Apply dark theme to list view
         if (m_hList)
         {
-            ThemeHelper::ApplyDarkThemeToControl(m_hList, true);
-            
-            // Use DarkMode_Explorer theme for dark scrollbars
-            SetWindowTheme(m_hList, L"DarkMode_Explorer", nullptr);
-            
-            // Remove border styles to eliminate white frame
-            LONG_PTR style = GetWindowLongPtrW(m_hList, GWL_STYLE);
-            style &= ~WS_BORDER;
-            SetWindowLongPtrW(m_hList, GWL_STYLE, style);
-            
-            LONG_PTR exStyle = GetWindowLongPtrW(m_hList, GWL_EXSTYLE);
-            exStyle &= ~WS_EX_CLIENTEDGE;
-            SetWindowLongPtrW(m_hList, GWL_EXSTYLE, exStyle);
-            
-            // Force style update
-            SetWindowPos(m_hList, nullptr, 0, 0, 0, 0, 
-                         SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-            
-            // Set explicit colors for ListView
-            ListView_SetBkColor(m_hList, RGB(30, 30, 30));      // Dark background
-            ListView_SetTextBkColor(m_hList, RGB(30, 30, 30));  // Dark text background
-            ListView_SetTextColor(m_hList, RGB(220, 220, 220)); // Light text
-            
-            // Note: Header subclass is set in InitializeDialog, no need to duplicate here
+            DialogThemeHelper::ApplyDarkListView(m_hList, true);
         }
     }
     else
@@ -440,104 +379,36 @@ void PerAppDialog::ApplyTheme(HWND hDlg)
         // Light theme colors
         if (m_hList)
         {
-            // Reset ListView to light theme
-            ThemeHelper::ApplyDarkThemeToControl(m_hList, false);
-            SetWindowTheme(m_hList, L"Explorer", nullptr);
-            
-            // Restore borders for light mode
-            LONG_PTR style = GetWindowLongPtrW(m_hList, GWL_STYLE);
-            style |= WS_BORDER;
-            SetWindowLongPtrW(m_hList, GWL_STYLE, style);
-            
-            // Note: WS_EX_CLIENTEDGE is usually default for SysListView32 but not strictly required if WS_BORDER looks ok.
-            // Let's rely on default behavior or just add it back if needed.
-            
-            SetWindowPos(m_hList, nullptr, 0, 0, 0, 0, 
-                         SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-            
-            ListView_SetBkColor(m_hList, RGB(255, 255, 255));      // White background
-            ListView_SetTextBkColor(m_hList, RGB(255, 255, 255));  // White text background
-            ListView_SetTextColor(m_hList, RGB(0, 0, 0));          // Black text
-            
-            // Reset header to light theme
-            HWND hHeader = ListView_GetHeader(m_hList);
-            if (hHeader)
-            {
-                ThemeHelper::ApplyDarkThemeToControl(hHeader, false);
-                SetWindowTheme(hHeader, L"ItemsView", nullptr);
-            }
+            DialogThemeHelper::ApplyDarkListView(m_hList, false);
         }
     }
+
+    // Toggle BS_OWNERDRAW on buttons based on theme
+    auto toggleOwnerDraw = [&](int id, bool enable)
+    {
+        HWND hBtn = GetDlgItem(hDlg, id);
+        if (hBtn)
+        {
+            LONG_PTR style = GetWindowLongPtrW(hBtn, GWL_STYLE);
+            if (enable)
+            {
+                style |= BS_OWNERDRAW;
+            }
+            else
+            {
+                style &= ~BS_OWNERDRAW;
+            }
+            SetWindowLongPtrW(hBtn, GWL_STYLE, style);
+            InvalidateRect(hBtn, nullptr, TRUE);
+        }
+    };
+
+    bool useOwnerDraw = (m_pConfig && m_pConfig->darkTheme);
+    toggleOwnerDraw(IDOK, useOwnerDraw);
+    toggleOwnerDraw(IDC_PERAPP_REFRESH, useOwnerDraw);
+    toggleOwnerDraw(IDCANCEL, useOwnerDraw);
 }
 
-LRESULT CALLBACK PerAppDialog::HeaderSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, 
-                                                   LPARAM lParam, UINT_PTR /*uIdSubclass*/, 
-                                                   DWORD_PTR dwRefData)
-{
-    PerAppDialog* pThis = (PerAppDialog*)dwRefData;
-    
-    if (msg == WM_PAINT && pThis->m_pConfig && pThis->m_pConfig->darkTheme)
-    {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hwnd, &ps);
-        
-        // Get client rect
-        RECT rc;
-        GetClientRect(hwnd, &rc);
-        
-        // Fill dark background
-        HBRUSH hBrush = CreateSolidBrush(RGB(40, 40, 40));
-        FillRect(hdc, &rc, hBrush);
-        DeleteObject(hBrush);
-        
-        // Draw bottom border only (NO column separators!)
-        HPEN hPen = CreatePen(PS_SOLID, 1, RGB(60, 60, 60));
-        HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
-        MoveToEx(hdc, rc.left, rc.bottom - 1, nullptr);
-        LineTo(hdc, rc.right, rc.bottom - 1);
-        SelectObject(hdc, hOldPen);
-        DeleteObject(hPen);
-        
-        // Set text colors
-        SetTextColor(hdc, RGB(220, 220, 220));
-        SetBkMode(hdc, TRANSPARENT);
-        
-        // Draw header items WITHOUT separators
-        int itemCount = Header_GetItemCount(hwnd);
-        for (int i = 0; i < itemCount; i++)
-        {
-            RECT itemRect;
-            Header_GetItemRect(hwnd, i, &itemRect);
-            
-            // Get item text
-            HDITEMW hdi = {0};
-            hdi.mask = HDI_TEXT;
-            wchar_t text[256];
-            hdi.pszText = text;
-            hdi.cchTextMax = 256;
-            Header_GetItem(hwnd, i, &hdi);
-            
-            // Draw text centered WITHOUT any borders
-            RECT textRect = itemRect;
-            textRect.left += 5;   // Small padding
-            textRect.right -= 5;
-            
-            // Determine alignment based on column index
-            UINT format = DT_LEFT; // Default for app name
-            // Align numeric columns to right (matches column definition)
-            if (i > 0) 
-            {
-                format = DT_RIGHT; 
-            }
-            
-            DrawTextW(hdc, text, -1, &textRect, format | DT_VCENTER | DT_SINGLELINE);
-        }
-        
-        EndPaint(hwnd, &ps);
-        return 0;
-    }
-    
-    return DefSubclassProc(hwnd, msg, wParam, lParam);
-}
+
 
 } // namespace NetworkMonitor

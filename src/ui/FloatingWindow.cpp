@@ -1,5 +1,6 @@
 #include "NetworkMonitor/FloatingWindow.h"
 #include "NetworkMonitor/Utils.h"
+#include "../../resources/resource.h"
 #include <windowsx.h>
 #include <commdlg.h>
 #include <sstream>
@@ -504,24 +505,27 @@ void FloatingWindow::PaintNormal(HDC hdc)
             wchar_t buf[32];
             COLORREF pingColor;
             
+            std::wstring pingLabel = LoadStringResource(IDS_SPEED_PING); // Reuse "Ping:"
+            if (pingLabel.empty()) pingLabel = L"Ping:";
+
             if (m_pingLatency < 0)
             {
-                wcscpy_s(buf, L"Ping: --");
+                swprintf_s(buf, L"%s --", pingLabel.c_str());
                 pingColor = m_darkTheme ? RGB(128, 128, 128) : RGB(150, 150, 150);
             }
             else if (m_pingLatency < 50)
             {
-                swprintf_s(buf, L"Ping: %dms", m_pingLatency);
+                swprintf_s(buf, L"%s %dms", pingLabel.c_str(), m_pingLatency);
                 pingColor = m_darkTheme ? RGB(0, 220, 100) : RGB(0, 150, 60);
             }
             else if (m_pingLatency < 100)
             {
-                swprintf_s(buf, L"Ping: %dms", m_pingLatency);
+                swprintf_s(buf, L"%s %dms", pingLabel.c_str(), m_pingLatency);
                 pingColor = m_darkTheme ? RGB(255, 200, 50) : RGB(200, 140, 0);
             }
             else
             {
-                swprintf_s(buf, L"Ping: %dms", m_pingLatency);
+                swprintf_s(buf, L"%s %dms", pingLabel.c_str(), m_pingLatency);
                 pingColor = m_darkTheme ? RGB(255, 80, 80) : RGB(200, 40, 40);
             }
             
@@ -538,7 +542,10 @@ void FloatingWindow::PaintNormal(HDC hdc)
         // Draw Data Today
         if (m_showDataToday)
         {
-            std::wstring todayStr = L"Today: " + FormatBytes(m_todayBytesDown + m_todayBytesUp);
+            std::wstring todayLabel = LoadStringResource(IDS_DASHBOARD_LABEL_TODAY); // Reuse "Today:"
+            if (todayLabel.empty()) todayLabel = L"Today:";
+            
+            std::wstring todayStr = todayLabel + L" " + FormatBytes(m_todayBytesDown + m_todayBytesUp);
             // Use a subtler color (e.g., CPU/RAM color or gray)
             COLORREF dateColor = m_darkTheme ? RGB(200, 200, 200) : RGB(80, 80, 80);
             SetTextColor(hdc, dateColor);
@@ -564,17 +571,20 @@ void FloatingWindow::PaintNormal(HDC hdc)
             
             if (m_isVpnActive)
             {
-                wcscpy_s(vpnBuf, L"VPN: ON");
+                std::wstring vpnOn = LoadStringResource(IDS_FLOATING_VPN_STATE_ON);
+                wcscpy_s(vpnBuf, vpnOn.empty() ? L"VPN: ON" : vpnOn.c_str());
                 vpnColor = m_darkTheme ? RGB(0, 220, 100) : RGB(0, 150, 60);
             }
             else if (m_isProxyActive)
             {
-                wcscpy_s(vpnBuf, L"Proxy: ON");
+                std::wstring proxyOn = LoadStringResource(IDS_FLOATING_PROXY_STATE_ON);
+                wcscpy_s(vpnBuf, proxyOn.empty() ? L"Proxy: ON" : proxyOn.c_str());
                 vpnColor = m_darkTheme ? RGB(255, 200, 50) : RGB(200, 140, 0);
             }
             else
             {
-                wcscpy_s(vpnBuf, L"VPN: OFF");
+                std::wstring vpnOff = LoadStringResource(IDS_FLOATING_VPN_STATE_OFF);
+                wcscpy_s(vpnBuf, vpnOff.empty() ? L"VPN: OFF" : vpnOff.c_str());
                 vpnColor = m_darkTheme ? RGB(128, 128, 128) : RGB(150, 150, 150);
             }
             
@@ -590,7 +600,9 @@ void FloatingWindow::PaintNormal(HDC hdc)
         // Draw Public IP
         if (m_showPublicIP && !m_publicIP.empty())
         {
-            std::wstring ipStr = L"IP: " + m_publicIP;
+            std::wstring ipLabel = LoadStringResource(IDS_FLOATING_IP_LABEL);
+            if (ipLabel.empty()) ipLabel = L"IP: ";
+            std::wstring ipStr = ipLabel + m_publicIP;
             COLORREF ipColor = m_darkTheme ? RGB(180, 180, 180) : RGB(100, 100, 100);
             SetTextColor(hdc, ipColor);
             TextOutW(hdc, startX, y, ipStr.c_str(), static_cast<int>(ipStr.length()));
@@ -793,7 +805,9 @@ bool FloatingWindow::ExportChartAsPNG(const std::wstring& filePath)
                               DEFAULT_PITCH | FF_SWISS, L"Segoe UI");
     HFONT hOldFont = static_cast<HFONT>(SelectObject(hdcMem, hFont));
     
-    TextOutW(hdcMem, 10, 5, L"Network Speed Chart", 19);
+    std::wstring chartTitle = LoadStringResource(IDS_FLOATING_CHART_TITLE);
+    if (chartTitle.empty()) chartTitle = L"Network Speed Chart";
+    TextOutW(hdcMem, 10, 5, chartTitle.c_str(), static_cast<int>(chartTitle.length()));
     
     // Draw sparklines
     RECT dlRect = { 10, 30, width - 10, 85 };
@@ -810,9 +824,14 @@ bool FloatingWindow::ExportChartAsPNG(const std::wstring& filePath)
                         DEFAULT_PITCH | FF_SWISS, L"Segoe UI");
     SelectObject(hdcMem, hFont);
     SetTextColor(hdcMem, RGB(0, 180, 255));
-    TextOutW(hdcMem, 12, 30, L"Download", 8);
+    std::wstring dlLabel = LoadStringResource(IDS_FLOATING_CHART_DOWNLOAD);
+    if (dlLabel.empty()) dlLabel = L"Download";
+    TextOutW(hdcMem, 12, 30, dlLabel.c_str(), static_cast<int>(dlLabel.length()));
+
     SetTextColor(hdcMem, RGB(0, 200, 100));
-    TextOutW(hdcMem, 12, 95, L"Upload", 6);
+    std::wstring ulLabel = LoadStringResource(IDS_FLOATING_CHART_UPLOAD);
+    if (ulLabel.empty()) ulLabel = L"Upload";
+    TextOutW(hdcMem, 12, 95, ulLabel.c_str(), static_cast<int>(ulLabel.length()));
     
     SelectObject(hdcMem, hOldFont);
     DeleteObject(hFont);
