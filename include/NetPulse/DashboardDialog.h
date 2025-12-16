@@ -9,9 +9,6 @@
 namespace NetPulse
 {
 
-class NetworkMonitorClass;
-class HistoryLogger;
-
 class DashboardDialog
 {
 public:
@@ -29,7 +26,7 @@ public:
     void SetDialogHandleStorage(HWND* pDialogHandle) { m_pExternalHandle = pDialogHandle; }
 
     // Show the dashboard dialog modally
-    bool Show(HWND parentWindow, NetworkMonitorClass* networkMonitor, const AppConfig* config);
+    bool Show(HWND parentWindow, const AppConfig* config);
 
 private:
     // Dialog procedure
@@ -46,7 +43,7 @@ private:
     // Member variables
     HWND m_hDialog;
     HWND* m_pExternalHandle;  // External storage for dialog handle (for tracking)
-    NetworkMonitorClass* m_pNetworkMonitor;
+    // Network monitor dependency removed (unused)
     const AppConfig* m_pConfig;
     std::vector<NetPulse::HistorySample> m_chartSamples;
 

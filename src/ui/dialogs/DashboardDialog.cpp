@@ -1,5 +1,5 @@
 ﻿#include "NetPulse/DashboardDialog.h"
-#include "NetPulse/NetworkMonitor.h"
+// NetworkMonitor.h removed - unused dependency
 #include "NetPulse/HistoryLogger.h"
 #include "NetPulse/HistoryDialog.h"
 #include "NetPulse/ChartRenderer.h"
@@ -28,7 +28,6 @@ namespace NetPulse
 DashboardDialog::DashboardDialog()
     : m_hDialog(nullptr)
     , m_pExternalHandle(nullptr)
-    , m_pNetworkMonitor(nullptr)
     , m_pConfig(nullptr)
     , m_chartViewMode(ChartViewMode::DailyThisMonth)
     , m_chartYear(0)
@@ -48,14 +47,13 @@ DashboardDialog::~DashboardDialog()
 {
 }
 
-bool DashboardDialog::Show(HWND parentWindow, NetworkMonitorClass* networkMonitor, const AppConfig* config)
+bool DashboardDialog::Show(HWND parentWindow, const AppConfig* config)
 {
-    if (!networkMonitor || !config)
+    if (!config)
     {
         return false;
     }
 
-    m_pNetworkMonitor = networkMonitor;
     m_pConfig = config;
 
     // Create modal dialog

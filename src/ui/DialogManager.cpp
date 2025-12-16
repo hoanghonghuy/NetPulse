@@ -41,7 +41,7 @@ void DialogManager::Initialize(
     HWND parentWindow,
     AppConfig* config,
     IConfigProvider* configProvider,
-    NetworkMonitorClass* networkMonitor,
+    INetworkStatsProvider* networkMonitor,
     UpdateCoordinator* updateCoordinator,
     ConnectionMonitor* connectionMonitor)
 {
@@ -226,7 +226,7 @@ void DialogManager::ShowDashboard()
 
     DashboardDialog dlg;
     dlg.SetDialogHandleStorage(&m_hDashboardDialog);
-    dlg.Show(m_parentWindow, m_pNetworkMonitor, m_pConfig);
+    dlg.Show(m_parentWindow, m_pConfig);
 
     m_hDashboardDialog = nullptr;
 }

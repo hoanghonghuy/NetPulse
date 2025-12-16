@@ -39,7 +39,7 @@ public:
         HWND parentWindow,
         AppConfig* config,
         IConfigProvider* configProvider,
-        NetworkMonitorClass* networkMonitor,
+        INetworkStatsProvider* networkMonitor,
         UpdateCoordinator* updateCoordinator,
         ConnectionMonitor* connectionMonitor = nullptr
     );
@@ -91,7 +91,7 @@ private:
     HWND m_parentWindow;
     AppConfig* m_pConfig;
     IConfigProvider* m_pConfigProvider;
-    NetworkMonitorClass* m_pNetworkMonitor;
+    INetworkStatsProvider* m_pNetworkMonitor;
     UpdateCoordinator* m_pUpdateCoordinator;
     ConnectionMonitor* m_pConnectionMonitor;
 
