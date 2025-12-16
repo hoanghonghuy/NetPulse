@@ -1,4 +1,4 @@
-#include "NetworkMonitor/ThemeHelper.h"
+﻿#include "NetPulse/ThemeHelper.h"
 #include <dwmapi.h>
 #include <uxtheme.h>
 #include <vssym32.h>
@@ -6,7 +6,7 @@
 #pragma comment(lib, "dwmapi.lib")
 #pragma comment(lib, "uxtheme.lib")
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 // Undocumented definitions for dark mode support
@@ -218,5 +218,5 @@ bool ThemeHelper::IsSystemInDarkMode()
     return false;
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse
 

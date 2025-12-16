@@ -1,8 +1,8 @@
-#include "NetworkMonitor/LanguageManager.h"
-#include "NetworkMonitor/Utils.h"
+﻿#include "NetPulse/LanguageManager.h"
+#include "NetPulse/Utils.h"
 #include <string>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 LanguageManager::LanguageManager()
@@ -80,4 +80,4 @@ void LanguageManager::ApplyLanguage(AppLanguage language)
     }
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

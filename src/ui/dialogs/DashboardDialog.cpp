@@ -1,10 +1,11 @@
-#include "NetworkMonitor/DashboardDialog.h"
-#include "NetworkMonitor/NetworkMonitor.h"
-#include "NetworkMonitor/HistoryLogger.h"
-#include "NetworkMonitor/HistoryDialog.h"
-#include "NetworkMonitor/DialogThemeHelper.h"
-#include "NetworkMonitor/Utils.h"
-#include "NetworkMonitor/ThemeHelper.h"
+﻿#include "NetPulse/DashboardDialog.h"
+#include "NetPulse/NetworkMonitor.h"
+#include "NetPulse/HistoryLogger.h"
+#include "NetPulse/HistoryDialog.h"
+#include "NetPulse/ChartRenderer.h"
+#include "NetPulse/DialogThemeHelper.h"
+#include "NetPulse/Utils.h"
+#include "NetPulse/ThemeHelper.h"
 #include "../../../resources/resource.h"
 #include <windowsx.h>
 #include <commctrl.h>
@@ -19,7 +20,7 @@
 #undef max
 #undef min
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 
@@ -29,7 +30,18 @@ DashboardDialog::DashboardDialog()
     , m_pExternalHandle(nullptr)
     , m_pNetworkMonitor(nullptr)
     , m_pConfig(nullptr)
+    , m_chartViewMode(ChartViewMode::DailyThisMonth)
+    , m_chartYear(0)
+    , m_chartMonth(0)
 {
+    // Initialize to current date
+    std::time_t now = std::time(nullptr);
+    std::tm localTime = {};
+    if (localtime_s(&localTime, &now) == 0)
+    {
+        m_chartYear = localTime.tm_year + 1900;
+        m_chartMonth = localTime.tm_mon + 1;
+    }
 }
 
 DashboardDialog::~DashboardDialog()
@@ -279,6 +291,8 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                 // our owner-draw logic runs.
                 SendMessageW(hDlg, DM_SETDEFID, 0, 0);
             }
+            // Create chart navigation controls
+            CreateChartControls(hDlg);
 
             // Fill data
             PostMessageW(hDlg, WM_COMMAND, MAKEWPARAM(IDC_DASHBOARD_REFRESH, 0), 0);
@@ -308,6 +322,66 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                     dlg.Show(hDlg, m_pConfig);
                     // After user modifies history, refresh dashboard view
                     PostMessageW(hDlg, WM_COMMAND, MAKEWPARAM(IDC_DASHBOARD_REFRESH, 0), 0);
+                    return TRUE;
+                }
+
+                case IDC_CHART_VIEW_DAILY:
+                {
+                    m_chartViewMode = ChartViewMode::DailyThisMonth;
+                    UpdateChartTitle(hDlg);
+                    HWND hChart = GetDlgItem(hDlg, IDC_DASHBOARD_CHART);
+                    if (hChart) InvalidateRect(hChart, nullptr, TRUE);
+                    return TRUE;
+                }
+
+                case IDC_CHART_VIEW_MONTHLY:
+                {
+                    m_chartViewMode = ChartViewMode::MonthlyThisYear;
+                    UpdateChartTitle(hDlg);
+                    HWND hChart = GetDlgItem(hDlg, IDC_DASHBOARD_CHART);
+                    if (hChart) InvalidateRect(hChart, nullptr, TRUE);
+                    return TRUE;
+                }
+
+                case IDC_CHART_NAV_PREV:
+                {
+                    if (m_chartViewMode == ChartViewMode::DailyThisMonth)
+                    {
+                        m_chartMonth--;
+                        if (m_chartMonth < 1)
+                        {
+                            m_chartMonth = 12;
+                            m_chartYear--;
+                        }
+                    }
+                    else
+                    {
+                        m_chartYear--;
+                    }
+                    UpdateChartTitle(hDlg);
+                    HWND hChart = GetDlgItem(hDlg, IDC_DASHBOARD_CHART);
+                    if (hChart) InvalidateRect(hChart, nullptr, TRUE);
+                    return TRUE;
+                }
+
+                case IDC_CHART_NAV_NEXT:
+                {
+                    if (m_chartViewMode == ChartViewMode::DailyThisMonth)
+                    {
+                        m_chartMonth++;
+                        if (m_chartMonth > 12)
+                        {
+                            m_chartMonth = 1;
+                            m_chartYear++;
+                        }
+                    }
+                    else
+                    {
+                        m_chartYear++;
+                    }
+                    UpdateChartTitle(hDlg);
+                    HWND hChart = GetDlgItem(hDlg, IDC_DASHBOARD_CHART);
+                    if (hChart) InvalidateRect(hChart, nullptr, TRUE);
                     return TRUE;
                 }
 
@@ -518,7 +592,9 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                 UINT id = pDrawItem->CtlID;
                 if (id == IDC_DASHBOARD_BUTTON_EXPORT || id == IDC_DASHBOARD_EXPORT_CHART || 
                     id == IDC_HISTORY_MANAGE || id == IDC_DASHBOARD_REFRESH || id == IDOK ||
-                    id == IDC_SPEED_TEST_BUTTON)
+                    id == IDC_SPEED_TEST_BUTTON ||
+                    id == IDC_CHART_VIEW_DAILY || id == IDC_CHART_VIEW_MONTHLY ||
+                    id == IDC_CHART_NAV_PREV || id == IDC_CHART_NAV_NEXT)
                 {
                     DialogThemeHelper::DrawButton(pDrawItem, true);
                     return TRUE;
@@ -628,137 +704,116 @@ void DashboardDialog::DrawDashboardChart(HDC hdc, const RECT& rc)
 
     bool darkTheme = (m_pConfig && m_pConfig->darkTheme);
 
-    // Slightly lighter background for dark theme so the chart does not
-    // appear too black compared to the rest of the dialog.
-    COLORREF backColor = darkTheme ? RGB(28, 28, 28) : GetSysColor(COLOR_WINDOW);
-    COLORREF borderColor = darkTheme ? RGB(80, 80, 80) : RGB(200, 200, 200);
-    COLORREF downColor = darkTheme ? RGB(80, 200, 120) : RGB(0, 128, 0);
-    COLORREF upColor = darkTheme ? RGB(80, 160, 240) : RGB(0, 0, 200);
-
+    // Fill background first
+    COLORREF backColor = darkTheme ? RGB(30, 30, 30) : GetSysColor(COLOR_WINDOW);
     HBRUSH backBrush = CreateSolidBrush(backColor);
     FillRect(hdc, &rc, backBrush);
     DeleteObject(backBrush);
 
     HistoryLogger& logger = HistoryLogger::Instance();
-    const std::wstring* ifaceFilter = nullptr;
-    if (m_pConfig && !m_pConfig->selectedInterface.empty())
+    std::vector<ChartDataPoint> chartData;
+
+    if (m_chartViewMode == ChartViewMode::DailyThisMonth)
     {
-        ifaceFilter = &m_pConfig->selectedInterface;
-    }
-
-    std::vector<HistorySample> samples;
-    logger.GetRecentSamples(100, samples, ifaceFilter, true);
-
-    if (samples.empty())
-    {
-        HBRUSH frameBrush = CreateSolidBrush(borderColor);
-        FrameRect(hdc, &rc, frameBrush);
-        DeleteObject(frameBrush);
-        return;
-    }
-
-    unsigned long long maxValue = 0;
-    for (const auto& s : samples)
-    {
-        maxValue = (std::max)(maxValue, s.bytesDown);
-        maxValue = (std::max)(maxValue, s.bytesUp);
-    }
-
-    if (maxValue == 0)
-    {
-        HBRUSH frameBrush = CreateSolidBrush(borderColor);
-        FrameRect(hdc, &rc, frameBrush);
-        DeleteObject(frameBrush);
-        return;
-    }
-
-    RECT inner = rc;
-    inner.left += 4;
-    inner.right -= 4;
-    inner.top += 4;
-    inner.bottom -= 4;
-
-    // Draw only the border of the chart area, keeping the dark
-    // background that we already filled above.
-    HBRUSH frameBrush = CreateSolidBrush(borderColor);
-    FrameRect(hdc, &inner, frameBrush);
-    DeleteObject(frameBrush);
-
-    int width = inner.right - inner.left;
-    int height = inner.bottom - inner.top;
-    size_t count = samples.size();
-
-    if (count == 0 || width <= 0 || height <= 0)
-    {
-        return;
-    }
-
-    auto getX = [&](size_t index) -> int {
-        if (count <= 1)
+        // Get daily usage for selected month
+        std::vector<DailyUsage> dailyData;
+        
+        if (!logger.GetDailyUsage(m_chartYear, m_chartMonth, dailyData))
         {
-            return inner.left + width / 2;
+            SetTextColor(hdc, darkTheme ? RGB(230, 230, 230) : RGB(30, 30, 30));
+            SetBkMode(hdc, TRANSPARENT);
+            RECT msgRect = rc;
+            DrawTextW(hdc, L"No chart data available", -1, &msgRect, 
+                      DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+            return;
         }
-        return inner.left + static_cast<int>((static_cast<double>(index) * static_cast<double>(width - 1)) / static_cast<double>(count - 1));
-    };
 
-    auto getY = [&](unsigned long long value) -> int {
-        double ratio = static_cast<double>(value) / static_cast<double>(maxValue);
-        if (ratio < 0.0)
+        // Get number of days in the month
+        int daysInMonth = 31;
+        if (m_chartMonth == 4 || m_chartMonth == 6 || m_chartMonth == 9 || m_chartMonth == 11)
         {
-            ratio = 0.0;
+            daysInMonth = 30;
         }
-        if (ratio > 1.0)
+        else if (m_chartMonth == 2)
         {
-            ratio = 1.0;
+            bool isLeap = (m_chartYear % 4 == 0 && (m_chartYear % 100 != 0 || m_chartYear % 400 == 0));
+            daysInMonth = isLeap ? 29 : 28;
         }
-        return inner.bottom - static_cast<int>(ratio * static_cast<double>(height));
-    };
 
-    std::vector<POINT> downPoints;
-    std::vector<POINT> upPoints;
-    downPoints.reserve(count);
-    upPoints.reserve(count);
+        // Create full month data with zero usage
+        std::vector<DailyUsage> fullMonthData;
+        fullMonthData.reserve(daysInMonth);
+        for (int day = 1; day <= daysInMonth; ++day)
+        {
+            DailyUsage empty = {};
+            empty.day = day;
+            empty.bytesDown = 0;
+            empty.bytesUp = 0;
+            fullMonthData.push_back(empty);
+        }
 
-    for (size_t i = 0; i < count; ++i)
+        // Fill in actual data
+        for (const auto& item : dailyData)
+        {
+            if (item.day >= 1 && item.day <= daysInMonth)
+            {
+                fullMonthData[item.day - 1] = item;
+            }
+        }
+
+        chartData = ChartRenderer::ConvertDailyUsage(fullMonthData);
+    }
+    else // MonthlyThisYear
     {
-        const auto& s = samples[count - 1 - i];
-        POINT pd;
-        pd.x = getX(i);
-        pd.y = getY(s.bytesDown);
-        downPoints.push_back(pd);
+        // Get monthly usage for selected year
+        std::vector<MonthlyUsage> monthlyData;
+        
+        if (!logger.GetMonthlyUsage(m_chartYear, monthlyData))
+        {
+            SetTextColor(hdc, darkTheme ? RGB(230, 230, 230) : RGB(30, 30, 30));
+            SetBkMode(hdc, TRANSPARENT);
+            RECT msgRect = rc;
+            DrawTextW(hdc, L"No chart data available", -1, &msgRect, 
+                      DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+            return;
+        }
 
-        POINT pu;
-        pu.x = pd.x;
-        pu.y = getY(s.bytesUp);
-        upPoints.push_back(pu);
+        // Create full year data with zero usage
+        std::vector<MonthlyUsage> fullYearData;
+        fullYearData.reserve(12);
+        for (int month = 1; month <= 12; ++month)
+        {
+            MonthlyUsage empty = {};
+            empty.month = month;
+            empty.bytesDown = 0;
+            empty.bytesUp = 0;
+            fullYearData.push_back(empty);
+        }
+
+        // Fill in actual data
+        for (const auto& item : monthlyData)
+        {
+            if (item.month >= 1 && item.month <= 12)
+            {
+                fullYearData[item.month - 1] = item;
+            }
+        }
+
+        chartData = ChartRenderer::ConvertMonthlyUsage(fullYearData);
     }
 
-    HPEN downPen = CreatePen(PS_SOLID, 1, downColor);
-    HPEN upPen = CreatePen(PS_SOLID, 1, upColor);
+    // Configure chart options
+    ChartOptions options;
+    options.darkTheme = darkTheme;
+    options.showGridLines = true;
+    options.showLegend = true;
+    options.barSpacing = 2;
+    options.axisPadding = 65;   // Room for Y-axis labels
+    options.bottomPadding = 22;  // Room for X-axis labels
+    options.topPadding = 25;     // Room for legend
 
-    HPEN oldPen = reinterpret_cast<HPEN>(SelectObject(hdc, downPen));
-    if (!downPoints.empty())
-    {
-        MoveToEx(hdc, downPoints[0].x, downPoints[0].y, nullptr);
-        for (size_t i = 1; i < downPoints.size(); ++i)
-        {
-            LineTo(hdc, downPoints[i].x, downPoints[i].y);
-        }
-    }
-
-    SelectObject(hdc, upPen);
-    if (!upPoints.empty())
-    {
-        MoveToEx(hdc, upPoints[0].x, upPoints[0].y, nullptr);
-        for (size_t i = 1; i < upPoints.size(); ++i)
-        {
-            LineTo(hdc, upPoints[i].x, upPoints[i].y);
-        }
-    }
-
-    SelectObject(hdc, oldPen);
-    DeleteObject(downPen);
-    DeleteObject(upPen);
+    // Draw the bar chart
+    ChartRenderer::DrawBarChart(hdc, rc, chartData, options);
 }
 
 void DashboardDialog::CenterDialogOnScreen(HWND hDlg)
@@ -766,7 +821,132 @@ void DashboardDialog::CenterDialogOnScreen(HWND hDlg)
     CenterWindowOnScreen(hDlg);
 }
 
+void DashboardDialog::CreateChartControls(HWND hDlg)
+{
+    // Get the chart control position to place buttons above it
+    HWND hChart = GetDlgItem(hDlg, IDC_DASHBOARD_CHART);
+    if (!hChart)
+    {
+        return;
+    }
+
+    RECT chartRect;
+    GetWindowRect(hChart, &chartRect);
+    MapWindowPoints(HWND_DESKTOP, hDlg, reinterpret_cast<LPPOINT>(&chartRect), 2);
+
+    HINSTANCE hInst = reinterpret_cast<HINSTANCE>(GetWindowLongPtrW(hDlg, GWLP_HINSTANCE));
+    HFONT hFont = reinterpret_cast<HFONT>(SendMessageW(hDlg, WM_GETFONT, 0, 0));
+
+    // Button dimensions
+    const int btnWidth = 55;
+    const int navBtnWidth = 22;
+    const int btnHeight = 18;
+    const int spacing = 4;
+    
+    // Position buttons ABOVE the chart (in the new gap we created)
+    int startX = chartRect.left;
+    int topY = chartRect.top - btnHeight - 4;
+
+    // "Daily" button
+    HWND hBtnDaily = CreateWindowExW(0, L"BUTTON", L"Daily",
+        WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
+        startX, topY, btnWidth, btnHeight,
+        hDlg, reinterpret_cast<HMENU>(IDC_CHART_VIEW_DAILY), hInst, nullptr);
+    if (hBtnDaily && hFont) SendMessageW(hBtnDaily, WM_SETFONT, reinterpret_cast<WPARAM>(hFont), TRUE);
+
+    // "Monthly" button
+    HWND hBtnMonthly = CreateWindowExW(0, L"BUTTON", L"Monthly",
+        WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
+        startX + btnWidth + spacing, topY, btnWidth, btnHeight,
+        hDlg, reinterpret_cast<HMENU>(IDC_CHART_VIEW_MONTHLY), hInst, nullptr);
+    if (hBtnMonthly && hFont) SendMessageW(hBtnMonthly, WM_SETFONT, reinterpret_cast<WPARAM>(hFont), TRUE);
+
+    // Separator space
+    int navStartX = startX + (btnWidth + spacing) * 2 + 10;
+
+    // "<" Previous button
+    HWND hBtnPrev = CreateWindowExW(0, L"BUTTON", L"<",
+        WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
+        navStartX, topY, navBtnWidth, btnHeight,
+        hDlg, reinterpret_cast<HMENU>(IDC_CHART_NAV_PREV), hInst, nullptr);
+    if (hBtnPrev && hFont) SendMessageW(hBtnPrev, WM_SETFONT, reinterpret_cast<WPARAM>(hFont), TRUE);
+
+    // Title label (shows current period)
+    HWND hTitle = CreateWindowExW(0, L"STATIC", L"",
+        WS_VISIBLE | WS_CHILD | SS_CENTER,
+        navStartX + navBtnWidth + spacing, topY, 80, btnHeight,
+        hDlg, reinterpret_cast<HMENU>(IDC_CHART_TITLE), hInst, nullptr);
+    if (hTitle && hFont) SendMessageW(hTitle, WM_SETFONT, reinterpret_cast<WPARAM>(hFont), TRUE);
+
+    // ">" Next button
+    HWND hBtnNext = CreateWindowExW(0, L"BUTTON", L">",
+        WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
+        navStartX + navBtnWidth + spacing + 80 + spacing, topY, navBtnWidth, btnHeight,
+        hDlg, reinterpret_cast<HMENU>(IDC_CHART_NAV_NEXT), hInst, nullptr);
+    if (hBtnNext && hFont) SendMessageW(hBtnNext, WM_SETFONT, reinterpret_cast<WPARAM>(hFont), TRUE);
+
+    // Apply dark theme if needed
+    if (m_pConfig && m_pConfig->darkTheme)
+    {
+        auto makeOwnerDraw = [](HWND hButton)
+        {
+            if (!hButton) return;
+            LONG_PTR style = GetWindowLongPtrW(hButton, GWL_STYLE);
+            style &= ~BS_TYPEMASK;
+            style |= BS_OWNERDRAW;
+            SetWindowLongPtrW(hButton, GWL_STYLE, style);
+            SetWindowTheme(hButton, L"", L"");
+            InvalidateRect(hButton, nullptr, TRUE);
+        };
+
+        makeOwnerDraw(hBtnDaily);
+        makeOwnerDraw(hBtnMonthly);
+        makeOwnerDraw(hBtnPrev);
+        makeOwnerDraw(hBtnNext);
+    }
+
+    UpdateChartTitle(hDlg);
+}
+
+void DashboardDialog::UpdateChartTitle(HWND hDlg)
+{
+    HWND hTitle = GetDlgItem(hDlg, IDC_CHART_TITLE);
+    if (!hTitle)
+    {
+        return;
+    }
+
+    static const wchar_t* monthNames[] = {
+        L"Jan", L"Feb", L"Mar", L"Apr", L"May", L"Jun",
+        L"Jul", L"Aug", L"Sep", L"Oct", L"Nov", L"Dec"
+    };
+
+    wchar_t title[64] = {};
+    if (m_chartViewMode == ChartViewMode::DailyThisMonth)
+    {
+        if (m_chartMonth >= 1 && m_chartMonth <= 12)
+        {
+            swprintf_s(title, L"%s %d", monthNames[m_chartMonth - 1], m_chartYear);
+        }
+        else
+        {
+            swprintf_s(title, L"%d/%d", m_chartMonth, m_chartYear);
+        }
+    }
+    else
+    {
+        swprintf_s(title, L"Year %d", m_chartYear);
+    }
+
+    SetWindowTextW(hTitle, title);
+
+    // Apply dark text color if needed
+    if (m_pConfig && m_pConfig->darkTheme)
+    {
+        InvalidateRect(hTitle, nullptr, TRUE);
+    }
+}
 
 
-} // namespace NetworkMonitor
+} // namespace NetPulse
 

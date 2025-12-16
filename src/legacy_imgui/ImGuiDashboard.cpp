@@ -1,10 +1,10 @@
-// ImGuiDashboard.cpp - Modern Dashboard UI Implementation
-#include "NetworkMonitor/ImGuiDashboard.h"
-#include "NetworkMonitor/Utils.h"
+﻿// ImGuiDashboard.cpp - Modern Dashboard UI Implementation
+#include "NetPulse/ImGuiDashboard.h"
+#include "NetPulse/Utils.h"
 #include "imgui.h"
 #include <algorithm>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 ImGuiDashboard::ImGuiDashboard()
@@ -166,4 +166,4 @@ void ImGuiDashboard::RenderSpeedGraph(const char* label, const std::deque<float>
     ImGui::PopStyleColor();
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

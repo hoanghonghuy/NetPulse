@@ -1,7 +1,7 @@
-#include "NetworkMonitor/SystemMonitor.h"
-#include "NetworkMonitor/Utils.h"
+﻿#include "NetPulse/SystemMonitor.h"
+#include "NetPulse/Utils.h"
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 SystemMonitor::SystemMonitor()
@@ -111,4 +111,4 @@ void SystemMonitor::Update()
     }
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

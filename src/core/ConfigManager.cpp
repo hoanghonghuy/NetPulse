@@ -1,9 +1,9 @@
-#include "NetworkMonitor/ConfigManager.h"
-#include "NetworkMonitor/Utils.h"
-#include "NetworkMonitor/ThemeHelper.h"
+﻿#include "NetPulse/ConfigManager.h"
+#include "NetPulse/Utils.h"
+#include "NetPulse/ThemeHelper.h"
 #include <shellapi.h>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 ConfigManager::ConfigManager()
@@ -223,7 +223,7 @@ bool ConfigManager::SetAutoStart(bool enable, bool asAdmin)
 {
     LogDebug(L"SetAutoStart called: enable=" + std::to_wstring(enable) + L", asAdmin=" + std::to_wstring(asAdmin));
     
-    static const wchar_t* TASK_NAME = L"NetworkMonitorAutoStart";
+    static const wchar_t* TASK_NAME = L"NetPulseAutoStart";
     bool regSuccess = true;
     bool taskSuccess = true;
 
@@ -359,7 +359,7 @@ bool ConfigManager::IsAutoStartEnabled()
     }
 
     // Check Task Scheduler for admin auto-start
-    static const wchar_t* TASK_NAME = L"NetworkMonitorAutoStart";
+    static const wchar_t* TASK_NAME = L"NetPulseAutoStart";
     wchar_t cmdParams[256] = {0};
     swprintf_s(cmdParams, L"/Query /TN \"%ls\"", TASK_NAME);
 
@@ -457,4 +457,4 @@ bool ConfigManager::WriteString(HKEY hKey, const wchar_t* valueName, const std::
     return (result == ERROR_SUCCESS);
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

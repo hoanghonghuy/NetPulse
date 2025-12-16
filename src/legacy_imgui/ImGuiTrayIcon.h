@@ -1,4 +1,4 @@
-// ImGuiTrayIcon.h - System Tray Icon for ImGui Application
+﻿// ImGuiTrayIcon.h - System Tray Icon for ImGui Application
 // Uses a hidden HWND to receive tray messages
 #ifndef NETWORK_MONITOR_IMGUI_TRAY_ICON_H
 #define NETWORK_MONITOR_IMGUI_TRAY_ICON_H
@@ -7,12 +7,12 @@
 #define NOMINMAX
 #endif
 
-#include "NetworkMonitor/Common.h"
+#include "NetPulse/Common.h"
 #include <windows.h>
 #include <shellapi.h>
 #include <functional>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 // Menu item IDs (matching original TrayIcon)
@@ -111,6 +111,6 @@ private:
     static ImGuiTrayIcon* s_instance;
 };
 
-} // namespace NetworkMonitor
+} // namespace NetPulse
 
 #endif // NETWORK_MONITOR_IMGUI_TRAY_ICON_H

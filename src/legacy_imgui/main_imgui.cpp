@@ -1,4 +1,4 @@
-// main_imgui.cpp - Modern ImGui Application Entry Point
+﻿// main_imgui.cpp - Modern ImGui Application Entry Point
 // Complete UI replacement for Network Monitor
 // Build: cmake -S . -B build -DBUILD_IMGUI_APP=ON && cmake --build build --config Release --target NetworkMonitorImGui
 
@@ -6,41 +6,41 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 
-#include "NetworkMonitor/ImGuiApp.h"
-#include "NetworkMonitor/ImGuiDashboard.h"
-#include "NetworkMonitor/ImGuiSettings.h"
-#include "NetworkMonitor/ImGuiPerApp.h"
-#include "NetworkMonitor/ImGuiHistory.h"
-#include "NetworkMonitor/ImGuiMainMenu.h"
-#include "NetworkMonitor/ImGuiFloatingWindow.h"
-#include "NetworkMonitor/ImGuiTrayIcon.h"
-#include "NetworkMonitor/NetworkMonitor.h"
-#include "NetworkMonitor/SystemMonitor.h"
-#include "NetworkMonitor/ConfigManager.h"
-#include "NetworkMonitor/PerAppMonitor.h"
-#include "NetworkMonitor/Utils.h"
+#include "NetPulse/ImGuiApp.h"
+#include "NetPulse/ImGuiDashboard.h"
+#include "NetPulse/ImGuiSettings.h"
+#include "NetPulse/ImGuiPerApp.h"
+#include "NetPulse/ImGuiHistory.h"
+#include "NetPulse/ImGuiMainMenu.h"
+#include "NetPulse/ImGuiFloatingWindow.h"
+#include "NetPulse/ImGuiTrayIcon.h"
+#include "NetPulse/NetworkMonitor.h"
+#include "NetPulse/SystemMonitor.h"
+#include "NetPulse/ConfigManager.h"
+#include "NetPulse/PerAppMonitor.h"
+#include "NetPulse/Utils.h"
 #include "imgui.h"
 #include <memory>
 #include <sstream>
 
 // Global instances
-std::unique_ptr<NetworkMonitor::NetworkMonitorClass> g_networkMonitor;
-std::unique_ptr<NetworkMonitor::SystemMonitor> g_systemMonitor;
-std::unique_ptr<NetworkMonitor::ConfigManager> g_configManager;
-std::unique_ptr<NetworkMonitor::PerAppMonitor> g_perAppMonitor;
-std::unique_ptr<NetworkMonitor::ImGuiDashboard> g_dashboard;
-std::unique_ptr<NetworkMonitor::ImGuiSettings> g_settings;
-std::unique_ptr<NetworkMonitor::ImGuiPerApp> g_perApp;
-std::unique_ptr<NetworkMonitor::ImGuiHistory> g_history;
-std::unique_ptr<NetworkMonitor::ImGuiMainMenu> g_mainMenu;
-std::unique_ptr<NetworkMonitor::ImGuiFloatingWindow> g_floatingWindow;
-std::unique_ptr<NetworkMonitor::ImGuiTrayIcon> g_trayIcon;
+std::unique_ptr<NetPulse::NetworkMonitorClass> g_networkMonitor;
+std::unique_ptr<NetPulse::SystemMonitor> g_systemMonitor;
+std::unique_ptr<NetPulse::ConfigManager> g_configManager;
+std::unique_ptr<NetPulse::PerAppMonitor> g_perAppMonitor;
+std::unique_ptr<NetPulse::ImGuiDashboard> g_dashboard;
+std::unique_ptr<NetPulse::ImGuiSettings> g_settings;
+std::unique_ptr<NetPulse::ImGuiPerApp> g_perApp;
+std::unique_ptr<NetPulse::ImGuiHistory> g_history;
+std::unique_ptr<NetPulse::ImGuiMainMenu> g_mainMenu;
+std::unique_ptr<NetPulse::ImGuiFloatingWindow> g_floatingWindow;
+std::unique_ptr<NetPulse::ImGuiTrayIcon> g_trayIcon;
 
 // Panel visibility
-NetworkMonitor::PanelVisibility g_visibility;
+NetPulse::PanelVisibility g_visibility;
 
 // Current config (for theme switching)
-NetworkMonitor::AppConfig g_currentConfig;
+NetPulse::AppConfig g_currentConfig;
 
 // Exit flag
 bool g_shouldExit = false;
@@ -147,15 +147,15 @@ void ApplyLightTheme()
 }
 
 // Apply theme based on config
-void ApplyTheme(NetworkMonitor::ThemeMode mode)
+void ApplyTheme(NetPulse::ThemeMode mode)
 {
     switch (mode)
     {
-    case NetworkMonitor::ThemeMode::Light:
+    case NetPulse::ThemeMode::Light:
         ApplyLightTheme();
         break;
-    case NetworkMonitor::ThemeMode::Dark:
-    case NetworkMonitor::ThemeMode::SystemDefault:
+    case NetPulse::ThemeMode::Dark:
+    case NetPulse::ThemeMode::SystemDefault:
     default:
         ApplyDarkTheme();
         break;
@@ -184,8 +184,8 @@ void RenderMainUI()
         // Update tray tooltip with speeds
         auto stats = g_networkMonitor->GetAggregatedStats();
         std::wstringstream ss;
-        ss << L"Down: " << NetworkMonitor::FormatSpeed(stats.currentDownloadSpeed, NetworkMonitor::SpeedUnit::BytesPerSecond)
-           << L" Up: " << NetworkMonitor::FormatSpeed(stats.currentUploadSpeed, NetworkMonitor::SpeedUnit::BytesPerSecond);
+        ss << L"Down: " << NetPulse::FormatSpeed(stats.currentDownloadSpeed, NetPulse::SpeedUnit::BytesPerSecond)
+           << L" Up: " << NetPulse::FormatSpeed(stats.currentUploadSpeed, NetPulse::SpeedUnit::BytesPerSecond);
         g_trayIcon->UpdateTooltip(ss.str().c_str());
 
         lastUpdate = now;
@@ -202,7 +202,7 @@ void RenderMainUI()
         if (g_settings->Render()) // Returns true if Save clicked
         {
             // Save settings to registry
-            NetworkMonitor::AppConfig newConfig = g_settings->GetConfig();
+            NetPulse::AppConfig newConfig = g_settings->GetConfig();
             g_configManager->SaveConfig(newConfig);
             g_settings->ResetModified();
             
@@ -233,21 +233,21 @@ void RenderMainUI()
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
 {
     // Initialize config manager
-    g_configManager = std::make_unique<NetworkMonitor::ConfigManager>();
+    g_configManager = std::make_unique<NetPulse::ConfigManager>();
 
     // Initialize monitors
-    g_networkMonitor = std::make_unique<NetworkMonitor::NetworkMonitorClass>();
-    g_systemMonitor = std::make_unique<NetworkMonitor::SystemMonitor>();
-    g_perAppMonitor = std::make_unique<NetworkMonitor::PerAppMonitor>();
+    g_networkMonitor = std::make_unique<NetPulse::NetworkMonitorClass>();
+    g_systemMonitor = std::make_unique<NetPulse::SystemMonitor>();
+    g_perAppMonitor = std::make_unique<NetPulse::PerAppMonitor>();
 
     // Initialize UI panels
-    g_dashboard = std::make_unique<NetworkMonitor::ImGuiDashboard>();
-    g_settings = std::make_unique<NetworkMonitor::ImGuiSettings>();
-    g_perApp = std::make_unique<NetworkMonitor::ImGuiPerApp>();
-    g_history = std::make_unique<NetworkMonitor::ImGuiHistory>();
-    g_mainMenu = std::make_unique<NetworkMonitor::ImGuiMainMenu>();
-    g_floatingWindow = std::make_unique<NetworkMonitor::ImGuiFloatingWindow>();
-    g_trayIcon = std::make_unique<NetworkMonitor::ImGuiTrayIcon>();
+    g_dashboard = std::make_unique<NetPulse::ImGuiDashboard>();
+    g_settings = std::make_unique<NetPulse::ImGuiSettings>();
+    g_perApp = std::make_unique<NetPulse::ImGuiPerApp>();
+    g_history = std::make_unique<NetPulse::ImGuiHistory>();
+    g_mainMenu = std::make_unique<NetPulse::ImGuiMainMenu>();
+    g_floatingWindow = std::make_unique<NetPulse::ImGuiFloatingWindow>();
+    g_trayIcon = std::make_unique<NetPulse::ImGuiTrayIcon>();
 
     // Setup exit callback
     g_mainMenu->SetExitCallback([]() { g_shouldExit = true; });
@@ -275,7 +275,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
     }
 
     // Create and run ImGui app
-    NetworkMonitor::ImGuiApp app;
+    NetPulse::ImGuiApp app;
     if (!app.Initialize(hInstance, nCmdShow))
     {
         MessageBoxW(nullptr, L"Failed to initialize ImGui app", L"Error", MB_OK | MB_ICONERROR);
@@ -286,7 +286,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
     ApplyTheme(g_currentConfig.themeMode);
 
     // Store app pointer for callbacks
-    NetworkMonitor::ImGuiApp* pApp = &app;
+    NetPulse::ImGuiApp* pApp = &app;
 
     // Setup minimize to tray callback
     app.SetMinimizeCallback([]() {
@@ -297,7 +297,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
     g_trayIcon->Initialize(hInstance);
 
     // Config provider for menu state
-    g_trayIcon->SetConfigProvider([]() -> const NetworkMonitor::AppConfig* {
+    g_trayIcon->SetConfigProvider([]() -> const NetPulse::AppConfig* {
         return &g_currentConfig;
     });
 

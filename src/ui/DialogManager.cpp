@@ -1,17 +1,20 @@
-#include "NetworkMonitor/DialogManager.h"
-#include "NetworkMonitor/NetworkMonitor.h"
-#include "NetworkMonitor/SettingsDialog.h"
-#include "NetworkMonitor/DashboardDialog.h"
-#include "NetworkMonitor/HistoryDialog.h"
-#include "NetworkMonitor/PerAppDialog.h"
-#include "NetworkMonitor/SpeedTestDialog.h"
-#include "NetworkMonitor/HistoryLogger.h"
-#include "NetworkMonitor/ThemeHelper.h"
-#include "NetworkMonitor/UpdateCoordinator.h"
-#include "NetworkMonitor/Utils.h"
+﻿#include "NetPulse/DialogManager.h"
+#include "NetPulse/NetworkMonitor.h"
+#include "NetPulse/SettingsDialog.h"
+#include "NetPulse/DashboardDialog.h"
+#include "NetPulse/HistoryDialog.h"
+#include "NetPulse/PerAppDialog.h"
+#include "NetPulse/SpeedTestDialog.h"
+#include "NetPulse/ConnectionLogDialog.h"
+#include "NetPulse/HistoryLogger.h"
+#include "NetPulse/ThemeHelper.h"
+#include "NetPulse/UpdateCoordinator.h"
+#include "NetPulse/Utils.h"
 #include "../../resources/resource.h"
+#include "NetPulse/DialogThemeHelper.h"
+#include <shellapi.h>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 DialogManager::DialogManager()
@@ -25,6 +28,8 @@ DialogManager::DialogManager()
     , m_hHistoryDialog(nullptr)
     , m_hPerAppDialog(nullptr)
     , m_hSpeedTestDialog(nullptr)
+    , m_pConnectionMonitor(nullptr)
+    , m_hConnectionLogDialog(nullptr)
 {
 }
 
@@ -37,13 +42,15 @@ void DialogManager::Initialize(
     AppConfig* config,
     IConfigProvider* configProvider,
     NetworkMonitorClass* networkMonitor,
-    UpdateCoordinator* updateCoordinator)
+    UpdateCoordinator* updateCoordinator,
+    ConnectionMonitor* connectionMonitor)
 {
     m_parentWindow = parentWindow;
     m_pConfig = config;
     m_pConfigProvider = configProvider;
     m_pNetworkMonitor = networkMonitor;
     m_pUpdateCoordinator = updateCoordinator;
+    m_pConnectionMonitor = connectionMonitor;
 }
 
 void DialogManager::SetConfigReloadCallback(ConfigReloadCallback callback)
@@ -289,6 +296,125 @@ void DialogManager::ShowSpeedTest()
     m_hSpeedTestDialog = nullptr;
 }
 
+// Helper for About Dialog
+static INT_PTR CALLBACK AboutDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    static AppConfig* s_pConfig = nullptr;
+    
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        {
+            // Store config pointer passed via lParam
+            s_pConfig = reinterpret_cast<AppConfig*>(lParam);
+            
+            // Center the dialog relative to parent (or desktop if no parent/hidden)
+            HWND hParent = GetParent(hDlg);
+            RECT rcOwner, rcDlg, rc;
+            bool useParent = false;
+            
+            if (hParent && IsWindowVisible(hParent))
+            {
+                GetWindowRect(hParent, &rcOwner);
+                useParent = true;
+            }
+
+            if (!useParent)
+            {
+                rcOwner.left = 0; rcOwner.top = 0;
+                rcOwner.right = GetSystemMetrics(SM_CXSCREEN);
+                rcOwner.bottom = GetSystemMetrics(SM_CYSCREEN);
+            }
+            GetWindowRect(hDlg, &rcDlg);
+            CopyRect(&rc, &rcOwner);
+
+            OffsetRect(&rcDlg, -rcDlg.left, -rcDlg.top);
+            OffsetRect(&rc, -rc.left, -rc.top);
+            OffsetRect(&rc, -rcDlg.right, -rcDlg.bottom);
+
+            SetWindowPos(hDlg,
+                HWND_TOP,
+                rcOwner.left + (rc.right / 2),
+                rcOwner.top + (rc.bottom / 2),
+                0, 0,          // Ignores size arguments.
+                SWP_NOSIZE);
+
+            // Apply dark theme LAST, matching SpeedTestDialog logic
+            if (s_pConfig && s_pConfig->darkTheme)
+            {
+                ThemeHelper::ApplyDarkTitleBar(hDlg, true);
+                
+                // Make OK button owner-draw for dark theme
+                HWND hButton = GetDlgItem(hDlg, IDOK);
+                if (hButton)
+                {
+                    LONG_PTR style = GetWindowLongPtrW(hButton, GWL_STYLE);
+                    
+                    // Always re-apply to ensure it sticks
+                    style &= ~BS_TYPEMASK;
+                    style |= BS_OWNERDRAW;
+                    
+                    SetWindowLongPtrW(hButton, GWL_STYLE, style);
+                    SetWindowTheme(hButton, L"", L""); // Strip theme
+                    
+                    // Force frame update for the button
+                    SetWindowPos(hButton, nullptr, 0, 0, 0, 0, 
+                        SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+                }
+            }
+                
+            return (INT_PTR)TRUE;
+        }
+
+    case WM_DRAWITEM:
+        if (s_pConfig && s_pConfig->darkTheme)
+        {
+            DRAWITEMSTRUCT* pDrawItem = reinterpret_cast<DRAWITEMSTRUCT*>(lParam);
+            if (pDrawItem->CtlType == ODT_BUTTON && pDrawItem->CtlID == IDOK)
+            {
+                DialogThemeHelper::DrawButton(pDrawItem, true);
+                return (INT_PTR)TRUE;
+            }
+        }
+        break;
+
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+        {
+            EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        }
+        break;
+
+    case WM_NOTIFY:
+        switch (((LPNMHDR)lParam)->code)
+        {
+        case NM_CLICK:
+        case NM_RETURN:
+            {
+                PNMLINK pNMLink = (PNMLINK)lParam;
+                LITEM item = pNMLink->item;
+                ShellExecuteW(NULL, L"open", item.szUrl, NULL, NULL, SW_SHOW);
+                return (INT_PTR)TRUE;
+            }
+        }
+        break;
+        
+    case WM_CTLCOLORDLG:
+    case WM_CTLCOLORSTATIC:
+        if (s_pConfig && s_pConfig->darkTheme)
+        {
+            HDC hdc = (HDC)wParam;
+            SetTextColor(hdc, RGB(255, 255, 255));
+            SetBkColor(hdc, RGB(32, 32, 32));
+            static HBRUSH hBrush = CreateSolidBrush(RGB(32, 32, 32));
+            return (INT_PTR)hBrush;
+        }
+        break;
+    }
+    return (INT_PTR)FALSE;
+}
+
 void DialogManager::ShowAbout()
 {
     if (!m_pConfig)
@@ -296,42 +422,30 @@ void DialogManager::ShowAbout()
         return;
     }
 
-    std::wstring title = LoadStringResource(IDS_ABOUT_TITLE);
-    if (title.empty())
-    {
-        title = L"About NetworkMonitor";
-    }
+    DialogBoxParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_ABOUT_DIALOG), m_parentWindow, AboutDialogProc, reinterpret_cast<LPARAM>(m_pConfig));
+}
 
-    // Check if About dialog is already open (using title finding since MessageBox is modal)
-    HWND hExisting = FindWindowW(nullptr, title.c_str());
-    if (hExisting && IsWindow(hExisting) && IsWindowVisible(hExisting))
+void DialogManager::ShowConnectionLog()
+{
+    if (!m_pConnectionMonitor || !m_pConfig)
     {
-        BringDialogToForeground(hExisting);
         return;
     }
 
-    std::wstring versionLabel = LoadStringResource(IDS_ABOUT_VERSION_LABEL);
-    if (versionLabel.empty())
+    // If dialog is already open, bring it to foreground
+    if (m_hConnectionLogDialog && IsWindow(m_hConnectionLogDialog))
     {
-        versionLabel = L"Version: ";
+        BringDialogToForeground(m_hConnectionLogDialog);
+        return;
     }
 
-    std::wstring body = LoadStringResource(IDS_ABOUT_BODY);
-    if (body.empty())
-    {
-        body = L"A lightweight network traffic monitor for Windows.\nDisplays real-time download/upload speeds in the system tray and taskbar.";
-    }
+    ConnectionLogDialog dlg;
+    dlg.SetDialogHandleStorage(&m_hConnectionLogDialog);
+    dlg.Show(m_parentWindow, m_pConfig, m_pConnectionMonitor);
 
-    std::wstring message = APP_NAME;
-    message += L"\n";
-    message += versionLabel;
-    message += APP_VERSION;
-    message += L"\n\n";
-    message += body;
-
-    ShowDarkMessageBox(m_parentWindow, message, title, MB_OK | MB_ICONINFORMATION, m_pConfig->darkTheme);
+    m_hConnectionLogDialog = nullptr;
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse
 
 

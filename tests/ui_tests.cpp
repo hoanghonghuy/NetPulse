@@ -1,14 +1,14 @@
-#include "NetworkMonitor/Common.h"
-#include "NetworkMonitor/TrayIcon.h"
-#include "NetworkMonitor/TaskbarOverlay.h"
-#include "NetworkMonitor/FloatingWindow.h"
+﻿#include "NetPulse/Common.h"
+#include "NetPulse/TrayIcon.h"
+#include "NetPulse/TaskbarOverlay.h"
+#include "NetPulse/FloatingWindow.h"
 #include "TestUtils.h"
 
 #include <windows.h>
 
-using namespace NetworkMonitor;
+using namespace NetPulse;
 
-namespace NetworkMonitorTests
+namespace NetPulseTests
 {
 
 namespace
@@ -187,4 +187,4 @@ void RunFloatingWindowTests()
     AssertTrue(true, L"FloatingWindow Phase 1 tests completed successfully");
 }
 
-} // namespace NetworkMonitorTests
+} // namespace NetPulseTests

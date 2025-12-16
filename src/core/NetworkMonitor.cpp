@@ -1,7 +1,7 @@
-#include "NetworkMonitor/NetworkMonitor.h"
-#include "NetworkMonitor/Utils.h"
+﻿#include "NetPulse/NetworkMonitor.h"
+#include "NetPulse/Utils.h"
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 NetworkMonitorClass::NetworkMonitorClass()
@@ -192,4 +192,4 @@ bool NetworkMonitorClass::ShouldMonitorInterface(const MIB_IF_ROW2* ifRow)
     return true;
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

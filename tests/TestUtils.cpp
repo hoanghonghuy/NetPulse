@@ -1,8 +1,8 @@
-#include "TestUtils.h"
+﻿#include "TestUtils.h"
 
 #include <cstdio>
 
-namespace NetworkMonitorTests
+namespace NetPulseTests
 {
 
 namespace
@@ -57,4 +57,4 @@ void ResetFailureCount()
     g_failures = 0;
 }
 
-} // namespace NetworkMonitorTests
+} // namespace NetPulseTests

@@ -1,10 +1,10 @@
-// ImGuiHistory.cpp - History Panel Implementation
-#include "NetworkMonitor/ImGuiHistory.h"
+﻿// ImGuiHistory.cpp - History Panel Implementation
+#include "NetPulse/ImGuiHistory.h"
 #include <sstream>
 #include <iomanip>
 #include <ctime>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 ImGuiHistory::ImGuiHistory()
@@ -204,4 +204,4 @@ std::string ImGuiHistory::FormatTimestamp(std::time_t timestamp)
     return oss.str();
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

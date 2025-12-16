@@ -1,10 +1,10 @@
-// ImGuiFloatingWindow.cpp - Floating Widget Implementation
-#include "NetworkMonitor/ImGuiFloatingWindow.h"
-#include "NetworkMonitor/Utils.h"
+﻿// ImGuiFloatingWindow.cpp - Floating Widget Implementation
+#include "NetPulse/ImGuiFloatingWindow.h"
+#include "NetPulse/Utils.h"
 #include <sstream>
 #include <iomanip>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 ImGuiFloatingWindow::ImGuiFloatingWindow()
@@ -125,4 +125,4 @@ bool ImGuiFloatingWindow::Render(const AppConfig& config)
     return !m_isOpen; // Return true if window was closed
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

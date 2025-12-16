@@ -1,12 +1,12 @@
-#include "NetworkMonitor/EtwNetworkMonitor.h"
-#include "NetworkMonitor/Utils.h"
+﻿#include "NetPulse/EtwNetworkMonitor.h"
+#include "NetPulse/Utils.h"
 #include <tdh.h>
 #include <in6addr.h>
 #include <psapi.h>
 
 #pragma comment(lib, "tdh.lib")
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 // Static instance for callback
@@ -314,4 +314,4 @@ std::wstring EtwNetworkMonitor::GetProcessName(DWORD pid) const
     return name;
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

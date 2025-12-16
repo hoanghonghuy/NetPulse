@@ -1,4 +1,4 @@
-// ImGuiHistory.h - History Panel using Dear ImGui
+﻿// ImGuiHistory.h - History Panel using Dear ImGui
 #ifndef NETWORK_MONITOR_IMGUI_HISTORY_H
 #define NETWORK_MONITOR_IMGUI_HISTORY_H
 
@@ -6,13 +6,13 @@
 #define NOMINMAX
 #endif
 
-#include "NetworkMonitor/Common.h"
-#include "NetworkMonitor/HistoryLogger.h"
+#include "NetPulse/Common.h"
+#include "NetPulse/HistoryLogger.h"
 #include "imgui.h"
 #include <vector>
 #include <string>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 class ImGuiHistory
@@ -43,6 +43,6 @@ private:
     int m_sampleLimit;
 };
 
-} // namespace NetworkMonitor
+} // namespace NetPulse
 
 #endif // NETWORK_MONITOR_IMGUI_HISTORY_H

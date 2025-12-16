@@ -1,18 +1,18 @@
-// ============================================================================
+﻿// ============================================================================
 // File: vpn_detection_tests.cpp
 // Description: Unit tests for VpnProxyDetector
 // ============================================================================
 
 #include "TestUtils.h"
-#include "NetworkMonitor/VpnProxyDetector.h"
+#include "NetPulse/VpnProxyDetector.h"
 #include <memory>
 #include <thread>
 #include <chrono>
 
-namespace NetworkMonitorTests
+namespace NetPulseTests
 {
 
-using namespace NetworkMonitor;
+using namespace NetPulse;
 
 void TestVpnDetectorInitialization()
 {

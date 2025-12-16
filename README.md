@@ -6,6 +6,7 @@ NetworkMonitor is a lightweight C++ Win32 application for monitoring network tra
 
 - **Tray icon**: displays current speed, detailed tooltip, icon changes according to load level (idle / active / high).
 - **Taskbar overlay**: 2 lines of text (Down / Up) located next to the system tray area, always displaying real-time speed.
+- **Speed Test**: Integrated tool to measure download/upload bandwidth and latency.
 - **Ping Monitor**: Real-time latency display on overlay with color coding (green <100ms, yellow 100-200ms, red >200ms, "---" on timeout).
 - **Keyboard Shortcut**: Press `Win+Shift+N` to toggle overlay visibility (customizable in Settings).
 - **Connection Notifications**: Optional balloon notification when network connects/disconnects.

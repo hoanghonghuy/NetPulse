@@ -1,5 +1,5 @@
-// ImGuiApp.cpp - Dear ImGui Direct3D 11 Host Window Implementation
-#include "NetworkMonitor/ImGuiApp.h"
+﻿// ImGuiApp.cpp - Dear ImGui Direct3D 11 Host Window Implementation
+#include "NetPulse/ImGuiApp.h"
 #include "imgui.h"
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx11.h"
@@ -8,7 +8,7 @@
 // Forward declaration of ImGui Win32 handler (from imgui_impl_win32.cpp)
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 // Static instance pointer for WndProc callback
@@ -54,7 +54,7 @@ bool ImGuiApp::Initialize(HINSTANCE hInstance, int nCmdShow)
     m_hWnd = CreateWindowExW(
         0,
         m_wc.lpszClassName,
-        L"NetworkMonitor - Modern UI",
+        L"NetPulse - Modern UI",
         WS_OVERLAPPEDWINDOW,
         100, 100, 1280, 720,
         nullptr, nullptr, hInstance, nullptr
@@ -383,4 +383,4 @@ void ImGuiApp::UnregisterGlobalHotkey()
     }
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

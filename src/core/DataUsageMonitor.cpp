@@ -1,8 +1,8 @@
-#include "NetworkMonitor/DataUsageMonitor.h"
-#include "NetworkMonitor/Utils.h"
+﻿#include "NetPulse/DataUsageMonitor.h"
+#include "NetPulse/Utils.h"
 #include <algorithm>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 DataUsageMonitor::DataUsageMonitor()
@@ -89,4 +89,4 @@ int DataUsageMonitor::GetUsagePercentage() const
     return static_cast<int>((m_currentUsageBytes * 100) / m_quotaBytes);
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

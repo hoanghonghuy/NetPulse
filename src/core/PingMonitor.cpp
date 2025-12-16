@@ -1,10 +1,10 @@
-#include "NetworkMonitor/PingMonitor.h"
-#include "NetworkMonitor/Utils.h"
+﻿#include "NetPulse/PingMonitor.h"
+#include "NetPulse/Utils.h"
 #include <ws2tcpip.h>
 
 #pragma comment(lib, "ws2_32.lib")
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 PingMonitor::PingMonitor()
@@ -155,4 +155,4 @@ void PingMonitor::Update()
     }
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

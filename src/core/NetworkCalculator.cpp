@@ -1,9 +1,9 @@
-#include "NetworkMonitor/NetworkCalculator.h"
-#include "NetworkMonitor/Utils.h"
+﻿#include "NetPulse/NetworkCalculator.h"
+#include "NetPulse/Utils.h"
 #include "../../resources/resource.h"
 #include <algorithm>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 NetworkCalculator::NetworkCalculator()
@@ -156,4 +156,4 @@ double NetworkCalculator::CalculateSpeed(ULONG64 byteDelta, double timeIntervalS
     return static_cast<double>(byteDelta) / timeIntervalSeconds;
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

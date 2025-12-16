@@ -1,4 +1,4 @@
-#include "NetworkMonitor/SpeedTester.h"
+﻿#include "NetPulse/SpeedTester.h"
 
 // NOMINMAX to prevent Windows min/max macro conflicts with std::min/max
 #ifndef NOMINMAX
@@ -18,7 +18,7 @@
 #pragma comment(lib, "winhttp.lib")
 #pragma comment(lib, "ws2_32.lib")
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 SpeedTester::SpeedTester()
@@ -286,7 +286,7 @@ bool SpeedTester::HttpDownload(const std::wstring& host, const std::wstring& pat
                                 size_t expectedBytes, double& speedMbps,
                                 std::function<void(size_t bytesReceived)> progressCallback)
 {
-    HINTERNET hSession = WinHttpOpen(L"NetworkMonitor/1.0",
+    HINTERNET hSession = WinHttpOpen(L"NetPulse/1.0",
                                       WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
                                       WINHTTP_NO_PROXY_NAME,
                                       WINHTTP_NO_PROXY_BYPASS, 0);
@@ -373,7 +373,7 @@ bool SpeedTester::HttpUpload(const std::wstring& host, const std::wstring& path,
                               size_t dataSize, double& speedMbps,
                               std::function<void(size_t bytesSent)> progressCallback)
 {
-    HINTERNET hSession = WinHttpOpen(L"NetworkMonitor/1.0",
+    HINTERNET hSession = WinHttpOpen(L"NetPulse/1.0",
                                       WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
                                       WINHTTP_NO_PROXY_NAME,
                                       WINHTTP_NO_PROXY_BYPASS, 0);
@@ -450,4 +450,4 @@ bool SpeedTester::HttpUpload(const std::wstring& host, const std::wstring& path,
     return !m_cancelled.load();
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

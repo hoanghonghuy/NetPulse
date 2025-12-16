@@ -1,15 +1,15 @@
-// Prevent winsock.h vs winsock2.h conflict
+﻿// Prevent winsock.h vs winsock2.h conflict
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 
-#include "NetworkMonitor/SpeedTestDialog.h"
-#include "NetworkMonitor/SpeedTester.h"
-#include "NetworkMonitor/SpeedTestHistory.h"
-#include "NetworkMonitor/Common.h"
-#include "NetworkMonitor/ThemeHelper.h"
-#include "NetworkMonitor/DialogThemeHelper.h"
-#include "NetworkMonitor/Utils.h"
+#include "NetPulse/SpeedTestDialog.h"
+#include "NetPulse/SpeedTester.h"
+#include "NetPulse/SpeedTestHistory.h"
+#include "NetPulse/Common.h"
+#include "NetPulse/ThemeHelper.h"
+#include "NetPulse/DialogThemeHelper.h"
+#include "NetPulse/Utils.h"
 #include "../resources/resource.h"
 
 #include <CommCtrl.h>
@@ -20,7 +20,7 @@
 #pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "uxtheme.lib")
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 // Custom messages for async updates
@@ -214,9 +214,10 @@ void SpeedTestDialog::ApplyDarkTheme(HWND hDlg)
     makeOwnerDraw(m_hStartButton);
     makeOwnerDraw(GetDlgItem(hDlg, IDCANCEL));
     
-    // Progress bar dark colors
+    // Progress bar dark colors - strip visual styles first for PBM_SETBKCOLOR to work
     if (m_hProgressBar)
     {
+        SetWindowTheme(m_hProgressBar, L"", L"");
         SendMessageW(m_hProgressBar, PBM_SETBARCOLOR, 0, RGB(80, 160, 240));
         SendMessageW(m_hProgressBar, PBM_SETBKCOLOR, 0, DialogThemeHelper::DARK_PANEL);
     }
@@ -227,6 +228,13 @@ void SpeedTestDialog::ApplyDarkTheme(HWND hDlg)
         DialogThemeHelper::ApplyDarkListView(m_hHistoryList, true);
     }
     
+    // Strip visual styles from GroupBox for proper dark text rendering
+    HWND hResultGroup = GetDlgItem(hDlg, IDC_SPEED_RESULT_GROUP);
+    if (hResultGroup)
+    {
+        SetWindowTheme(hResultGroup, L"", L"");
+    }
+
     InvalidateRect(hDlg, nullptr, TRUE);
 }
 
@@ -512,7 +520,7 @@ bool SpeedTestDialog::OnDrawItem(DRAWITEMSTRUCT* pDrawItem)
     return true;
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse
 
 
 

@@ -1,13 +1,13 @@
-// NOTE: This class manages its own GDI resources (Fonts, Brushes, Bitmaps) for performance and stability.
+﻿// NOTE: This class manages its own GDI resources (Fonts, Brushes, Bitmaps) for performance and stability.
 // Refactoring to shared helpers is discouraged to avoid object lifetime issues.
-#include "NetworkMonitor/TaskbarOverlay.h"
-#include "NetworkMonitor/Utils.h"
+#include "NetPulse/TaskbarOverlay.h"
+#include "NetPulse/Utils.h"
 #include "../../resources/resource.h"
 #include <dwmapi.h>
 
 #pragma comment(lib, "Dwmapi.lib")
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 TaskbarOverlay::TaskbarOverlay()
@@ -166,7 +166,7 @@ bool TaskbarOverlay::CreateOverlayWindow(HINSTANCE hInstance)
     m_hwnd = CreateWindowExW(
         WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_LAYERED | WS_EX_NOACTIVATE | WS_EX_TRANSPARENT,
         WINDOW_CLASS_NAME,
-        L"NetworkMonitor Overlay",
+        L"NetPulse Overlay",
         WS_POPUP | WS_VISIBLE,
         0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
         nullptr, nullptr, hInstance, this
@@ -749,4 +749,4 @@ bool TaskbarOverlay::IsForegroundWindowFullscreen()
             windowRect.bottom >= monitorInfo.rcMonitor.bottom);
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

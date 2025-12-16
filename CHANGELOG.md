@@ -2,6 +2,24 @@
 
 All notable changes to NetworkMonitor will be documented in this file.
 
+## [2.0.0] - 2025-12-16
+
+### Added
+- **Integrated Bandwidth Speed Test**: New dedicated dialog for testing download, upload, and ping latency. Includes history tracking and dark theme support.
+- **Floating Window Position Safety**: Automatic reset logic to ensure the floating widget remains visible when changing DPI settings or monitor configurations.
+
+### Changed
+- **High-DPI Support**: Switched application DPI awareness to `GDI Scaling` mode to resolve text blurriness on high-resolution displays (2K/4K).
+- **Dark Theme Overhaul**:
+  - Unified dark theme across all dialogs (About, Speed Test, Settings).
+  - Modernized window frames (removed white/classic borders in dark mode).
+  - Implemented custom owner-draw rendering for buttons to ensure correct contrast.
+
+### Fixed
+- **Floating Window Visibility**: Resolved issue where the floating widget would disappear off-screen due to DPI coordinate mismatches.
+- **Dialog Frame Rendering**: Fixed inconsistent title bar and border rendering in the About and Speed Test dialogs.
+- **Theme Conflicts**: Removed redundant theme application logic (`ApplyToDialog`) that caused visual glitches.
+
 ## [1.5.0] - 2025-12-14
 
 ### Added

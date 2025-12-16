@@ -1,7 +1,7 @@
 // ============================================================================
 // File: app.rc
-// Description: Resource script for NetworkMonitor
-// Author: NetworkMonitor Project
+// Description: Resource script for NetPulse
+// Author: NetPulse Project
 // ============================================================================
 
 #include <windows.h>
@@ -58,10 +58,10 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_APP_TITLE                    "NetworkMonitor"
-    IDS_ERROR_INIT                   "Failed to initialize NetworkMonitor"
+    IDS_APP_TITLE                    "NetPulse"
+    IDS_ERROR_INIT                   "Failed to initialize NetPulse"
     IDS_ERROR_NETWORK                "Failed to access network interfaces"
-    IDS_ERROR_ALREADY_RUNNING        "NetworkMonitor is already running!"
+    IDS_ERROR_ALREADY_RUNNING        "NetPulse is already running!"
     IDS_ERR_REGISTER_WINDOW_CLASS    "Failed to register window class"
     IDS_ERR_CREATE_WINDOW            "Failed to create window"
     IDS_ERR_INIT_TRAY_ICON           "Failed to initialize tray icon"
@@ -94,7 +94,7 @@ BEGIN
     IDS_AGGREGATED_STATS             "Aggregated Statistics"
     IDS_OVERLAY_DOWN_PREFIX          "Down: "
     IDS_OVERLAY_UP_PREFIX            "Up: "
-    IDS_ABOUT_TITLE                  "About NetworkMonitor"
+    IDS_ABOUT_TITLE                  "About NetPulse"
     IDS_ABOUT_VERSION_LABEL          "Version: "
     IDS_ABOUT_BODY                   "A lightweight network traffic monitor for Windows.\nDisplays real-time download/upload speeds in the system tray and taskbar."
     IDS_HISTORY_MANAGE_TITLE         "Manage History"
@@ -113,7 +113,7 @@ BEGIN
     IDS_LANGUAGE_JAPANESE            "日本語"
     IDS_LANGUAGE_KOREAN              "한국어"
     IDS_LANGUAGE_CHINESE_SIMPLIFIED  "简体中文"
-    IDS_SETTINGS_TITLE               "NetworkMonitor Settings"
+    IDS_SETTINGS_TITLE               "NetPulse Settings"
     IDS_SETTINGS_GROUP_GENERAL       "General"
     IDS_SETTINGS_GROUP_UPDATE        "Update && Display"
     IDS_SETTINGS_GROUP_NETWORK       "Network && History"
@@ -167,6 +167,15 @@ BEGIN
     IDS_MENU_FLOATING_WINDOW         "Floating Window"
     IDS_MENU_PERAPP                  "Per-App Usage..."
     IDS_MENU_SPEED_TEST              "Speed Test..."
+    IDS_MENU_CONNECTION_LOG          "Connection Log..."
+    IDS_CONNLOG_COL_PROCESS          "Process"
+    IDS_CONNLOG_COL_PID              "PID"
+    IDS_CONNLOG_COL_PROTOCOL         "Protocol"
+    IDS_CONNLOG_COL_LOCAL_ADDR       "Local Address"
+    IDS_CONNLOG_COL_LOCAL_PORT       "L.Port"
+    IDS_CONNLOG_COL_REMOTE_ADDR      "Remote Address"
+    IDS_CONNLOG_COL_REMOTE_PORT      "R.Port"
+    IDS_CONNLOG_COL_STATE            "State"
     IDS_SETTINGS_LABEL_OVERLAY_FONT_SIZE "Overlay Font Size:"
     IDS_SETTINGS_LABEL_OVERLAY_COLORS    "Overlay Colors:"
     IDS_SETTINGS_LABEL_PING_TARGET       "Ping Target:"
@@ -220,10 +229,10 @@ LANGUAGE LANG_VIETNAMESE, SUBLANG_VIETNAMESE_VIETNAM
 
 STRINGTABLE
 BEGIN
-    IDS_APP_TITLE                    "NetworkMonitor"
-    IDS_ERROR_INIT                   "Không thể khởi tạo NetworkMonitor"
+    IDS_APP_TITLE                    "NetPulse"
+    IDS_ERROR_INIT                   "Không thể khởi tạo NetPulse"
     IDS_ERROR_NETWORK                "Không truy cập được các giao diện mạng"
-    IDS_ERROR_ALREADY_RUNNING        "NetworkMonitor đang chạy rồi!"
+    IDS_ERROR_ALREADY_RUNNING        "NetPulse đang chạy rồi!"
     IDS_ERR_REGISTER_WINDOW_CLASS    "Không thể đăng ký lớp cửa sổ"
     IDS_ERR_CREATE_WINDOW            "Không thể tạo cửa sổ"
     IDS_ERR_INIT_TRAY_ICON           "Không thể khởi tạo biểu tượng khay hệ thống"
@@ -256,7 +265,7 @@ BEGIN
     IDS_AGGREGATED_STATS             "Tổng hợp thống kê"
     IDS_OVERLAY_DOWN_PREFIX          "Tải xuống: "
     IDS_OVERLAY_UP_PREFIX            "Tải lên: "
-    IDS_ABOUT_TITLE                  "Giới thiệu NetworkMonitor"
+    IDS_ABOUT_TITLE                  "Giới thiệu NetPulse"
     IDS_ABOUT_VERSION_LABEL          "Phiên bản: "
     IDS_ABOUT_BODY                   "Công cụ giám sát lưu lượng mạng nhẹ cho Windows.\nHiển thị tốc độ tải xuống / tải lên theo thời gian thực ở khay hệ thống và taskbar."
     IDS_HISTORY_MANAGE_TITLE         "Quản lý lịch sử"
@@ -275,7 +284,7 @@ BEGIN
     IDS_LANGUAGE_JAPANESE            "日本語"
     IDS_LANGUAGE_KOREAN              "한국어"
     IDS_LANGUAGE_CHINESE_SIMPLIFIED  "简体中文"
-    IDS_SETTINGS_TITLE               "Cài đặt NetworkMonitor"
+    IDS_SETTINGS_TITLE               "Cài đặt NetPulse"
     IDS_SETTINGS_GROUP_GENERAL       "Chung"
     IDS_SETTINGS_GROUP_UPDATE        "Cập nhật && Hiển thị"
     IDS_SETTINGS_GROUP_NETWORK       "Mạng && Lịch sử"
@@ -329,6 +338,15 @@ BEGIN
     IDS_MENU_FLOATING_WINDOW         "Cửa sổ nổi"
     IDS_MENU_PERAPP                  "Sử dụng theo ứng dụng..."
     IDS_MENU_SPEED_TEST              "Kiểm tra tốc độ..."
+    IDS_MENU_CONNECTION_LOG          "Nhật ký kết nối..."
+    IDS_CONNLOG_COL_PROCESS          "Tiến trình"
+    IDS_CONNLOG_COL_PID              "PID"
+    IDS_CONNLOG_COL_PROTOCOL         "Giao thức"
+    IDS_CONNLOG_COL_LOCAL_ADDR       "Địa chỉ cục bộ"
+    IDS_CONNLOG_COL_LOCAL_PORT       "Cổng LB"
+    IDS_CONNLOG_COL_REMOTE_ADDR      "Địa chỉ từ xa"
+    IDS_CONNLOG_COL_REMOTE_PORT      "Cổng TX"
+    IDS_CONNLOG_COL_STATE            "Trạng thái"
     IDS_SETTINGS_LABEL_OVERLAY_FONT_SIZE "Cỡ chữ overlay:"
     IDS_SETTINGS_LABEL_OVERLAY_COLORS    "Màu overlay:"
     IDS_SETTINGS_LABEL_PING_TARGET       "Địa chỉ ping:"
@@ -383,10 +401,10 @@ LANGUAGE LANG_JAPANESE, SUBLANG_JAPANESE_JAPAN
 
 STRINGTABLE
 BEGIN
-    IDS_APP_TITLE                    "NetworkMonitor"
-    IDS_ERROR_INIT                   "NetworkMonitorを初期化できませんでした"
+    IDS_APP_TITLE                    "NetPulse"
+    IDS_ERROR_INIT                   "NetPulseを初期化できませんでした"
     IDS_ERROR_NETWORK                "ネットワークインターフェースにアクセスできませんでした"
-    IDS_ERROR_ALREADY_RUNNING        "NetworkMonitorは既に実行中です！"
+    IDS_ERROR_ALREADY_RUNNING        "NetPulseは既に実行中です！"
     IDS_ERR_REGISTER_WINDOW_CLASS    "ウィンドウクラスの登録に失敗しました"
     IDS_ERR_CREATE_WINDOW            "ウィンドウの作成に失敗しました"
     IDS_ERR_INIT_TRAY_ICON           "トレイアイコンの初期化に失敗しました"
@@ -419,7 +437,7 @@ BEGIN
     IDS_AGGREGATED_STATS             "統合統計"
     IDS_OVERLAY_DOWN_PREFIX          "下り: "
     IDS_OVERLAY_UP_PREFIX            "上り: "
-    IDS_ABOUT_TITLE                  "NetworkMonitorについて"
+    IDS_ABOUT_TITLE                  "NetPulseについて"
     IDS_ABOUT_VERSION_LABEL          "バージョン: "
     IDS_ABOUT_BODY                   "Windows用の軽量ネットワークトラフィックモニター。\nシステムトレイとタスクバーにリアルタイムの下り/上り速度を表示します。"
     IDS_HISTORY_MANAGE_TITLE         "履歴管理"
@@ -438,7 +456,7 @@ BEGIN
     IDS_LANGUAGE_JAPANESE            "日本語"
     IDS_LANGUAGE_KOREAN              "한국어"
     IDS_LANGUAGE_CHINESE_SIMPLIFIED  "简体中文"
-    IDS_SETTINGS_TITLE               "NetworkMonitor 設定"
+    IDS_SETTINGS_TITLE               "NetPulse 設定"
     IDS_SETTINGS_GROUP_GENERAL       "一般"
     IDS_SETTINGS_GROUP_UPDATE        "更新 && 表示"
     IDS_SETTINGS_GROUP_NETWORK       "ネットワーク && 履歴"
@@ -492,6 +510,15 @@ BEGIN
     IDS_MENU_FLOATING_WINDOW         "フローティングウィンドウ"
     IDS_MENU_PERAPP                  "アプリ別使用状況..."
     IDS_MENU_SPEED_TEST              "スピードテスト..."
+    IDS_MENU_CONNECTION_LOG          "接続ログ..."
+    IDS_CONNLOG_COL_PROCESS          "プロセス"
+    IDS_CONNLOG_COL_PID              "PID"
+    IDS_CONNLOG_COL_PROTOCOL         "プロトコル"
+    IDS_CONNLOG_COL_LOCAL_ADDR       "ローカルアドレス"
+    IDS_CONNLOG_COL_LOCAL_PORT       "L.ポート"
+    IDS_CONNLOG_COL_REMOTE_ADDR      "リモートアドレス"
+    IDS_CONNLOG_COL_REMOTE_PORT      "R.ポート"
+    IDS_CONNLOG_COL_STATE            "状態"
     IDS_SETTINGS_LABEL_OVERLAY_FONT_SIZE "オーバーレイフォントサイズ:"
     IDS_SETTINGS_LABEL_OVERLAY_COLORS    "オーバーレイの色:"
     IDS_SETTINGS_LABEL_PING_TARGET       "Pingターゲット:"
@@ -541,10 +568,10 @@ LANGUAGE LANG_KOREAN, SUBLANG_KOREAN
 
 STRINGTABLE
 BEGIN
-    IDS_APP_TITLE                    "NetworkMonitor"
-    IDS_ERROR_INIT                   "NetworkMonitor를 초기화할 수 없습니다"
+    IDS_APP_TITLE                    "NetPulse"
+    IDS_ERROR_INIT                   "NetPulse를 초기화할 수 없습니다"
     IDS_ERROR_NETWORK                "네트워크 인터페이스에 접근할 수 없습니다"
-    IDS_ERROR_ALREADY_RUNNING        "NetworkMonitor가 이미 실행 중입니다!"
+    IDS_ERROR_ALREADY_RUNNING        "NetPulse가 이미 실행 중입니다!"
     IDS_ERR_REGISTER_WINDOW_CLASS    "윈도우 클래스 등록에 실패했습니다"
     IDS_ERR_CREATE_WINDOW            "윈도우 생성에 실패했습니다"
     IDS_ERR_INIT_TRAY_ICON           "트레이 아이콘 초기화에 실패했습니다"
@@ -577,7 +604,7 @@ BEGIN
     IDS_AGGREGATED_STATS             "통합 통계"
     IDS_OVERLAY_DOWN_PREFIX          "다운: "
     IDS_OVERLAY_UP_PREFIX            "업: "
-    IDS_ABOUT_TITLE                  "NetworkMonitor 정보"
+    IDS_ABOUT_TITLE                  "NetPulse 정보"
     IDS_ABOUT_VERSION_LABEL          "버전: "
     IDS_ABOUT_BODY                   "Windows용 경량 네트워크 트래픽 모니터.\n시스템 트레이와 작업 표시줄에 실시간 다운로드/업로드 속도를 표시합니다."
     IDS_HISTORY_MANAGE_TITLE         "기록 관리"
@@ -596,7 +623,7 @@ BEGIN
     IDS_LANGUAGE_JAPANESE            "日本語"
     IDS_LANGUAGE_KOREAN              "한국어"
     IDS_LANGUAGE_CHINESE_SIMPLIFIED  "简体中文"
-    IDS_SETTINGS_TITLE               "NetworkMonitor 설정"
+    IDS_SETTINGS_TITLE               "NetPulse 설정"
     IDS_SETTINGS_GROUP_GENERAL       "일반"
     IDS_SETTINGS_GROUP_UPDATE        "업데이트 && 표시"
     IDS_SETTINGS_GROUP_NETWORK       "네트워크 && 기록"
@@ -633,7 +660,7 @@ BEGIN
     IDS_SETTINGS_TAB_DISPLAY         "표시"
     IDS_SETTINGS_TAB_ADVANCED        "고급"
     IDS_BUTTON_OK                    "확인"
-    IDS_BUTTON_CANCEL                "취소"
+    IDS_BUTTON_CANCEL                    "취소"
     IDS_BUTTON_APPLY                 "적용"
     IDS_DASHBOARD_BUTTON_REFRESH     "새로 고침"
     IDS_DASHBOARD_BUTTON_CLOSE       "닫기"
@@ -650,6 +677,15 @@ BEGIN
    IDS_MENU_FLOATING_WINDOW         "플로팅 창"
     IDS_MENU_PERAPP                  "앱별 사용량..."
     IDS_MENU_SPEED_TEST              "속도 테스트..."
+    IDS_MENU_CONNECTION_LOG          "연결 로그..."
+    IDS_CONNLOG_COL_PROCESS          "프로세스"
+    IDS_CONNLOG_COL_PID              "PID"
+    IDS_CONNLOG_COL_PROTOCOL         "프로토콜"
+    IDS_CONNLOG_COL_LOCAL_ADDR       "로컬 주소"
+    IDS_CONNLOG_COL_LOCAL_PORT       "L.포트"
+    IDS_CONNLOG_COL_REMOTE_ADDR      "원격 주소"
+    IDS_CONNLOG_COL_REMOTE_PORT      "R.포트"
+    IDS_CONNLOG_COL_STATE            "상태"
     IDS_SETTINGS_LABEL_OVERLAY_FONT_SIZE "오버레이 글꼴 크기:"
     IDS_SETTINGS_LABEL_OVERLAY_COLORS    "오버레이 색상:"
     IDS_SETTINGS_LABEL_PING_TARGET       "Ping 대상:"
@@ -699,10 +735,10 @@ LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
 
 STRINGTABLE
 BEGIN
-    IDS_APP_TITLE                    "NetworkMonitor"
-    IDS_ERROR_INIT                   "无法初始化 NetworkMonitor"
+    IDS_APP_TITLE                    "NetPulse"
+    IDS_ERROR_INIT                   "无法初始化 NetPulse"
     IDS_ERROR_NETWORK                "无法访问网络接口"
-    IDS_ERROR_ALREADY_RUNNING        "NetworkMonitor 已在运行！"
+    IDS_ERROR_ALREADY_RUNNING        "NetPulse 已在运行！"
     IDS_ERR_REGISTER_WINDOW_CLASS    "注册窗口类失败"
     IDS_ERR_CREATE_WINDOW            "创建窗口失败"
     IDS_ERR_INIT_TRAY_ICON           "初始化托盘图标失败"
@@ -735,7 +771,7 @@ BEGIN
     IDS_AGGREGATED_STATS             "汇总统计"
     IDS_OVERLAY_DOWN_PREFIX          "下载: "
     IDS_OVERLAY_UP_PREFIX            "上传: "
-    IDS_ABOUT_TITLE                  "关于 NetworkMonitor"
+    IDS_ABOUT_TITLE                  "关于 NetPulse"
     IDS_ABOUT_VERSION_LABEL          "版本: "
     IDS_ABOUT_BODY                   "Windows 轻量级网络流量监控器。\n在系统托盘和任务栏中显示实时下载/上传速度。"
     IDS_HISTORY_MANAGE_TITLE         "管理历史记录"
@@ -754,7 +790,7 @@ BEGIN
     IDS_LANGUAGE_JAPANESE            "日本語"
     IDS_LANGUAGE_KOREAN              "한국어"
     IDS_LANGUAGE_CHINESE_SIMPLIFIED  "简体中文"
-    IDS_SETTINGS_TITLE               "NetworkMonitor 设置"
+    IDS_SETTINGS_TITLE               "NetPulse 设置"
     IDS_SETTINGS_GROUP_GENERAL       "常规"
     IDS_SETTINGS_GROUP_UPDATE        "更新 && 显示"
     IDS_SETTINGS_GROUP_NETWORK       "网络 && 历史"
@@ -808,6 +844,15 @@ BEGIN
     IDS_MENU_FLOATING_WINDOW         "浮动窗口"
     IDS_MENU_PERAPP                  "应用程序使用情况..."
     IDS_MENU_SPEED_TEST              "速度测试..."
+    IDS_MENU_CONNECTION_LOG          "连接日志..."
+    IDS_CONNLOG_COL_PROCESS          "进程"
+    IDS_CONNLOG_COL_PID              "PID"
+    IDS_CONNLOG_COL_PROTOCOL         "协议"
+    IDS_CONNLOG_COL_LOCAL_ADDR       "本地地址"
+    IDS_CONNLOG_COL_LOCAL_PORT       "本地端口"
+    IDS_CONNLOG_COL_REMOTE_ADDR      "远程地址"
+    IDS_CONNLOG_COL_REMOTE_PORT      "远程端口"
+    IDS_CONNLOG_COL_STATE            "状态"
     IDS_SETTINGS_LABEL_OVERLAY_FONT_SIZE "覆盖层字体大小:"
     IDS_SETTINGS_LABEL_OVERLAY_COLORS    "覆盖层颜色:"
     IDS_SETTINGS_LABEL_PING_TARGET       "Ping目标:"
@@ -860,8 +905,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // ============================================================================
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,3,0,0
- PRODUCTVERSION 1,3,0,0
+ FILEVERSION 2,0,0,0
+ PRODUCTVERSION 2,0,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -876,14 +921,14 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "CompanyName", "NetworkMonitor Project"
-            VALUE "FileDescription", "Network Traffic Monitor for Windows"
-            VALUE "FileVersion", "1.3.0.0"
-            VALUE "InternalName", "NetworkMonitor.exe"
+            VALUE "CompanyName", "NetPulse Project"
+            VALUE "FileDescription", "Network Usage Monitor"
+            VALUE "FileVersion", "2.0.0.0"
+            VALUE "InternalName", "NetPulse.exe"
             VALUE "LegalCopyright", "Copyright (C) 2025"
-            VALUE "OriginalFilename", "NetworkMonitor.exe"
-            VALUE "ProductName", "NetworkMonitor"
-            VALUE "ProductVersion", "1.3.0.0"
+            VALUE "OriginalFilename", "NetPulse.exe"
+            VALUE "ProductName", "NetPulse"
+            VALUE "ProductVersion", "2.0.0.0"
         END
     END
     BLOCK "VarFileInfo"
@@ -905,21 +950,22 @@ END
 
 IDD_ABOUT_DIALOG DIALOGEX 0, 0, 250, 120
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "About NetworkMonitor"
+CAPTION "About NetPulse"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     // ICON COMMENTED OUT - IDI_APP_ICON not defined yet
     // ICON            IDI_APP_ICON,IDC_STATIC,7,7,21,20
-    LTEXT           "NetworkMonitor",IDC_STATIC,40,10,200,8,SS_NOPREFIX
-    LTEXT           "Version 1.3.0",IDC_VERSION_TEXT,40,25,200,8
+    LTEXT           "NetPulse",IDC_STATIC,40,10,200,8,SS_NOPREFIX
+    LTEXT           "Version 2.0.0",IDC_VERSION_TEXT,40,25,200,8
     LTEXT           "A lightweight network traffic monitor for Windows.",IDC_STATIC,40,40,200,8
     LTEXT           "Copyright (C) 2025",IDC_COPYRIGHT_TEXT,40,55,200,8
+    CONTROL         "<a href=""https://github.com/hoanghonghuy/NetPulse"">GitHub: hoanghonghuy/NetPulse</a>",IDC_GITHUB_LINK,"SysLink",WS_TABSTOP | WS_GROUP,40,70,200,10
     DEFPUSHBUTTON   "OK",IDOK,95,95,60,14,WS_GROUP
 END
 
 IDD_SETTINGS_DIALOG DIALOGEX 0, 0, 280, 220
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "NetworkMonitor Settings"
+CAPTION "NetPulse Settings"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     // Tab Control
@@ -989,7 +1035,7 @@ BEGIN
     PUSHBUTTON      "Cancel",IDCANCEL,225,195,50,14
 END
 
-IDD_DASHBOARD_DIALOG DIALOGEX 0, 0, 360, 220
+IDD_DASHBOARD_DIALOG DIALOGEX 0, 0, 360, 240
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Network Usage Dashboard"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
@@ -1008,13 +1054,14 @@ BEGIN
     LTEXT           "Upload:",IDC_DASHBOARD_LABEL_UPLOAD_M,180,33,60,8
     LTEXT           "",IDC_MONTH_UP,260,33,90,8
 
-    CONTROL         "",IDC_DASHBOARD_CHART,"STATIC",SS_OWNERDRAW | WS_CHILD | WS_VISIBLE | WS_BORDER,7,50,346,60
-    CONTROL         "",IDC_RECENT_LIST,"SysListView32",WS_TABSTOP | WS_BORDER | WS_VSCROLL | WS_HSCROLL | LVS_REPORT | LVS_SHOWSELALWAYS,7,115,346,80
-    PUSHBUTTON      "Export CSV...",IDC_DASHBOARD_BUTTON_EXPORT,7,200,55,14
-    PUSHBUTTON      "Export Chart...",IDC_DASHBOARD_EXPORT_CHART,65,200,55,14
-    PUSHBUTTON      "Manage history...",IDC_HISTORY_MANAGE,125,200,76,14
-    PUSHBUTTON      "Refresh",IDC_DASHBOARD_REFRESH,206,200,50,14
-    PUSHBUTTON      "Close",IDOK,260,200,50,14
+    // Chart control (moved down to make room for navigation buttons)
+    CONTROL         "",IDC_DASHBOARD_CHART,"STATIC",SS_OWNERDRAW | WS_CHILD | WS_VISIBLE | WS_BORDER,7,65,346,60
+    CONTROL         "",IDC_RECENT_LIST,"SysListView32",WS_TABSTOP | WS_BORDER | WS_VSCROLL | WS_HSCROLL | LVS_REPORT | LVS_SHOWSELALWAYS,7,130,346,85
+    PUSHBUTTON      "Export CSV...",IDC_DASHBOARD_BUTTON_EXPORT,7,220,55,14
+    PUSHBUTTON      "Export Chart...",IDC_DASHBOARD_EXPORT_CHART,65,220,55,14
+    PUSHBUTTON      "Manage history...",IDC_HISTORY_MANAGE,125,220,76,14
+    PUSHBUTTON      "Refresh",IDC_DASHBOARD_REFRESH,206,220,50,14
+    PUSHBUTTON      "Close",IDOK,260,220,50,14
 END
 
 IDD_HISTORY_MANAGE_DIALOG DIALOGEX 0, 0, 240, 110
@@ -1079,4 +1126,15 @@ BEGIN
     CONTROL         "",IDC_PERAPP_LIST,"SysListView32",WS_TABSTOP | WS_BORDER | WS_VSCROLL | LVS_REPORT | LVS_SHOWSELALWAYS | LVS_SINGLESEL,7,7,466,280
     CONTROL         "Refresh",IDC_PERAPP_REFRESH,"Button",BS_OWNERDRAW | WS_TABSTOP,355,293,58,14
     CONTROL         "Close",IDOK,"Button",BS_OWNERDRAW | WS_TABSTOP,415,293,58,14
+END
+
+// Connection Log Dialog (Phase 4)
+IDD_CONNECTION_LOG_DIALOG DIALOGEX 0, 0, 520, 320
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+CAPTION "Connection Log"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_CONNLOG_LIST,"SysListView32",WS_TABSTOP | WS_BORDER | WS_VSCROLL | LVS_REPORT | LVS_SHOWSELALWAYS | LVS_SINGLESEL,7,7,506,285
+    PUSHBUTTON      "Refresh",IDC_CONNLOG_REFRESH,395,296,58,18
+    PUSHBUTTON      "Close",IDCANCEL,455,296,58,18
 END

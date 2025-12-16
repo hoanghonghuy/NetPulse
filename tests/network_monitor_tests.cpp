@@ -1,10 +1,10 @@
-#include "NetworkMonitor/Common.h"
-#include "NetworkMonitor/NetworkMonitor.h"
+﻿#include "NetPulse/Common.h"
+#include "NetPulse/NetworkMonitor.h"
 #include "TestUtils.h"
 
-using namespace NetworkMonitor;
+using namespace NetPulse;
 
-namespace NetworkMonitorTests
+namespace NetPulseTests
 {
 
 void RunNetworkMonitorTests()
@@ -35,4 +35,4 @@ void RunNetworkMonitorTests()
     AssertTrue(!monitor.IsRunning(), L"NetworkMonitorClass.IsRunning is false after Stop");
 }
 
-} // namespace NetworkMonitorTests
+} // namespace NetPulseTests

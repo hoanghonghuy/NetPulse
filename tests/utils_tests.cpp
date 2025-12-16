@@ -1,10 +1,10 @@
-#include "NetworkMonitor/Common.h"
-#include "NetworkMonitor/Utils.h"
+﻿#include "NetPulse/Common.h"
+#include "NetPulse/Utils.h"
 #include "TestUtils.h"
 
-using namespace NetworkMonitor;
+using namespace NetPulse;
 
-namespace NetworkMonitorTests
+namespace NetPulseTests
 {
 
 void RunUtilsTests()
@@ -34,4 +34,4 @@ void RunUtilsTests()
     AssertTrue(v2 >= 1.0 - 1e-6 && v2 <= 1.0 + 1e-6, L"ConvertSpeed 1 MB/s");
 }
 
-} // namespace NetworkMonitorTests
+} // namespace NetPulseTests

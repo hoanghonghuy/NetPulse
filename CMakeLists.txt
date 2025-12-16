@@ -1,4 +1,4 @@
-# ============================================================================
+﻿# ============================================================================
 # File: CMakeLists.txt
 # Description: CMake build configuration for NetworkMonitor
 # Author: NetworkMonitor Project
@@ -10,8 +10,8 @@ cmake_minimum_required(VERSION 3.15)
 # PROJECT CONFIGURATION
 # ============================================================================
 
-project(NetworkMonitor
-    VERSION 1.5.0
+project(NetPulse
+    VERSION 2.0.0
     DESCRIPTION "Network Traffic Monitor for Windows System Tray"
     LANGUAGES C CXX
 )
@@ -57,38 +57,39 @@ endif()
 
 # Header files
 set(HEADER_FILES
-    include/NetworkMonitor/Common.h
-    include/NetworkMonitor/Utils.h
-    include/NetworkMonitor/NetworkCalculator.h
-    include/NetworkMonitor/NetworkMonitor.h
-    include/NetworkMonitor/ConfigManager.h
-    include/NetworkMonitor/TrayIcon.h
-    include/NetworkMonitor/TaskbarOverlay.h
-    include/NetworkMonitor/ThemeHelper.h
-    include/NetworkMonitor/DialogThemeHelper.h
-    include/NetworkMonitor/PingMonitor.h
-    include/NetworkMonitor/HistoryLogger.h
-    include/NetworkMonitor/HotkeyManager.h
-    include/NetworkMonitor/MenuHandler.h
-    include/NetworkMonitor/UpdateCoordinator.h
-    include/NetworkMonitor/DialogManager.h
-    include/NetworkMonitor/LanguageManager.h
-    include/NetworkMonitor/DataUsageMonitor.h
-    include/NetworkMonitor/FloatingWindow.h
-    include/NetworkMonitor/SystemMonitor.h
-    include/NetworkMonitor/Application.h
-    include/NetworkMonitor/SettingsDialog.h
-    include/NetworkMonitor/DashboardDialog.h
-    include/NetworkMonitor/HistoryDialog.h
-    include/NetworkMonitor/PerAppMonitor.h
-    include/NetworkMonitor/PerAppDialog.h
-    include/NetworkMonitor/EtwNetworkMonitor.h
-    include/NetworkMonitor/SparklineRenderer.h
-    include/NetworkMonitor/VpnProxyDetector.h
-    include/NetworkMonitor/SpeedTester.h
-    include/NetworkMonitor/SpeedTestHistory.h
-    include/NetworkMonitor/Interfaces/IVpnProxyProvider.h
-    include/NetworkMonitor/Interfaces/ISpeedTestProvider.h
+    include/NetPulse/Common.h
+    include/NetPulse/Utils.h
+    include/NetPulse/NetworkCalculator.h
+    include/NetPulse/NetworkMonitor.h
+    include/NetPulse/ConfigManager.h
+    include/NetPulse/TrayIcon.h
+    include/NetPulse/TaskbarOverlay.h
+    include/NetPulse/ThemeHelper.h
+    include/NetPulse/DialogThemeHelper.h
+    include/NetPulse/PingMonitor.h
+    include/NetPulse/HistoryLogger.h
+    include/NetPulse/HotkeyManager.h
+    include/NetPulse/MenuHandler.h
+    include/NetPulse/UpdateCoordinator.h
+    include/NetPulse/DialogManager.h
+    include/NetPulse/LanguageManager.h
+    include/NetPulse/DataUsageMonitor.h
+    include/NetPulse/FloatingWindow.h
+    include/NetPulse/SystemMonitor.h
+    include/NetPulse/Application.h
+    include/NetPulse/SettingsDialog.h
+    include/NetPulse/DashboardDialog.h
+    include/NetPulse/HistoryDialog.h
+    include/NetPulse/PerAppMonitor.h
+    include/NetPulse/PerAppDialog.h
+    include/NetPulse/EtwNetworkMonitor.h
+    include/NetPulse/SparklineRenderer.h
+    include/NetPulse/ChartRenderer.h
+    include/NetPulse/VpnProxyDetector.h
+    include/NetPulse/SpeedTester.h
+    include/NetPulse/SpeedTestHistory.h
+    include/NetPulse/Interfaces/IVpnProxyProvider.h
+    include/NetPulse/Interfaces/ISpeedTestProvider.h
 )
 
 # Source files
@@ -99,6 +100,7 @@ set(SOURCE_FILES
     src/ui/dialogs/DashboardDialog.cpp
     src/ui/dialogs/HistoryDialog.cpp
     src/ui/dialogs/SpeedTestDialog.cpp
+    src/ui/dialogs/ConnectionLogDialog.cpp
     src/core/Utils.cpp
     src/core/NetworkCalculator.cpp
     src/core/NetworkMonitor.cpp
@@ -121,9 +123,11 @@ set(SOURCE_FILES
     src/ui/dialogs/PerAppDialog.cpp
     src/core/EtwNetworkMonitor.cpp
     src/ui/SparklineRenderer.cpp
+    src/ui/ChartRenderer.cpp
     src/core/VpnProxyDetector.cpp
     src/core/SpeedTester.cpp
     src/core/SpeedTestHistory.cpp
+    src/core/ConnectionMonitor.cpp
     third_party/sqlite/sqlite3.c
 )
 

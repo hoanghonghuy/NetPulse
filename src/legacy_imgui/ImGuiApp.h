@@ -1,4 +1,4 @@
-// ImGuiApp.h - Dear ImGui Direct3D 11 Host Window
+﻿// ImGuiApp.h - Dear ImGui Direct3D 11 Host Window
 #ifndef NETWORK_MONITOR_IMGUI_APP_H
 #define NETWORK_MONITOR_IMGUI_APP_H
 
@@ -6,7 +6,7 @@
 #include <windows.h>
 #include <functional>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 class ImGuiApp
@@ -71,6 +71,6 @@ private:
     int m_hotkeyId;
 };
 
-} // namespace NetworkMonitor
+} // namespace NetPulse
 
 #endif // NETWORK_MONITOR_IMGUI_APP_H

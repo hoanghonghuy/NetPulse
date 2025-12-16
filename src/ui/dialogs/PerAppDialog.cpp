@@ -1,7 +1,7 @@
-#include "NetworkMonitor/PerAppDialog.h"
-#include "NetworkMonitor/Utils.h"
-#include "NetworkMonitor/DialogThemeHelper.h"
-#include "NetworkMonitor/ThemeHelper.h"
+﻿#include "NetPulse/PerAppDialog.h"
+#include "NetPulse/Utils.h"
+#include "NetPulse/DialogThemeHelper.h"
+#include "NetPulse/ThemeHelper.h"
 #include "../../../resources/resource.h"
 #include <commctrl.h>
 #include <windowsx.h>
@@ -9,7 +9,7 @@
 
 #pragma comment(lib, "dwmapi.lib")
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 PerAppDialog::PerAppDialog()
@@ -411,4 +411,4 @@ void PerAppDialog::ApplyTheme(HWND hDlg)
 
 
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

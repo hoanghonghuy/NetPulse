@@ -1,19 +1,19 @@
-// ============================================================================
+﻿// ============================================================================
 // File: speed_test_tests.cpp
 // Description: Unit tests for SpeedTester and SpeedTestHistory
 // ============================================================================
 
 #include "TestUtils.h"
-#include "NetworkMonitor/SpeedTester.h"
-#include "NetworkMonitor/SpeedTestHistory.h"
+#include "NetPulse/SpeedTester.h"
+#include "NetPulse/SpeedTestHistory.h"
 #include <memory>
 #include <thread>
 #include <chrono>
 
-namespace NetworkMonitorTests
+namespace NetPulseTests
 {
 
-using namespace NetworkMonitor;
+using namespace NetPulse;
 
 // ============================================================================
 // SpeedTester Tests
@@ -245,4 +245,4 @@ void RunSpeedTestTests()
     LogTestMessage(L"SpeedTest Tests completed.");
 }
 
-} // namespace NetworkMonitorTests
+} // namespace NetPulseTests

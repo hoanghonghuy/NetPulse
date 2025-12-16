@@ -1,4 +1,4 @@
-// ImGuiFloatingWindow.h - Always-on-top Floating Widget
+﻿// ImGuiFloatingWindow.h - Always-on-top Floating Widget
 #ifndef NETWORK_MONITOR_IMGUI_FLOATING_WINDOW_H
 #define NETWORK_MONITOR_IMGUI_FLOATING_WINDOW_H
 
@@ -6,12 +6,12 @@
 #define NOMINMAX
 #endif
 
-#include "NetworkMonitor/Common.h"
-#include "NetworkMonitor/Interfaces/INetworkStatsProvider.h"
-#include "NetworkMonitor/SystemMonitor.h"
+#include "NetPulse/Common.h"
+#include "NetPulse/Interfaces/INetworkStatsProvider.h"
+#include "NetPulse/SystemMonitor.h"
 #include "imgui.h"
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 class ImGuiFloatingWindow
@@ -44,6 +44,6 @@ private:
     bool m_isDragging;
 };
 
-} // namespace NetworkMonitor
+} // namespace NetPulse
 
 #endif // NETWORK_MONITOR_IMGUI_FLOATING_WINDOW_H

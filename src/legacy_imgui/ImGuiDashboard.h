@@ -1,4 +1,4 @@
-// ImGuiDashboard.h - Modern Dashboard UI using Dear ImGui
+﻿// ImGuiDashboard.h - Modern Dashboard UI using Dear ImGui
 #ifndef NETWORK_MONITOR_IMGUI_DASHBOARD_H
 #define NETWORK_MONITOR_IMGUI_DASHBOARD_H
 
@@ -6,14 +6,14 @@
 #define NOMINMAX  // Prevent Windows.h from defining min/max macros
 #endif
 
-#include "NetworkMonitor/Common.h"
-#include "NetworkMonitor/Interfaces/INetworkStatsProvider.h"
-#include "NetworkMonitor/SystemMonitor.h"
+#include "NetPulse/Common.h"
+#include "NetPulse/Interfaces/INetworkStatsProvider.h"
+#include "NetPulse/SystemMonitor.h"
 #include "imgui.h"
 #include <vector>
 #include <deque>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 class ImGuiDashboard
@@ -46,6 +46,6 @@ private:
     uint64_t m_totalBytesSent;
 };
 
-} // namespace NetworkMonitor
+} // namespace NetPulse
 
 #endif // NETWORK_MONITOR_IMGUI_DASHBOARD_H

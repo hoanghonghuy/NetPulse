@@ -1,10 +1,10 @@
-#include "NetworkMonitor/TrayIcon.h"
-#include "NetworkMonitor/Utils.h"
-#include "NetworkMonitor/ThemeHelper.h"
-#include "NetworkMonitor/DialogThemeHelper.h"
+﻿#include "NetPulse/TrayIcon.h"
+#include "NetPulse/Utils.h"
+#include "NetPulse/ThemeHelper.h"
+#include "NetPulse/DialogThemeHelper.h"
 #include "../../resources/resource.h"
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 TrayIcon::TrayIcon()
@@ -496,6 +496,7 @@ HMENU TrayIcon::CreateContextMenu(const AppConfig& config, bool overlayVisible, 
     AddMenuItem(hMenu, IDM_DASHBOARD, LoadStringResource(IDS_MENU_DASHBOARD));
     AddMenuItem(hMenu, IDM_PERAPP, LoadStringResource(IDS_MENU_PERAPP));
     AddMenuItem(hMenu, IDM_SPEED_TEST, LoadStringResource(IDS_MENU_SPEED_TEST));
+    AddMenuItem(hMenu, IDM_CONNECTION_LOG, LoadStringResource(IDS_MENU_CONNECTION_LOG));
     AddMenuItem(hMenu, IDM_ABOUT, LoadStringResource(IDS_MENU_ABOUT));
     
     AddMenuItem(hMenu, 9997, L"", false, true); // Separator
@@ -750,4 +751,4 @@ void TrayIcon::OnAnimationTick()
     Shell_NotifyIconW(NIM_MODIFY, &m_notifyIconData);
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

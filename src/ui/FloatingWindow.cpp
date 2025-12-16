@@ -1,7 +1,7 @@
-// NOTE: This class manages its own GDI resources (Fonts, Brushes, Bitmaps) for performance and stability.
+﻿// NOTE: This class manages its own GDI resources (Fonts, Brushes, Bitmaps) for performance and stability.
 // Refactoring to shared helpers is discouraged to avoid object lifetime issues.
-#include "NetworkMonitor/FloatingWindow.h"
-#include "NetworkMonitor/Utils.h"
+#include "NetPulse/FloatingWindow.h"
+#include "NetPulse/Utils.h"
 #include "../../resources/resource.h"
 #include <windowsx.h>
 #include <commdlg.h>
@@ -9,7 +9,7 @@
 #include <iomanip>
 #include <vector>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 bool FloatingWindow::s_classRegistered = false;
@@ -931,6 +931,6 @@ void FloatingWindow::SetShowPublicIP(bool show)
     }
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse
 
 

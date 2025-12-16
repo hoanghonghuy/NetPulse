@@ -1,4 +1,4 @@
-// ImGuiPerApp.h - Per-App Network Usage Panel using Dear ImGui
+﻿// ImGuiPerApp.h - Per-App Network Usage Panel using Dear ImGui
 #ifndef NETWORK_MONITOR_IMGUI_PERAPP_H
 #define NETWORK_MONITOR_IMGUI_PERAPP_H
 
@@ -6,12 +6,12 @@
 #define NOMINMAX
 #endif
 
-#include "NetworkMonitor/Common.h"
-#include "NetworkMonitor/PerAppMonitor.h"
+#include "NetPulse/Common.h"
+#include "NetPulse/PerAppMonitor.h"
 #include "imgui.h"
 #include <vector>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 class ImGuiPerApp
@@ -38,6 +38,6 @@ private:
     bool m_sortAscending;
 };
 
-} // namespace NetworkMonitor
+} // namespace NetPulse
 
 #endif // NETWORK_MONITOR_IMGUI_PERAPP_H

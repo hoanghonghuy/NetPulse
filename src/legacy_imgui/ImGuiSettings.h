@@ -1,4 +1,4 @@
-// ImGuiSettings.h - Modern Settings Panel using Dear ImGui
+﻿// ImGuiSettings.h - Modern Settings Panel using Dear ImGui
 #ifndef NETWORK_MONITOR_IMGUI_SETTINGS_H
 #define NETWORK_MONITOR_IMGUI_SETTINGS_H
 
@@ -6,11 +6,11 @@
 #define NOMINMAX
 #endif
 
-#include "NetworkMonitor/Common.h"
-#include "NetworkMonitor/Interfaces/IConfigProvider.h"
+#include "NetPulse/Common.h"
+#include "NetPulse/Interfaces/IConfigProvider.h"
 #include "imgui.h"
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 class ImGuiSettings
@@ -48,6 +48,6 @@ private:
     void RenderDataUsageTab();
 };
 
-} // namespace NetworkMonitor
+} // namespace NetPulse
 
 #endif // NETWORK_MONITOR_IMGUI_SETTINGS_H

@@ -1,4 +1,4 @@
-#include "NetworkMonitor/SpeedTestHistory.h"
+﻿#include "NetPulse/SpeedTestHistory.h"
 #include <Windows.h>
 #include <ShlObj.h>
 #include <fstream>
@@ -6,17 +6,17 @@
 #include <algorithm>
 #include <string>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 SpeedTestHistory::SpeedTestHistory()
 {
-    // Get %APPDATA%/NetworkMonitor path
+    // Get %APPDATA%/NetPulse path
     wchar_t appDataPath[MAX_PATH];
     if (SUCCEEDED(SHGetFolderPathW(nullptr, CSIDL_APPDATA, nullptr, 0, appDataPath)))
     {
         m_filePath = appDataPath;
-        m_filePath += L"\\NetworkMonitor";
+        m_filePath += L"\\NetPulse";
         
         // Create directory if not exists
         CreateDirectoryW(m_filePath.c_str(), nullptr);
@@ -186,4 +186,4 @@ void SpeedTestHistory::SaveToFile() const
     file << "]\n";
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

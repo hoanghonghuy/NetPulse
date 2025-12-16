@@ -1,6 +1,6 @@
-#include "NetworkMonitor/Common.h"
-#include "NetworkMonitor/Utils.h"
-#include "NetworkMonitor/Application.h"
+﻿#include "NetPulse/Common.h"
+#include "NetPulse/Utils.h"
+#include "NetPulse/Application.h"
 #include "../../resources/resource.h"
 #include <windows.h>
 // ============================================================================
@@ -17,33 +17,37 @@ int WINAPI WinMain(
     UNREFERENCED_PARAMETER(lpCmdLine);
     UNREFERENCED_PARAMETER(nCmdShow);
 
-    NetworkMonitor::LogDebug(L"WinMain: NetworkMonitor starting");
+    // Enable GDI-scaled DPI awareness: sharp GDI text + Windows handles bitmap scaling
+    // This requires Windows 10 1703+ but is the best balance of quality and compatibility
+    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED);
+
+    NetPulse::LogDebug(L"WinMain: NetPulse starting");
 
     // Check if another instance is already running
-    HANDLE hMutex = CreateMutexW(nullptr, TRUE, L"NetworkMonitor_SingleInstance");
+    HANDLE hMutex = CreateMutexW(nullptr, TRUE, APP_MUTEX_NAME);
     if (GetLastError() == ERROR_ALREADY_EXISTS)
     {
-        NetworkMonitor::LogError(L"WinMain: another instance is already running");
-        std::wstring msg = NetworkMonitor::LoadStringResource(IDS_ERROR_ALREADY_RUNNING);
-        std::wstring title = NetworkMonitor::LoadStringResource(IDS_APP_TITLE);
+        NetPulse::LogError(L"WinMain: another instance is already running");
+        std::wstring msg = NetPulse::LoadStringResource(IDS_ERROR_ALREADY_RUNNING);
+        std::wstring title = NetPulse::LoadStringResource(IDS_APP_TITLE);
         if (title.empty())
         {
             title = APP_NAME;
         }
         if (msg.empty())
         {
-            msg = L"NetworkMonitor is already running!";
+            msg = L"NetPulse is already running!";
         }
-        NetworkMonitor::ShowDarkMessageBox(nullptr, msg, title, MB_OK | MB_ICONINFORMATION, true);
+        NetPulse::ShowDarkMessageBox(nullptr, msg, title, MB_OK | MB_ICONINFORMATION, true);
         return 0;
     }
 
     // Use Application class for initialization and message loop
-    NetworkMonitor::Application app;
+    NetPulse::Application app;
     if (!app.Initialize(hInstance))
     {
         // Initialization failed; Application will show any relevant error messages
-        NetworkMonitor::LogError(L"WinMain: Application::Initialize failed");
+        NetPulse::LogError(L"WinMain: Application::Initialize failed");
         if (hMutex)
         {
             ReleaseMutex(hMutex);
@@ -63,7 +67,7 @@ int WINAPI WinMain(
         CloseHandle(hMutex);
     }
 
-    NetworkMonitor::LogDebug(L"WinMain: exiting with code " + std::to_wstring(result));
+    NetPulse::LogDebug(L"WinMain: exiting with code " + std::to_wstring(result));
     return result;
 }
 

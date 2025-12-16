@@ -1,13 +1,13 @@
-#include "NetworkMonitor/Common.h"
-#include "NetworkMonitor/Utils.h"
-#include "NetworkMonitor/HistoryLogger.h"
+﻿#include "NetPulse/Common.h"
+#include "NetPulse/Utils.h"
+#include "NetPulse/HistoryLogger.h"
 #include "TestUtils.h"
 
 #include <vector>
 
-using namespace NetworkMonitor;
+using namespace NetPulse;
 
-namespace NetworkMonitorTests
+namespace NetPulseTests
 {
 
 void RunHistoryLoggerTests()
@@ -72,4 +72,4 @@ void RunHistoryLoggerTests()
     AssertTrue(trimmed2, L"HistoryLogger.TrimToRecentDays(2) returns true");
 }
 
-} // namespace NetworkMonitorTests
+} // namespace NetPulseTests

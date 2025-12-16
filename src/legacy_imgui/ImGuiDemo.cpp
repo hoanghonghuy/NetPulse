@@ -1,9 +1,9 @@
-// ImGuiDemo.cpp - Standalone demo entry point
+﻿// ImGuiDemo.cpp - Standalone demo entry point
 // This file will be used *temporarily* for testing.
 // Build with: cmake --build build --config Release, then Run NetworkMonitor.exe
 // The actual Application entry point will call this later.
 
-#include "NetworkMonitor/ImGuiApp.h"
+#include "NetPulse/ImGuiApp.h"
 #include "imgui.h"
 
 // Demo callback - draws a simple dashboard mockup
@@ -12,7 +12,7 @@ void RenderDemoUI()
     // Main window that fills the viewport
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-    ImGui::Begin("NetworkMonitor Dashboard", nullptr, 
+    ImGui::Begin("NetPulse Dashboard", nullptr, 
         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | 
         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus);
 
@@ -37,7 +37,7 @@ void RenderDemoUI()
 #ifdef IMGUI_DEMO_STANDALONE
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
 {
-    NetworkMonitor::ImGuiApp app;
+    NetPulse::ImGuiApp app;
     if (!app.Initialize(hInstance, nCmdShow))
     {
         return 1;

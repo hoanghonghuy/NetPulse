@@ -1,12 +1,12 @@
-#include "NetworkMonitor/HistoryLogger.h"
-#include "NetworkMonitor/Utils.h"
+﻿#include "NetPulse/HistoryLogger.h"
+#include "NetPulse/Utils.h"
 
 #include <cwchar>   // wcsrchr
 #include <ctime>
 #include <string>
 #include "sqlite3.h"
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 HistoryLogger& HistoryLogger::Instance()
@@ -492,6 +492,173 @@ void HistoryLogger::LogRecentSamplesDebug(int limit,
     }
 }
 
+bool HistoryLogger::GetDailyUsage(int year, int month, std::vector<DailyUsage>& outData)
+{
+    outData.clear();
+
+    EnsureInitialized();
+    if (!m_sqliteAvailable || !m_db)
+    {
+        LogError(L"HistoryLogger::GetDailyUsage: SQLite not available");
+        return false;
+    }
+
+    // Calculate start and end timestamps for the month
+    std::tm startTm = {};
+    startTm.tm_year = year - 1900;
+    startTm.tm_mon = month - 1;  // 0-11
+    startTm.tm_mday = 1;
+    startTm.tm_hour = 0;
+    startTm.tm_min = 0;
+    startTm.tm_sec = 0;
+    startTm.tm_isdst = -1;
+
+    std::time_t startTime = std::mktime(&startTm);
+    if (startTime == static_cast<std::time_t>(-1))
+    {
+        LogError(L"HistoryLogger::GetDailyUsage: mktime(start) failed");
+        return false;
+    }
+
+    // End of month
+    std::tm endTm = startTm;
+    endTm.tm_mon += 1;
+    if (endTm.tm_mon >= 12)
+    {
+        endTm.tm_mon = 0;
+        endTm.tm_year += 1;
+    }
+    std::time_t endTime = std::mktime(&endTm);
+    if (endTime == static_cast<std::time_t>(-1))
+    {
+        LogError(L"HistoryLogger::GetDailyUsage: mktime(end) failed");
+        return false;
+    }
+
+    // Query: aggregate by day within the month
+    const char* sql =
+        "SELECT CAST(strftime('%d', datetime(timestamp, 'unixepoch', 'localtime')) AS INTEGER) as day, "
+        "COALESCE(SUM(bytes_down), 0), "
+        "COALESCE(SUM(bytes_up), 0) "
+        "FROM usage "
+        "WHERE timestamp >= ? AND timestamp < ? "
+        "GROUP BY day "
+        "ORDER BY day;";
+
+    sqlite3_stmt* stmt = nullptr;
+    int rc = sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr);
+    if (rc != SQLITE_OK || !stmt)
+    {
+        LogError(L"HistoryLogger::GetDailyUsage: sqlite3_prepare_v2 failed, rc=" + std::to_wstring(rc));
+        return false;
+    }
+
+    sqlite3_bind_int64(stmt, 1, static_cast<sqlite3_int64>(startTime));
+    sqlite3_bind_int64(stmt, 2, static_cast<sqlite3_int64>(endTime));
+
+    while ((rc = sqlite3_step(stmt)) == SQLITE_ROW)
+    {
+        DailyUsage usage;
+        usage.day = sqlite3_column_int(stmt, 0);
+        usage.bytesDown = static_cast<uint64_t>(sqlite3_column_int64(stmt, 1));
+        usage.bytesUp = static_cast<uint64_t>(sqlite3_column_int64(stmt, 2));
+        outData.push_back(usage);
+    }
+
+    sqlite3_finalize(stmt);
+
+    if (rc != SQLITE_DONE)
+    {
+        LogError(L"HistoryLogger::GetDailyUsage: sqlite3_step ended with rc=" + std::to_wstring(rc));
+        return false;
+    }
+
+    LogDebug(L"HistoryLogger::GetDailyUsage: returned " + std::to_wstring(outData.size()) + 
+             L" days for " + std::to_wstring(year) + L"-" + std::to_wstring(month));
+    return true;
+}
+
+bool HistoryLogger::GetMonthlyUsage(int year, std::vector<MonthlyUsage>& outData)
+{
+    outData.clear();
+
+    EnsureInitialized();
+    if (!m_sqliteAvailable || !m_db)
+    {
+        LogError(L"HistoryLogger::GetMonthlyUsage: SQLite not available");
+        return false;
+    }
+
+    // Calculate start and end timestamps for the year
+    std::tm startTm = {};
+    startTm.tm_year = year - 1900;
+    startTm.tm_mon = 0;  // January
+    startTm.tm_mday = 1;
+    startTm.tm_hour = 0;
+    startTm.tm_min = 0;
+    startTm.tm_sec = 0;
+    startTm.tm_isdst = -1;
+
+    std::time_t startTime = std::mktime(&startTm);
+    if (startTime == static_cast<std::time_t>(-1))
+    {
+        LogError(L"HistoryLogger::GetMonthlyUsage: mktime(start) failed");
+        return false;
+    }
+
+    // End of year (start of next year)
+    std::tm endTm = startTm;
+    endTm.tm_year += 1;
+    std::time_t endTime = std::mktime(&endTm);
+    if (endTime == static_cast<std::time_t>(-1))
+    {
+        LogError(L"HistoryLogger::GetMonthlyUsage: mktime(end) failed");
+        return false;
+    }
+
+    // Query: aggregate by month within the year
+    const char* sql =
+        "SELECT CAST(strftime('%m', datetime(timestamp, 'unixepoch', 'localtime')) AS INTEGER) as month, "
+        "COALESCE(SUM(bytes_down), 0), "
+        "COALESCE(SUM(bytes_up), 0) "
+        "FROM usage "
+        "WHERE timestamp >= ? AND timestamp < ? "
+        "GROUP BY month "
+        "ORDER BY month;";
+
+    sqlite3_stmt* stmt = nullptr;
+    int rc = sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr);
+    if (rc != SQLITE_OK || !stmt)
+    {
+        LogError(L"HistoryLogger::GetMonthlyUsage: sqlite3_prepare_v2 failed, rc=" + std::to_wstring(rc));
+        return false;
+    }
+
+    sqlite3_bind_int64(stmt, 1, static_cast<sqlite3_int64>(startTime));
+    sqlite3_bind_int64(stmt, 2, static_cast<sqlite3_int64>(endTime));
+
+    while ((rc = sqlite3_step(stmt)) == SQLITE_ROW)
+    {
+        MonthlyUsage usage;
+        usage.month = sqlite3_column_int(stmt, 0);
+        usage.bytesDown = static_cast<uint64_t>(sqlite3_column_int64(stmt, 1));
+        usage.bytesUp = static_cast<uint64_t>(sqlite3_column_int64(stmt, 2));
+        outData.push_back(usage);
+    }
+
+    sqlite3_finalize(stmt);
+
+    if (rc != SQLITE_DONE)
+    {
+        LogError(L"HistoryLogger::GetMonthlyUsage: sqlite3_step ended with rc=" + std::to_wstring(rc));
+        return false;
+    }
+
+    LogDebug(L"HistoryLogger::GetMonthlyUsage: returned " + std::to_wstring(outData.size()) + 
+             L" months for year " + std::to_wstring(year));
+    return true;
+}
+
 bool HistoryLogger::DeleteAll()
 {
     EnsureInitialized();
@@ -696,4 +863,4 @@ bool HistoryLogger::ExportToCSV(const std::wstring& filePath,
     return true;
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

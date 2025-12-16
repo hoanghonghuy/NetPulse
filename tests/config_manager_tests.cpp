@@ -1,10 +1,10 @@
-#include "NetworkMonitor/Common.h"
-#include "NetworkMonitor/ConfigManager.h"
+﻿#include "NetPulse/Common.h"
+#include "NetPulse/ConfigManager.h"
 #include "TestUtils.h"
 
-using namespace NetworkMonitor;
+using namespace NetPulse;
 
-namespace NetworkMonitorTests
+namespace NetPulseTests
 {
 
 void RunConfigManagerTests()
@@ -69,4 +69,4 @@ void RunConfigManagerTests()
     AssertTrue(setBack, L"ConfigManager.SetAutoStart(restore) returns true");
 }
 
-} // namespace NetworkMonitorTests
+} // namespace NetPulseTests

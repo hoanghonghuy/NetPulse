@@ -1,14 +1,14 @@
-// ImGuiTrayIcon.cpp - System Tray Icon Implementation
-#include "NetworkMonitor/ImGuiTrayIcon.h"
-#include "NetworkMonitor/Common.h"
+﻿// ImGuiTrayIcon.cpp - System Tray Icon Implementation
+#include "NetPulse/ImGuiTrayIcon.h"
+#include "NetPulse/Common.h"
 #include <string>
 
 #pragma comment(lib, "shell32.lib")
 
 #define WM_TRAY_CALLBACK (WM_USER + 100)
-#define TRAY_MSG_WINDOW_CLASS L"NetworkMonitorTrayMsgWnd"
+#define TRAY_MSG_WINDOW_CLASS L"NetPulseTrayMsgWnd"
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 ImGuiTrayIcon* ImGuiTrayIcon::s_instance = nullptr;
@@ -280,4 +280,4 @@ LRESULT CALLBACK ImGuiTrayIcon::MessageWndProc(HWND hWnd, UINT msg, WPARAM wPara
     return DefWindowProcW(hWnd, msg, wParam, lParam);
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

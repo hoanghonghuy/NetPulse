@@ -1,12 +1,12 @@
-#include "NetworkMonitor/UpdateCoordinator.h"
-#include "NetworkMonitor/TrayIcon.h"
-#include "NetworkMonitor/TaskbarOverlay.h"
-#include "NetworkMonitor/PingMonitor.h"
-#include "NetworkMonitor/HistoryLogger.h"
-#include "NetworkMonitor/Utils.h"
+﻿#include "NetPulse/UpdateCoordinator.h"
+#include "NetPulse/TrayIcon.h"
+#include "NetPulse/TaskbarOverlay.h"
+#include "NetPulse/PingMonitor.h"
+#include "NetPulse/HistoryLogger.h"
+#include "NetPulse/Utils.h"
 #include "../../resources/resource.h"
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 UpdateCoordinator::UpdateCoordinator()
@@ -272,4 +272,4 @@ void UpdateCoordinator::ApplyOverlayStyleFromConfig()
     }
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

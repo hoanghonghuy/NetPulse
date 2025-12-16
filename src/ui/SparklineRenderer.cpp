@@ -1,8 +1,8 @@
-#include "NetworkMonitor/SparklineRenderer.h"
+﻿#include "NetPulse/SparklineRenderer.h"
 #include <algorithm>
 #include <cmath>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 SparklineRenderer::SparklineRenderer(size_t maxPoints)
@@ -156,4 +156,4 @@ void SparklineRenderer::Render(HDC hdc, const RECT& bounds, COLORREF lineColor, 
     DeleteObject(hLinePen);
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

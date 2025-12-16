@@ -1,7 +1,7 @@
-// ImGuiSettings.cpp - Modern Settings Panel Implementation
-#include "NetworkMonitor/ImGuiSettings.h"
+﻿// ImGuiSettings.cpp - Modern Settings Panel Implementation
+#include "NetPulse/ImGuiSettings.h"
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 ImGuiSettings::ImGuiSettings()
@@ -281,7 +281,7 @@ void ImGuiSettings::RenderAdvancedTab()
     ImGui::Checkbox("Enable Debug Logging", &m_config.debugLogging);
     if (ImGui::IsItemHovered())
     {
-        ImGui::SetTooltip("Logs to %%LOCALAPPDATA%%\\NetworkMonitor\\NetworkMonitor.log");
+        ImGui::SetTooltip("Logs to %%LOCALAPPDATA%\\NetPulse\\NetPulse.log");
     }
 
     ImGui::Spacing();
@@ -315,4 +315,4 @@ void ImGuiSettings::RenderAdvancedTab()
     ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Win + Shift + N (default)");
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

@@ -1,16 +1,16 @@
-#include "NetworkMonitor/Application.h"
-#include "NetworkMonitor/Utils.h"
-#include "NetworkMonitor/HistoryLogger.h"
-#include "NetworkMonitor/SettingsDialog.h"
-#include "NetworkMonitor/DashboardDialog.h"
-#include "NetworkMonitor/HistoryDialog.h"
+﻿#include "NetPulse/Application.h"
+#include "NetPulse/Utils.h"
+#include "NetPulse/HistoryLogger.h"
+#include "NetPulse/SettingsDialog.h"
+#include "NetPulse/DashboardDialog.h"
+#include "NetPulse/HistoryDialog.h"
 
-#include "NetworkMonitor/ThemeHelper.h"
+#include "NetPulse/ThemeHelper.h"
 #include "../../resources/resource.h"
 #include <windowsx.h>
 #include <commctrl.h>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 // Static member initialization
@@ -42,7 +42,7 @@ bool Application::Initialize(HINSTANCE hInstance)
     // Initialize common controls
     INITCOMMONCONTROLSEX icc = {};
     icc.dwSize = sizeof(INITCOMMONCONTROLSEX);
-    icc.dwICC = ICC_LISTVIEW_CLASSES;
+    icc.dwICC = ICC_LISTVIEW_CLASSES | ICC_LINK_CLASS;
     if (!InitCommonControlsEx(&icc))
     {
         // Fallback to a generic initialization error message
@@ -190,6 +190,7 @@ bool Application::Initialize(HINSTANCE hInstance)
     });
     m_pMenuHandler->SetShowPerAppCallback([this]() { ShowPerAppDialog(); });
     m_pMenuHandler->SetShowSpeedTestCallback([this]() { ShowSpeedTestDialog(); });
+    m_pMenuHandler->SetShowConnectionLogCallback([this]() { ShowConnectionLogDialog(); });
 
     // Create and initialize UpdateCoordinator
     m_pUpdateCoordinator = std::make_unique<UpdateCoordinator>();
@@ -214,6 +215,17 @@ bool Application::Initialize(HINSTANCE hInstance)
         HistoryLogger::Instance().AppendSample(ifaceName, bytesDown, bytesUp);
     });
 
+    // Create and initialize ConnectionMonitor (Phase 4) - MUST be before DialogManager
+    m_pConnectionMonitor = std::make_unique<ConnectionMonitor>();
+    if (m_pConnectionMonitor->Start())
+    {
+        LogDebug(L"Application::Initialize: ConnectionMonitor started");
+    }
+    else
+    {
+        LogDebug(L"Application::Initialize: ConnectionMonitor start failed, continuing without connection monitoring");
+        m_pConnectionMonitor.reset();
+    }
 
     // Create and initialize DialogManager
     m_pDialogManager = std::make_unique<DialogManager>();
@@ -222,7 +234,8 @@ bool Application::Initialize(HINSTANCE hInstance)
         &m_config,
         m_pConfigManager.get(),
         m_pNetworkMonitor.get(),
-        m_pUpdateCoordinator.get()
+        m_pUpdateCoordinator.get(),
+        m_pConnectionMonitor.get()
     );
     m_pDialogManager->SetConfigReloadCallback([this]() { return LoadConfig(); });
     m_pDialogManager->SetLanguageApplyCallback([this]() { ApplyLanguageFromConfig(); });
@@ -302,9 +315,36 @@ bool Application::Initialize(HINSTANCE hInstance)
         });
         
         // Set position if saved
-        if (m_config.floatingWindowX >= 0 && m_config.floatingWindowY >= 0)
+        // Set position if saved, but verify it's on screen (DPI changes can push it off)
+        int screenW = GetSystemMetrics(SM_CXSCREEN);
+        int screenH = GetSystemMetrics(SM_CYSCREEN);
+        int winX = m_config.floatingWindowX;
+        int winY = m_config.floatingWindowY;
+
+        if (winX >= 0 && winY >= 0)
         {
-            m_pFloatingWindow->SetPosition(m_config.floatingWindowX, m_config.floatingWindowY);
+            // Simple check: top-left corner must be within screen bounds
+            if (winX >= screenW - 50 || winY >= screenH - 50)
+            {
+                LogDebug(L"FloatingWindow position out of bounds (DPI change?), resetting to default");
+                // Reset to default (top-right)
+                // Assuming width ~260, hard to access constant here, but SetPosition handles visual logic if we just don't set it?
+                // Actually FloatingWindow::Create sets default. 
+                // But if we call SetPosition with invalid values it overrides.
+                // We should just SKIP SetPosition if invalid, allowing Create's default to take over?
+                // No, persistence overrides Create.
+                
+                // Let's manually calculate a safe default
+                winX = screenW - 300; 
+                if (winX < 0) winX = 20;
+                winY = 20;
+
+                // Update config too so it saves correctly next time
+                m_config.floatingWindowX = winX;
+                m_config.floatingWindowY = winY;
+            }
+            
+            m_pFloatingWindow->SetPosition(winX, winY);
         }
         
         // Show if enabled in config
@@ -433,6 +473,13 @@ void Application::Cleanup()
         m_pVpnDetector.reset();
     }
 
+    // Cleanup ConnectionMonitor (Phase 4)
+    if (m_pConnectionMonitor)
+    {
+        m_pConnectionMonitor->Stop();
+        m_pConnectionMonitor.reset();
+    }
+
     // Cleanup config manager
     m_pConfigManager.reset();
 
@@ -520,6 +567,14 @@ void Application::ShowSpeedTestDialog()
     if (m_pDialogManager)
     {
         m_pDialogManager->ShowSpeedTest();
+    }
+}
+
+void Application::ShowConnectionLogDialog()
+{
+    if (m_pDialogManager)
+    {
+        m_pDialogManager->ShowConnectionLog();
     }
 }
 
@@ -807,5 +862,5 @@ void Application::OnHotkey(int hotkeyId)
     }
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse
 

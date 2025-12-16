@@ -1,13 +1,13 @@
-#include "NetworkMonitor/Common.h"
-#include "NetworkMonitor/NetworkCalculator.h"
+﻿#include "NetPulse/Common.h"
+#include "NetPulse/NetworkCalculator.h"
 #include "TestUtils.h"
 
 #include <thread>
 #include <chrono>
 
-using namespace NetworkMonitor;
+using namespace NetPulse;
 
-namespace NetworkMonitorTests
+namespace NetPulseTests
 {
 
 void RunNetworkCalculatorTests()
@@ -50,4 +50,4 @@ void RunNetworkCalculatorTests()
                L"NetworkCalculator aggregate sums speeds");
 }
 
-} // namespace NetworkMonitorTests
+} // namespace NetPulseTests

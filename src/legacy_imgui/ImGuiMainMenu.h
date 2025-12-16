@@ -1,11 +1,11 @@
-// ImGuiMainMenu.h - Main Menu Bar using Dear ImGui
+﻿// ImGuiMainMenu.h - Main Menu Bar using Dear ImGui
 #ifndef NETWORK_MONITOR_IMGUI_MAIN_MENU_H
 #define NETWORK_MONITOR_IMGUI_MAIN_MENU_H
 
 #include "imgui.h"
 #include <functional>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 // Panel visibility flags
@@ -35,6 +35,6 @@ private:
     bool m_showAbout;
 };
 
-} // namespace NetworkMonitor
+} // namespace NetPulse
 
 #endif // NETWORK_MONITOR_IMGUI_MAIN_MENU_H

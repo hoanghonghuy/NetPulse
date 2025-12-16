@@ -1,13 +1,13 @@
-#include "NetworkMonitor/HistoryDialog.h"
-#include "NetworkMonitor/HistoryLogger.h"
-#include "NetworkMonitor/DialogThemeHelper.h"
-#include "NetworkMonitor/Utils.h"
-#include "NetworkMonitor/ThemeHelper.h"
+﻿#include "NetPulse/HistoryDialog.h"
+#include "NetPulse/HistoryLogger.h"
+#include "NetPulse/DialogThemeHelper.h"
+#include "NetPulse/Utils.h"
+#include "NetPulse/ThemeHelper.h"
 #include "../../../resources/resource.h"
 #include <windowsx.h>
 #include <commctrl.h>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 HistoryDialog::HistoryDialog()
@@ -312,4 +312,4 @@ void HistoryDialog::CenterDialogOnScreen(HWND hDlg)
     CenterWindowOnScreen(hDlg);
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

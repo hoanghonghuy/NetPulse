@@ -1,8 +1,8 @@
-#include "NetworkMonitor/MenuHandler.h"
-#include "NetworkMonitor/TaskbarOverlay.h"
+﻿#include "NetPulse/MenuHandler.h"
+#include "NetPulse/TaskbarOverlay.h"
 #include "../../resources/resource.h"
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 MenuHandler::MenuHandler()
@@ -71,6 +71,11 @@ void MenuHandler::SetShowSpeedTestCallback(ShowDialogCallback callback)
     m_showSpeedTestCallback = callback;
 }
 
+void MenuHandler::SetShowConnectionLogCallback(ShowDialogCallback callback)
+{
+    m_showConnectionLogCallback = callback;
+}
+
 void MenuHandler::HandleCommand(UINT menuId)
 {
     if (!m_pConfig)
@@ -131,6 +136,10 @@ void MenuHandler::HandleCommand(UINT menuId)
             if (m_showSpeedTestCallback) m_showSpeedTestCallback();
             break;
 
+        case IDM_CONNECTION_LOG:
+            if (m_showConnectionLogCallback) m_showConnectionLogCallback();
+            break;
+
         case IDM_ABOUT:
             if (m_showAboutCallback) m_showAboutCallback();
             break;
@@ -141,4 +150,4 @@ void MenuHandler::HandleCommand(UINT menuId)
     }
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

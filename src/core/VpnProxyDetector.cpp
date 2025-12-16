@@ -1,17 +1,17 @@
-// ============================================================================
+﻿// ============================================================================
 // File: VpnProxyDetector.cpp
 // Description: VPN and Proxy detection implementation
 // Author: NetworkMonitor Project
 // ============================================================================
 
-#include "NetworkMonitor/VpnProxyDetector.h"
+#include "NetPulse/VpnProxyDetector.h"
 #include <algorithm>
 #include <cctype>
 #include <cwctype>
 #include <vector>
 #include <string>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 // VPN adapter keywords for detection (case-insensitive)
@@ -195,7 +195,7 @@ bool VpnProxyDetector::DetectVpnAdapters()
     return vpnFound;
 }
 
-bool VpnProxyDetector::IsVpnAdapter(DWORD adapterType, const std::wstring& description) const
+bool VpnProxyDetector::IsVpnAdapter(DWORD /*adapterType*/, const std::wstring& description) const
 {
     if (description.empty())
         return false;
@@ -269,7 +269,7 @@ std::wstring VpnProxyDetector::FetchPublicIP()
     
     // Open WinHTTP session
     HINTERNET hSession = WinHttpOpen(
-        L"NetworkMonitor/1.0",
+        L"NetPulse/1.0",
         WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
         WINHTTP_NO_PROXY_NAME,
         WINHTTP_NO_PROXY_BYPASS,
@@ -380,4 +380,4 @@ std::wstring VpnProxyDetector::FetchPublicIP()
     return ip;
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

@@ -1,6 +1,6 @@
-#include "NetworkMonitor/PerAppMonitor.h"
-#include "NetworkMonitor/EtwNetworkMonitor.h"
-#include "NetworkMonitor/Utils.h"
+﻿#include "NetPulse/PerAppMonitor.h"
+#include "NetPulse/EtwNetworkMonitor.h"
+#include "NetPulse/Utils.h"
 #include <iphlpapi.h>
 #include <psapi.h>
 #include <shellapi.h>
@@ -11,7 +11,7 @@
 #pragma comment(lib, "iphlpapi.lib")
 #pragma comment(lib, "psapi.lib")
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 PerAppMonitor::PerAppMonitor()
@@ -420,4 +420,4 @@ HICON PerAppMonitor::GetProcessIcon(DWORD pid) const
     return icon;
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

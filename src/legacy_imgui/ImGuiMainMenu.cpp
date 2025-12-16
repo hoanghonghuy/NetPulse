@@ -1,7 +1,7 @@
-// ImGuiMainMenu.cpp - Main Menu Bar Implementation
-#include "NetworkMonitor/ImGuiMainMenu.h"
+﻿// ImGuiMainMenu.cpp - Main Menu Bar Implementation
+#include "NetPulse/ImGuiMainMenu.h"
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 ImGuiMainMenu::ImGuiMainMenu()
@@ -87,4 +87,4 @@ bool ImGuiMainMenu::Render(PanelVisibility& visibility)
     return keepRunning;
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

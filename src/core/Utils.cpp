@@ -1,13 +1,13 @@
-#include "NetworkMonitor/Utils.h"
-#include "NetworkMonitor/DialogThemeHelper.h"
-#include "NetworkMonitor/ThemeHelper.h"
+﻿#include "NetPulse/Utils.h"
+#include "NetPulse/DialogThemeHelper.h"
+#include "NetPulse/ThemeHelper.h"
 #include "../../resources/resource.h"
 #include <sstream>
 #include <iomanip>
 #include <fstream>
 #include <shellapi.h>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 static bool g_debugLoggingEnabled = false;
@@ -372,10 +372,10 @@ namespace
             basePath.assign(buffer, length);
         }
 
-        std::wstring dirPath = basePath + L"\\NetworkMonitor";
+        std::wstring dirPath = basePath + L"\\NetPulse";
         CreateDirectoryW(dirPath.c_str(), nullptr);
 
-        std::wstring filePath = dirPath + L"\\NetworkMonitor.log";
+        std::wstring filePath = dirPath + L"\\NetPulse.log";
         return filePath;
     }
 
@@ -499,4 +499,4 @@ bool IsDarkThemeEnabled(const AppConfig& config)
     }
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

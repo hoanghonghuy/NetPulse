@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // File: main_tests.cpp
 // Description: Test runner for NetworkMonitor
 // Author: NetworkMonitor Project (tests)
@@ -6,7 +6,7 @@
 
 #include "TestUtils.h"
 
-namespace NetworkMonitorTests
+namespace NetPulseTests
 {
 void RunHistoryLoggerTests();
 void RunNetworkMonitorTests();
@@ -20,7 +20,7 @@ void RunVpnProxyDetectorTests();
 void RunSpeedTestTests();
 }
 
-using namespace NetworkMonitorTests;
+using namespace NetPulseTests;
 
 int main()
 {

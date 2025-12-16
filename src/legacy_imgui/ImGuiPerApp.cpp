@@ -1,10 +1,10 @@
-// ImGuiPerApp.cpp - Per-App Network Usage Panel Implementation
-#include "NetworkMonitor/ImGuiPerApp.h"
+﻿// ImGuiPerApp.cpp - Per-App Network Usage Panel Implementation
+#include "NetPulse/ImGuiPerApp.h"
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 ImGuiPerApp::ImGuiPerApp()
@@ -161,4 +161,4 @@ std::string ImGuiPerApp::FormatBytesNarrow(uint64_t bytes)
     return oss.str();
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

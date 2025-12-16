@@ -1,8 +1,8 @@
-#define WIN32_LEAN_AND_MEAN
-#include "NetworkMonitor/HotkeyManager.h"
-#include "NetworkMonitor/Utils.h"
+﻿#define WIN32_LEAN_AND_MEAN
+#include "NetPulse/HotkeyManager.h"
+#include "NetPulse/Utils.h"
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 HotkeyManager::HotkeyManager()
@@ -76,4 +76,4 @@ void HotkeyManager::OnHotkey(int hotkeyId)
     }
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

@@ -1,16 +1,16 @@
-#include "NetworkMonitor/SettingsDialog.h"
-#include "NetworkMonitor/Interfaces/IConfigProvider.h"
-#include "NetworkMonitor/Interfaces/INetworkStatsProvider.h"
-#include "NetworkMonitor/DialogThemeHelper.h"
-#include "NetworkMonitor/Utils.h"
-#include "NetworkMonitor/ThemeHelper.h"
+﻿#include "NetPulse/SettingsDialog.h"
+#include "NetPulse/Interfaces/IConfigProvider.h"
+#include "NetPulse/Interfaces/INetworkStatsProvider.h"
+#include "NetPulse/DialogThemeHelper.h"
+#include "NetPulse/Utils.h"
+#include "NetPulse/ThemeHelper.h"
 #include "../../../resources/resource.h"
 #include <windowsx.h>
 #include <commctrl.h>
 #include <uxtheme.h>
 #include <vector>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 // Tab Control subclass procedure for dark theme
@@ -1987,4 +1987,4 @@ void SettingsDialog::SwitchTab(HWND hDlg, int tabIndex)
     }
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse

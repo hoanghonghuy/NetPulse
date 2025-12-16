@@ -1,5 +1,5 @@
-#include "NetworkMonitor/DialogThemeHelper.h"
-#include "NetworkMonitor/ThemeHelper.h"
+﻿#include "NetPulse/DialogThemeHelper.h"
+#include "NetPulse/ThemeHelper.h"
 #include <uxtheme.h>
 #include <dwmapi.h>
 
@@ -9,7 +9,7 @@
 
 #include <commctrl.h>
 
-namespace NetworkMonitor
+namespace NetPulse
 {
 
 // Static member initialization
@@ -345,4 +345,4 @@ void DialogThemeHelper::ApplyDarkListView(HWND hList, bool darkTheme)
     }
 }
 
-} // namespace NetworkMonitor
+} // namespace NetPulse
