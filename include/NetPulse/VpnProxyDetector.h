@@ -9,6 +9,8 @@
 #include <string>
 #include <atomic>
 #include <mutex>
+#include <thread>
+#include <future>
 
 #pragma comment(lib, "iphlpapi.lib")
 #pragma comment(lib, "winhttp.lib")
@@ -127,6 +129,20 @@ private:
     
     // HTTP timeout for IP fetch
     static constexpr DWORD HTTP_TIMEOUT_MS = 5000;
+    
+    // Async IP fetch tracking
+    std::future<std::wstring> m_ipFetchFuture;
+    std::atomic<bool> m_ipFetchInProgress;
+    
+    /**
+     * Start async IP fetch (non-blocking)
+     */
+    void StartAsyncIPFetch();
+    
+    /**
+     * Check and harvest async IP fetch result (non-blocking)
+     */
+    void CheckAsyncIPResult();
 };
 
 } // namespace NetPulse

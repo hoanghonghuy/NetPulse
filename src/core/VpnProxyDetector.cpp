@@ -45,6 +45,7 @@ VpnProxyDetector::VpnProxyDetector()
     , m_isProxyActive(false)
     , m_lastIPUpdateTime(0)
     , m_ipUpdateIntervalMs(DEFAULT_IP_UPDATE_INTERVAL_MS)
+    , m_ipFetchInProgress(false)
 {
 }
 
@@ -68,6 +69,13 @@ bool VpnProxyDetector::Initialize()
 
 void VpnProxyDetector::Cleanup()
 {
+    // Wait for any in-progress async IP fetch to complete
+    if (m_ipFetchFuture.valid())
+    {
+        m_ipFetchFuture.wait();
+    }
+    m_ipFetchInProgress = false;
+    
     std::lock_guard<std::mutex> lock(m_mutex);
     m_initialized = false;
     m_isVpnActive = false;
@@ -87,17 +95,15 @@ void VpnProxyDetector::Update()
     // Detect proxy settings (fast)
     DetectProxySettings();
     
-    // Fetch public IP (rate limited)
+    // Check for completed async IP fetch result (non-blocking)
+    CheckAsyncIPResult();
+    
+    // Start async IP fetch if time has elapsed (rate limited)
     DWORD currentTime = GetTickCount();
     if (m_lastIPUpdateTime == 0 || 
         (currentTime - m_lastIPUpdateTime) >= m_ipUpdateIntervalMs)
     {
-        std::wstring newIP = FetchPublicIP();
-        if (!newIP.empty())
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            m_publicIP = newIP;
-        }
+        StartAsyncIPFetch();
         m_lastIPUpdateTime = currentTime;
     }
 }
@@ -116,13 +122,40 @@ std::wstring VpnProxyDetector::GetVpnAdapterName() const
 
 void VpnProxyDetector::RefreshPublicIP()
 {
-    std::wstring newIP = FetchPublicIP();
-    if (!newIP.empty())
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        m_publicIP = newIP;
-    }
+    // Non-blocking: start async fetch
+    StartAsyncIPFetch();
     m_lastIPUpdateTime = GetTickCount();
+}
+
+void VpnProxyDetector::StartAsyncIPFetch()
+{
+    // Don't start if already in progress
+    if (m_ipFetchInProgress)
+        return;
+    
+    m_ipFetchInProgress = true;
+    m_ipFetchFuture = std::async(std::launch::async, [this]() {
+        return FetchPublicIP();
+    });
+}
+
+void VpnProxyDetector::CheckAsyncIPResult()
+{
+    if (!m_ipFetchInProgress)
+        return;
+    
+    // Check if future is ready (non-blocking)
+    if (m_ipFetchFuture.valid() && 
+        m_ipFetchFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
+    {
+        std::wstring newIP = m_ipFetchFuture.get();
+        if (!newIP.empty())
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            m_publicIP = newIP;
+        }
+        m_ipFetchInProgress = false;
+    }
 }
 
 bool VpnProxyDetector::DetectVpnAdapters()
