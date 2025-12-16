@@ -259,6 +259,24 @@ namespace
                 if (data->darkTheme)
                 {
                     ThemeHelper::ApplyDarkTitleBar(hDlg, true);
+
+                    // Convert buttons to owner-drawn for dark theming
+                    auto makeOwnerDraw = [](HWND hButton) {
+                        if (hButton)
+                        {
+                            LONG_PTR style = GetWindowLongPtrW(hButton, GWL_STYLE);
+                            style &= ~BS_TYPEMASK;
+                            style |= BS_OWNERDRAW;
+                            SetWindowLongPtrW(hButton, GWL_STYLE, style);
+                            // Remove visual styles to prevent conflict
+                            SetWindowTheme(hButton, L"", L"");
+                        }
+                    };
+
+                    makeOwnerDraw(GetDlgItem(hDlg, IDOK));
+                    makeOwnerDraw(GetDlgItem(hDlg, IDCANCEL));
+                    makeOwnerDraw(GetDlgItem(hDlg, IDYES));
+                    makeOwnerDraw(GetDlgItem(hDlg, IDNO));
                 }
 
                 UINT type = (data->flags & MB_TYPEMASK);
@@ -280,6 +298,20 @@ namespace
 
         switch (message)
         {
+        case WM_DRAWITEM:
+        {
+             if (data && data->darkTheme)
+             {
+                 DRAWITEMSTRUCT* pDrawItem = reinterpret_cast<DRAWITEMSTRUCT*>(lParam);
+                 if (pDrawItem->CtlType == ODT_BUTTON)
+                 {
+                     DialogThemeHelper::DrawButton(pDrawItem, true);
+                     return TRUE;
+                 }
+             }
+             break;
+        }
+
         case WM_CTLCOLORDLG:
         case WM_CTLCOLORSTATIC:
         case WM_CTLCOLORBTN:
