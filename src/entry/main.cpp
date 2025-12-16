@@ -16,10 +16,27 @@ int WINAPI WinMain(
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
     UNREFERENCED_PARAMETER(nCmdShow);
-
     // Enable GDI-scaled DPI awareness: sharp GDI text + Windows handles bitmap scaling
-    // This requires Windows 10 1703+ but is the best balance of quality and compatibility
-    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED);
+    // This requires Windows 10 1703+ but is the best balance of quality and compatibility.
+    // We load it dynamically to maintain Windows 7 compatibility (where it will just fail gracefully).
+    HMODULE hUser32 = GetModuleHandleW(L"user32.dll");
+    if (hUser32)
+    {
+        // Define function pointer type
+        typedef BOOL (WINAPI *SetProcessDpiAwarenessContextFunc)(DPI_AWARENESS_CONTEXT);
+        
+        // This constant is available in headers if _WIN32_WINNT >= 0x0A00, but we define it here for Win7 compat build
+        // DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED is (DPI_AWARENESS_CONTEXT)-5
+        const DPI_AWARENESS_CONTEXT CTX_UNAWARE_GDISCALED = (DPI_AWARENESS_CONTEXT)-5;
+
+        SetProcessDpiAwarenessContextFunc pSetDpi = 
+            (SetProcessDpiAwarenessContextFunc)GetProcAddress(hUser32, "SetProcessDpiAwarenessContext");
+            
+        if (pSetDpi)
+        {
+            pSetDpi(CTX_UNAWARE_GDISCALED);
+        }
+    }
 
     NetPulse::LogDebug(L"WinMain: NetPulse starting");
 

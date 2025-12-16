@@ -42,6 +42,8 @@ set(TEST_SOURCES
     ../src/core/SpeedTester.cpp
     ../src/core/SpeedTestHistory.cpp
     ../src/ui/dialogs/SpeedTestDialog.cpp
+    ../src/ui/dialogs/ConnectionLogDialog.cpp
+    ../src/ui/ChartRenderer.cpp
     ../third_party/sqlite/sqlite3.c
 )
 
