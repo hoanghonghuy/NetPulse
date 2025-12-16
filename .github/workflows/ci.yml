@@ -48,8 +48,8 @@ jobs:
         if: matrix.build_type == 'Release'
         uses: actions/upload-artifact@v4
         with:
-          name: NetworkMonitor-${{ github.sha }}
-          path: build/Release/NetworkMonitor.exe
+          name: NetPulse-${{ github.sha }}
+          path: build/Release/NetPulse.exe
           retention-days: 30
 
   # Automatic release when tag pushed
@@ -64,13 +64,13 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: NetworkMonitor-${{ github.sha }}
+          name: NetPulse-${{ github.sha }}
           path: ./artifacts
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ./artifacts/NetworkMonitor.exe
+          files: ./artifacts/NetPulse.exe
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref, '-') }}
