@@ -6,6 +6,7 @@
 #include "NetPulse/DialogThemeHelper.h"
 #include "NetPulse/Utils.h"
 #include "NetPulse/ThemeHelper.h"
+#include "NetPulse/LanguageManager.h"
 #include "../../../resources/resource.h"
 #include <windowsx.h>
 #include <commctrl.h>
@@ -1109,28 +1110,36 @@ void DashboardDialog::UpdateTooltip(HWND hChart, int barIndex)
 
     const auto& point = m_currentChartData[barIndex];
 
-    // Format detailed label based on view mode using Windows locale API
+    // Get locale based on app's language setting (not Windows system locale)
+    LCID lcid = LOCALE_USER_DEFAULT;
+    if (m_pConfig)
+    {
+        LANGID langId = LanguageManager::GetLangIdForLanguage(m_pConfig->language);
+        lcid = MAKELCID(langId, SORT_DEFAULT);
+    }
+
+    // Format detailed label based on view mode using app's language
     wchar_t detailedLabel[128] = {};
     SYSTEMTIME st = {};
     st.wYear = static_cast<WORD>(m_chartYear);
 
     if (m_chartViewMode == ChartViewMode::DailyThisMonth)
     {
-        // Daily view: Show localized full date (e.g., "December 17, 2024" or "17 décembre 2024")
+        // Daily view: Show localized full date (e.g., "December 17, 2024" or "17 tháng 12 2024")
         st.wMonth = static_cast<WORD>(m_chartMonth);
         st.wDay = static_cast<WORD>(barIndex + 1);  // barIndex is 0-based
         
-        // Use user's locale for date format (long date)
-        GetDateFormatW(LOCALE_USER_DEFAULT, DATE_LONGDATE, &st, nullptr, detailedLabel, 128);
+        // Use app's locale for date format (long date)
+        GetDateFormatW(lcid, DATE_LONGDATE, &st, nullptr, detailedLabel, 128);
     }
     else  // MonthlyThisYear
     {
-        // Monthly view: Show "Month Year" (e.g., "December 2024" or "décembre 2024")
+        // Monthly view: Show "Month Year" (e.g., "December 2024" or "tháng 12 2024")
         st.wMonth = static_cast<WORD>(barIndex + 1);  // barIndex is 0-based
         st.wDay = 1;
         
         // Use "MMMM yyyy" format for Month Year
-        GetDateFormatW(LOCALE_USER_DEFAULT, 0, &st, L"MMMM yyyy", detailedLabel, 128);
+        GetDateFormatW(lcid, 0, &st, L"MMMM yyyy", detailedLabel, 128);
     }
 
     // Fallback to original label if formatting failed
