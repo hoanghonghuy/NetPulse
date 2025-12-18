@@ -2,6 +2,17 @@
 
 All notable changes to NetworkMonitor will be documented in this file.
 
+## [2.1.0] - 2025-12-18
+
+### Added
+- **Detailed Connection Log (Mini DPI)**: Real-time monitoring of active TCP/UDP connections. Accessible via Tray Icon.
+- **Portable Mode**: Zero-dependency mode. Automatically activates if `netpulse.ini` exists next to the executable.
+- **Interactive Charts**: Hover tooltips for detailed stats and click-to-drill-down (Monthly -> Daily).
+
+### Changed
+- **Chart Visuals**: Optimized date labels to prevent overflow using abbreviated formats.
+- **Localization**: Full translation support for Connection Log dialog.
+
 ## [2.0.0] - 2025-12-16
 
 ### Added

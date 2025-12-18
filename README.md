@@ -29,6 +29,8 @@ NetworkMonitor is a lightweight C++ Win32 application for monitoring network tra
   - Configure ping target (IP/domain) and interval.
   - Customize hotkey for overlay toggle.
   - Enable/disable connection notifications.
+- **Detailed Connection Log**: Real-time view of TCP/UDP connections, processes, and ports (Mini DPI).
+- **Portable Mode**: Run entirely from a USB drive without installation or registry usage.
 - **Per-App Usage**: Monitor network usage per application (process). **Requires Administrator privileges.**
 - **Floating Widget**: Desktop widget for quick stats overview (Network, CPU, RAM).
 - **System Monitor**: Real-time CPU and RAM usage monitoring.
