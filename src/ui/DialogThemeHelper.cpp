@@ -53,6 +53,14 @@ void DialogThemeHelper::ApplyDarkButton(HWND hButton)
     }
 }
 
+void DialogThemeHelper::ApplyDarkCheckbox(HWND hCheckbox)
+{
+    if (!hCheckbox) return;
+    LONG_PTR style = GetWindowLongPtrW(hCheckbox, GWL_STYLE);
+    style |= BS_OWNERDRAW;
+    SetWindowLongPtrW(hCheckbox, GWL_STYLE, style);
+}
+
 void DialogThemeHelper::FillDarkBackground(HDC hdc, const RECT& rect)
 {
     FillRect(hdc, &rect, GetDarkBackgroundBrush());
@@ -296,6 +304,23 @@ void DialogThemeHelper::ApplyDarkHeader(HWND hHeader, bool darkTheme)
         // Remove subclass
         RemoveWindowSubclass(hHeader, HeaderSubclassProc, 0);
     }
+}
+
+
+void DialogThemeHelper::DrawListViewBorder(HDC hdc, HWND hList, HWND hDlg)
+{
+    if (!hList || !hdc || !hDlg)
+        return;
+
+    RECT rcList;
+    GetWindowRect(hList, &rcList);
+    MapWindowPoints(NULL, hDlg, (LPPOINT)&rcList, 2);
+    InflateRect(&rcList, 1, 1);
+    
+    // Use lighter border for better visibility in dark mode (consistent with previous PerApp/ConnectionLog implementation)
+    HBRUSH borderBrush = CreateSolidBrush(RGB(100, 100, 100));
+    FrameRect(hdc, &rcList, borderBrush);
+    DeleteObject(borderBrush);
 }
 
 void DialogThemeHelper::ApplyDarkListView(HWND hList, bool darkTheme)

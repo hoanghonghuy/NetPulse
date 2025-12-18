@@ -130,18 +130,7 @@ INT_PTR PerAppDialog::InstanceDialogProc(HWND hDlg, UINT message, WPARAM wParam,
             HBRUSH hBrush = DialogThemeHelper::HandleControlColor(hdc, true);
             
             // Draw border around ListView (replaced system border)
-            if (m_hList)
-            {
-                 RECT rcList;
-                 GetWindowRect(m_hList, &rcList);
-                 MapWindowPoints(NULL, hDlg, (LPPOINT)&rcList, 2);
-                 InflateRect(&rcList, 1, 1);
-                 
-                 // Use lighter border for better visibility in dark mode
-                 HBRUSH borderBrush = CreateSolidBrush(RGB(100, 100, 100));
-                 FrameRect(hdc, &rcList, borderBrush);
-                 DeleteObject(borderBrush);
-            }
+            DialogThemeHelper::DrawListViewBorder(hdc, m_hList, hDlg);
             
             return reinterpret_cast<INT_PTR>(hBrush);
         }
@@ -384,29 +373,13 @@ void PerAppDialog::ApplyTheme(HWND hDlg)
     }
 
     // Toggle BS_OWNERDRAW on buttons based on theme
-    auto toggleOwnerDraw = [&](int id, bool enable)
-    {
-        HWND hBtn = GetDlgItem(hDlg, id);
-        if (hBtn)
-        {
-            LONG_PTR style = GetWindowLongPtrW(hBtn, GWL_STYLE);
-            if (enable)
-            {
-                style |= BS_OWNERDRAW;
-            }
-            else
-            {
-                style &= ~BS_OWNERDRAW;
-            }
-            SetWindowLongPtrW(hBtn, GWL_STYLE, style);
-            InvalidateRect(hBtn, nullptr, TRUE);
-        }
-    };
-
     bool useOwnerDraw = (m_pConfig && m_pConfig->darkTheme);
-    toggleOwnerDraw(IDOK, useOwnerDraw);
-    toggleOwnerDraw(IDC_PERAPP_REFRESH, useOwnerDraw);
-    toggleOwnerDraw(IDCANCEL, useOwnerDraw);
+    if (useOwnerDraw)
+    {
+        DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDOK));
+        DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDC_PERAPP_REFRESH));
+        DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDCANCEL));
+    }
 }
 
 

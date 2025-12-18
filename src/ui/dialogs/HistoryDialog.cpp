@@ -122,25 +122,10 @@ INT_PTR CALLBACK HistoryDialog::InstanceDialogProc(HWND hDlg, UINT message, WPAR
             // backgrounds.
             if (m_pConfig && m_pConfig->darkTheme)
             {
-                auto makeOwnerDraw = [](HWND hButton)
-                {
-                    if (!hButton) return;
-                    LONG_PTR style = GetWindowLongPtrW(hButton, GWL_STYLE);
-                    if ((style & BS_OWNERDRAW) == 0)
-                    {
-                        style &= ~BS_TYPEMASK;
-                        style |= BS_OWNERDRAW;
-                        SetWindowLongPtrW(hButton, GWL_STYLE, style);
-
-                        InvalidateRect(hButton, nullptr, TRUE);
-                        UpdateWindow(hButton);
-                    }
-                };
-
-                makeOwnerDraw(GetDlgItem(hDlg, IDC_HISTORY_DELETE_ALL));
-                makeOwnerDraw(GetDlgItem(hDlg, IDC_HISTORY_KEEP_30));
-                makeOwnerDraw(GetDlgItem(hDlg, IDC_HISTORY_KEEP_90));
-                makeOwnerDraw(GetDlgItem(hDlg, IDCANCEL));
+                DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDC_HISTORY_DELETE_ALL));
+                DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDC_HISTORY_KEEP_30));
+                DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDC_HISTORY_KEEP_90));
+                DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDCANCEL));
 
                 // Clear default button id so the dialog manager does not draw
                 // an initial white default highlight before owner-draw runs.
@@ -175,12 +160,8 @@ INT_PTR CALLBACK HistoryDialog::InstanceDialogProc(HWND hDlg, UINT message, WPAR
             if (m_pConfig && m_pConfig->darkTheme)
             {
                 HDC hdc = reinterpret_cast<HDC>(wParam);
-                HBRUSH darkBrush = DialogThemeHelper::GetDarkBackgroundBrush();
-
-                SetTextColor(hdc, DialogThemeHelper::DARK_TEXT);
-                SetBkMode(hdc, TRANSPARENT);
-
-                return reinterpret_cast<INT_PTR>(darkBrush);
+                HBRUSH hBrush = DialogThemeHelper::HandleControlColor(hdc, true);
+                if (hBrush) return reinterpret_cast<INT_PTR>(hBrush);
             }
             break;
         }

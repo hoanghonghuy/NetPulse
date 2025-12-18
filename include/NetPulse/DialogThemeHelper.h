@@ -99,6 +99,19 @@ public:
     static void ApplyDarkButton(HWND hButton);
 
     /**
+     * Apply owner-drawn style to checkbox for dark theme support
+     */
+    static void ApplyDarkCheckbox(HWND hCheckbox);
+
+    /**
+     * Draw border around ListView
+     * @param hdc Device context
+     * @param hList ListView handle
+     * @param hDlg Dialog handle
+     */
+    static void DrawListViewBorder(HDC hdc, HWND hList, HWND hDlg);
+
+    /**
      * Cleanup cached resources (call on application exit)
      */
     static void Cleanup();

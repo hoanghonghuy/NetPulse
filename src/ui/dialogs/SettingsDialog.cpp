@@ -649,30 +649,22 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDC_PORTABLE_MODE_BUTTON));
 
                 // Make checkboxes owner-draw for dark theme
-                auto makeOwnerDrawCheckbox = [](HWND hCheck)
-                {
-                    if (!hCheck) return;
-                    LONG_PTR style = GetWindowLongPtrW(hCheck, GWL_STYLE);
-                    style |= BS_OWNERDRAW;
-                    SetWindowLongPtrW(hCheck, GWL_STYLE, style);
-                };
-
-                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_AUTOSTART_CHECK));
-                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_AUTOSTART_ADMIN_CHECK));
-                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_ENABLE_LOGGING_CHECK));
-                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_DEBUG_LOGGING_CHECK));
-                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_CONNECTION_NOTIFY_CHECK));
-                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_DATA_USAGE_ENABLE_CHECK));
-                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_NETWORK_CHECK));
-                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_CPU_CHECK));
-                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_RAM_CHECK));
-                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_PING_CHECK));
-                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_DATA_TODAY_CHECK));
-                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_SPARKLINE_CHECK));
-                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_VPN_CHECK));
-                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_IP_CHECK));
-                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_TRAY_ANIMATION_CHECK));
-                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_PORTABLE_MODE_CHECK));
+                DialogThemeHelper::ApplyDarkCheckbox(GetDlgItem(hDlg, IDC_AUTOSTART_CHECK));
+                DialogThemeHelper::ApplyDarkCheckbox(GetDlgItem(hDlg, IDC_AUTOSTART_ADMIN_CHECK));
+                DialogThemeHelper::ApplyDarkCheckbox(GetDlgItem(hDlg, IDC_ENABLE_LOGGING_CHECK));
+                DialogThemeHelper::ApplyDarkCheckbox(GetDlgItem(hDlg, IDC_DEBUG_LOGGING_CHECK));
+                DialogThemeHelper::ApplyDarkCheckbox(GetDlgItem(hDlg, IDC_CONNECTION_NOTIFY_CHECK));
+                DialogThemeHelper::ApplyDarkCheckbox(GetDlgItem(hDlg, IDC_DATA_USAGE_ENABLE_CHECK));
+                DialogThemeHelper::ApplyDarkCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_NETWORK_CHECK));
+                DialogThemeHelper::ApplyDarkCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_CPU_CHECK));
+                DialogThemeHelper::ApplyDarkCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_RAM_CHECK));
+                DialogThemeHelper::ApplyDarkCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_PING_CHECK));
+                DialogThemeHelper::ApplyDarkCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_DATA_TODAY_CHECK));
+                DialogThemeHelper::ApplyDarkCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_SPARKLINE_CHECK));
+                DialogThemeHelper::ApplyDarkCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_VPN_CHECK));
+                DialogThemeHelper::ApplyDarkCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_IP_CHECK));
+                DialogThemeHelper::ApplyDarkCheckbox(GetDlgItem(hDlg, IDC_TRAY_ANIMATION_CHECK));
+                DialogThemeHelper::ApplyDarkCheckbox(GetDlgItem(hDlg, IDC_PORTABLE_MODE_CHECK));
 
                 // Clear default button to prevent the system from drawing an
                 // initial white default highlight before owner-draw kicks in.

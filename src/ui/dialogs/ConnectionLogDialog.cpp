@@ -121,17 +121,7 @@ INT_PTR ConnectionLogDialog::InstanceDialogProc(HWND hDlg, UINT message, WPARAM 
             HBRUSH hBrush = DialogThemeHelper::HandleControlColor(hdc, true);
             
             // Draw border around ListView
-            if (m_hList)
-            {
-                RECT rcList;
-                GetWindowRect(m_hList, &rcList);
-                MapWindowPoints(NULL, hDlg, (LPPOINT)&rcList, 2);
-                InflateRect(&rcList, 1, 1);
-                
-                HBRUSH borderBrush = CreateSolidBrush(RGB(100, 100, 100));
-                FrameRect(hdc, &rcList, borderBrush);
-                DeleteObject(borderBrush);
-            }
+            DialogThemeHelper::DrawListViewBorder(hdc, m_hList, hDlg);
             
             return reinterpret_cast<INT_PTR>(hBrush);
         }
@@ -440,27 +430,11 @@ void ConnectionLogDialog::ApplyTheme(HWND hDlg)
     }
 
     // Toggle BS_OWNERDRAW on buttons based on theme
-    auto toggleOwnerDraw = [&](int id, bool enable)
+    if (darkTheme)
     {
-        HWND hBtn = GetDlgItem(hDlg, id);
-        if (hBtn)
-        {
-            LONG_PTR style = GetWindowLongPtrW(hBtn, GWL_STYLE);
-            if (enable)
-            {
-                style |= BS_OWNERDRAW;
-            }
-            else
-            {
-                style &= ~BS_OWNERDRAW;
-            }
-            SetWindowLongPtrW(hBtn, GWL_STYLE, style);
-            InvalidateRect(hBtn, nullptr, TRUE);
-        }
-    };
-
-    toggleOwnerDraw(IDC_CONNLOG_REFRESH, darkTheme);
-    toggleOwnerDraw(IDCANCEL, darkTheme);
+        DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDC_CONNLOG_REFRESH));
+        DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDCANCEL));
+    }
 }
 
 } // namespace NetPulse

@@ -262,30 +262,11 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
             
             if (m_pConfig && m_pConfig->darkTheme)
             {
-                auto makeOwnerDraw = [](HWND hButton)
-                {
-                    if (!hButton) return;
-                    LONG_PTR style = GetWindowLongPtrW(hButton, GWL_STYLE);
-                    if ((style & BS_OWNERDRAW) == 0)
-                    {
-                        style &= ~BS_TYPEMASK;
-                        style |= BS_OWNERDRAW;
-                        SetWindowLongPtrW(hButton, GWL_STYLE, style);
-
-                        // Disable visual styles so themed drawing does not
-                        // override our owner-draw dark appearance.
-                        SetWindowTheme(hButton, L"", L"");
-
-                        InvalidateRect(hButton, nullptr, TRUE);
-                        UpdateWindow(hButton);
-                    }
-                };
-
-                makeOwnerDraw(GetDlgItem(hDlg, IDC_DASHBOARD_BUTTON_EXPORT));
-                makeOwnerDraw(GetDlgItem(hDlg, IDC_DASHBOARD_EXPORT_CHART));
-                makeOwnerDraw(GetDlgItem(hDlg, IDC_HISTORY_MANAGE));
-                makeOwnerDraw(GetDlgItem(hDlg, IDC_DASHBOARD_REFRESH));
-                makeOwnerDraw(GetDlgItem(hDlg, IDOK));
+                DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDC_DASHBOARD_BUTTON_EXPORT));
+                DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDC_DASHBOARD_EXPORT_CHART));
+                DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDC_HISTORY_MANAGE));
+                DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDC_DASHBOARD_REFRESH));
+                DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDOK));
 
                 // Clear default button so the system does not try to paint
                 // a default highlight using the classic white style before
@@ -941,21 +922,10 @@ void DashboardDialog::CreateChartControls(HWND hDlg)
     // Apply dark theme if needed
     if (m_pConfig && m_pConfig->darkTheme)
     {
-        auto makeOwnerDraw = [](HWND hButton)
-        {
-            if (!hButton) return;
-            LONG_PTR style = GetWindowLongPtrW(hButton, GWL_STYLE);
-            style &= ~BS_TYPEMASK;
-            style |= BS_OWNERDRAW;
-            SetWindowLongPtrW(hButton, GWL_STYLE, style);
-            SetWindowTheme(hButton, L"", L"");
-            InvalidateRect(hButton, nullptr, TRUE);
-        };
-
-        makeOwnerDraw(hBtnDaily);
-        makeOwnerDraw(hBtnMonthly);
-        makeOwnerDraw(hBtnPrev);
-        makeOwnerDraw(hBtnNext);
+        DialogThemeHelper::ApplyDarkButton(hBtnDaily);
+        DialogThemeHelper::ApplyDarkButton(hBtnMonthly);
+        DialogThemeHelper::ApplyDarkButton(hBtnPrev);
+        DialogThemeHelper::ApplyDarkButton(hBtnNext);
     }
 
     UpdateChartTitle(hDlg);
