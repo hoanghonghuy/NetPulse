@@ -35,32 +35,14 @@ void ConfigManager::DetectPortableMode()
     DWORD attribs = GetFileAttributesW(m_portableFilePath.c_str());
     m_portableFileExists = (attribs != INVALID_FILE_ATTRIBUTES && !(attribs & FILE_ATTRIBUTE_DIRECTORY));
     
-    // Check Registry for portable mode preference
-    HKEY hKey = nullptr;
-    bool portableEnabled = false;
-    if (RegOpenKeyExW(HKEY_CURRENT_USER, REGISTRY_PATH, 0, KEY_READ, &hKey) == ERROR_SUCCESS)
-    {
-        DWORD value = 0;
-        DWORD size = sizeof(DWORD);
-        DWORD type = REG_DWORD;
-        if (RegQueryValueExW(hKey, L"UsePortableMode", nullptr, &type, 
-                             reinterpret_cast<BYTE*>(&value), &size) == ERROR_SUCCESS)
-        {
-            portableEnabled = (value != 0);
-        }
-        RegCloseKey(hKey);
-    }
-    
-    // Portable mode is active if: file exists AND user has enabled the preference
-    m_isPortable = m_portableFileExists && portableEnabled;
+    // FIX: Portable mode is active if the file exists. 
+    // We ignore the registry key 'UsePortableMode' because on a new machine (USB usage), 
+    // the registry key won't exist yet, but we still want Portable Mode to work.
+    m_isPortable = m_portableFileExists;
     
     if (m_isPortable)
     {
-        LogDebug(L"ConfigManager: Running in PORTABLE mode, config file: " + m_portableFilePath);
-    }
-    else if (m_portableFileExists)
-    {
-        LogDebug(L"ConfigManager: Portable file exists but mode is DISABLED, using Registry");
+        LogDebug(L"ConfigManager: Running in PORTABLE mode (netpulse.ini found at: " + m_portableFilePath + L")");
     }
     else
     {
