@@ -59,6 +59,16 @@ public:
      */
     static std::vector<ChartDataPoint> ConvertMonthlyUsage(const std::vector<MonthlyUsage>& monthly);
 
+    /**
+     * Hit test: Returns index of bar at given point, or -1 if none
+     * @param chartRect The chart drawing rectangle
+     * @param mouseX Mouse X position relative to chart
+     * @param dataCount Number of data bars
+     * @param options Chart drawing options
+     * @return Index of bar (0-based) or -1 if not over a bar
+     */
+    static int HitTestBar(const RECT& chartRect, int mouseX, int dataCount, const ChartOptions& options);
+
 private:
     // Theme colors
     static COLORREF GetBackgroundColor(bool darkTheme);
@@ -74,6 +84,9 @@ private:
     static void DrawYAxisLabels(HDC hdc, const RECT& chartArea, uint64_t maxValue,
                                 const ChartOptions& options);
     static void DrawLegend(HDC hdc, const RECT& rect, const ChartOptions& options);
+
+public:
+    // Utility method for formatting bytes (used for tooltips)
     static std::wstring FormatBytes(uint64_t bytes);
 };
 

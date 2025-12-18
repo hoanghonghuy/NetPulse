@@ -32,6 +32,8 @@ DashboardDialog::DashboardDialog()
     , m_chartViewMode(ChartViewMode::DailyThisMonth)
     , m_chartYear(0)
     , m_chartMonth(0)
+    , m_hChartTooltip(nullptr)
+    , m_hoveredBarIndex(-1)
 {
     // Initialize to current date
     std::time_t now = std::time(nullptr);
@@ -291,6 +293,32 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
             }
             // Create chart navigation controls
             CreateChartControls(hDlg);
+
+            // Create tooltip for chart hover
+            HWND hChart = GetDlgItem(hDlg, IDC_DASHBOARD_CHART);
+            if (hChart)
+            {
+                m_hChartTooltip = CreateWindowExW(
+                    0, TOOLTIPS_CLASSW, nullptr,
+                    WS_POPUP | TTS_ALWAYSTIP | TTS_NOPREFIX,
+                    CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+                    hDlg, nullptr, GetModuleHandleW(nullptr), nullptr);
+
+                if (m_hChartTooltip)
+                {
+                    TOOLINFOW ti = {};
+                    ti.cbSize = sizeof(TOOLINFOW);
+                    ti.uFlags = TTF_SUBCLASS | TTF_IDISHWND;
+                    ti.hwnd = hDlg;
+                    ti.uId = reinterpret_cast<UINT_PTR>(hChart);
+                    ti.lpszText = LPSTR_TEXTCALLBACKW;
+                    SendMessageW(m_hChartTooltip, TTM_ADDTOOL, 0, reinterpret_cast<LPARAM>(&ti));
+                    SendMessageW(m_hChartTooltip, TTM_SETMAXTIPWIDTH, 0, 300);
+                }
+
+                // Subclass chart control for mouse events
+                SetWindowSubclass(hChart, ChartSubclassProc, 1, reinterpret_cast<DWORD_PTR>(this));
+            }
 
             // Fill data
             PostMessageW(hDlg, WM_COMMAND, MAKEWPARAM(IDC_DASHBOARD_REFRESH, 0), 0);
@@ -810,6 +838,9 @@ void DashboardDialog::DrawDashboardChart(HDC hdc, const RECT& rc)
     options.bottomPadding = 22;  // Room for X-axis labels
     options.topPadding = 25;     // Room for legend
 
+    // Store chart data for mouse hit testing
+    m_currentChartData = chartData;
+
     // Draw the bar chart
     ChartRenderer::DrawBarChart(hdc, rc, chartData, options);
 }
@@ -943,6 +974,147 @@ void DashboardDialog::UpdateChartTitle(HWND hDlg)
     {
         InvalidateRect(hTitle, nullptr, TRUE);
     }
+}
+
+// Chart subclass procedure for mouse interactions
+LRESULT CALLBACK DashboardDialog::ChartSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam,
+                                                     UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
+{
+    DashboardDialog* pThis = reinterpret_cast<DashboardDialog*>(dwRefData);
+
+    switch (msg)
+    {
+        case WM_MOUSEMOVE:
+        {
+            int x = GET_X_LPARAM(lParam);
+            int y = GET_Y_LPARAM(lParam);
+            if (pThis) pThis->OnChartMouseMove(hwnd, x, y);
+            break;
+        }
+
+        case WM_LBUTTONDOWN:
+        {
+            int x = GET_X_LPARAM(lParam);
+            int y = GET_Y_LPARAM(lParam);
+            if (pThis) pThis->OnChartLButtonDown(hwnd, x, y);
+            break;
+        }
+
+        case WM_MOUSELEAVE:
+        {
+            if (pThis)
+            {
+                pThis->m_hoveredBarIndex = -1;
+                if (pThis->m_hChartTooltip)
+                {
+                    SendMessageW(pThis->m_hChartTooltip, TTM_POP, 0, 0);
+                }
+            }
+            break;
+        }
+
+        case WM_NCDESTROY:
+        {
+            RemoveWindowSubclass(hwnd, ChartSubclassProc, uIdSubclass);
+            break;
+        }
+    }
+
+    return DefSubclassProc(hwnd, msg, wParam, lParam);
+}
+
+void DashboardDialog::OnChartMouseMove(HWND hChart, int x, int /* y */)
+{
+    if (m_currentChartData.empty())
+    {
+        return;
+    }
+
+    RECT rc;
+    GetClientRect(hChart, &rc);
+
+    ChartOptions options;
+    options.axisPadding = 65;
+    options.bottomPadding = 22;
+    options.topPadding = 25;
+    options.barSpacing = 2;
+
+    int barIndex = ChartRenderer::HitTestBar(rc, x, static_cast<int>(m_currentChartData.size()), options);
+
+    if (barIndex != m_hoveredBarIndex)
+    {
+        m_hoveredBarIndex = barIndex;
+        UpdateTooltip(hChart, barIndex);
+    }
+}
+
+void DashboardDialog::OnChartLButtonDown(HWND hChart, int x, int /* y */)
+{
+    // Click to drill down: only from Monthly view to Daily view
+    if (m_chartViewMode != ChartViewMode::MonthlyThisYear)
+    {
+        return;
+    }
+
+    if (m_currentChartData.empty())
+    {
+        return;
+    }
+
+    RECT rc;
+    GetClientRect(hChart, &rc);
+
+    ChartOptions options;
+    options.axisPadding = 65;
+    options.bottomPadding = 22;
+    options.topPadding = 25;
+    options.barSpacing = 2;
+
+    int barIndex = ChartRenderer::HitTestBar(rc, x, static_cast<int>(m_currentChartData.size()), options);
+
+    if (barIndex >= 0 && barIndex < 12)
+    {
+        // Switch to Daily view for the clicked month
+        m_chartMonth = barIndex + 1;  // barIndex is 0-based, month is 1-based
+        m_chartViewMode = ChartViewMode::DailyThisMonth;
+
+        HWND hDlg = GetParent(hChart);
+        if (hDlg)
+        {
+            UpdateChartTitle(hDlg);
+            InvalidateRect(hChart, nullptr, TRUE);
+        }
+    }
+}
+
+void DashboardDialog::UpdateTooltip(HWND hChart, int barIndex)
+{
+    if (!m_hChartTooltip)
+    {
+        return;
+    }
+
+    if (barIndex < 0 || barIndex >= static_cast<int>(m_currentChartData.size()))
+    {
+        SendMessageW(m_hChartTooltip, TTM_POP, 0, 0);
+        return;
+    }
+
+    const auto& point = m_currentChartData[barIndex];
+
+    // Format tooltip text
+    wchar_t tipText[256];
+    std::wstring downStr = ChartRenderer::FormatBytes(point.valueDown);
+    std::wstring upStr = ChartRenderer::FormatBytes(point.valueUp);
+    swprintf_s(tipText, L"%s\n↓ %s  ↑ %s", 
+               point.label.c_str(), downStr.c_str(), upStr.c_str());
+
+    TOOLINFOW ti = {};
+    ti.cbSize = sizeof(TOOLINFOW);
+    ti.hwnd = GetParent(hChart);
+    ti.uId = reinterpret_cast<UINT_PTR>(hChart);
+    ti.lpszText = tipText;
+    SendMessageW(m_hChartTooltip, TTM_UPDATETIPTEXT, 0, reinterpret_cast<LPARAM>(&ti));
 }
 
 

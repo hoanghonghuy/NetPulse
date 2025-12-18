@@ -343,4 +343,52 @@ void ChartRenderer::DrawBarChart(
     DeleteObject(hAxisPen);
 }
 
+int ChartRenderer::HitTestBar(const RECT& chartRect, int mouseX, int dataCount, const ChartOptions& options)
+{
+    if (dataCount <= 0)
+    {
+        return -1;
+    }
+
+    // Calculate chart area (same logic as DrawBarChart)
+    RECT chartArea = chartRect;
+    chartArea.left += options.axisPadding;
+    chartArea.top += options.topPadding;
+    chartArea.bottom -= options.bottomPadding;
+    chartArea.right -= 10;
+
+    int chartWidth = chartArea.right - chartArea.left;
+    if (chartWidth <= 0)
+    {
+        return -1;
+    }
+
+    // Calculate bar width (same logic as DrawBarChart)
+    int totalSpacing = options.barSpacing * (dataCount + 1);
+    int barWidth = (chartWidth - totalSpacing) / dataCount;
+    if (barWidth < 4)
+    {
+        barWidth = 4;
+    }
+
+    // Check if mouseX is within chart area
+    if (mouseX < chartArea.left || mouseX > chartArea.right)
+    {
+        return -1;
+    }
+
+    // Find which bar the mouse is over
+    int x = chartArea.left + options.barSpacing;
+    for (int i = 0; i < dataCount; i++)
+    {
+        if (mouseX >= x && mouseX < x + barWidth)
+        {
+            return i;
+        }
+        x += barWidth + options.barSpacing;
+    }
+
+    return -1;
+}
+
 } // namespace NetPulse

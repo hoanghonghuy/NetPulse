@@ -3,6 +3,7 @@
 
 #include "NetPulse/Common.h"
 #include "NetPulse/HistoryLogger.h"
+#include "NetPulse/ChartRenderer.h"
 #include <vector>
 #include <memory>
 
@@ -51,6 +52,18 @@ private:
     ChartViewMode m_chartViewMode;
     int m_chartYear;
     int m_chartMonth;
+
+    // Chart interaction state
+    HWND m_hChartTooltip;                           // Tooltip control
+    int m_hoveredBarIndex;                          // Currently hovered bar (-1 = none)
+    std::vector<ChartDataPoint> m_currentChartData; // Current chart data for hit testing
+
+    // Chart subclass
+    static LRESULT CALLBACK ChartSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam,
+                                               UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
+    void OnChartMouseMove(HWND hChart, int x, int y);
+    void OnChartLButtonDown(HWND hChart, int x, int y);
+    void UpdateTooltip(HWND hChart, int barIndex);
 };
 
 } // namespace NetPulse
