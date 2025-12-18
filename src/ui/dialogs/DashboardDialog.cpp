@@ -1109,12 +1109,42 @@ void DashboardDialog::UpdateTooltip(HWND hChart, int barIndex)
 
     const auto& point = m_currentChartData[barIndex];
 
+    // Format detailed label based on view mode using Windows locale API
+    wchar_t detailedLabel[128] = {};
+    SYSTEMTIME st = {};
+    st.wYear = static_cast<WORD>(m_chartYear);
+
+    if (m_chartViewMode == ChartViewMode::DailyThisMonth)
+    {
+        // Daily view: Show localized full date (e.g., "December 17, 2024" or "17 décembre 2024")
+        st.wMonth = static_cast<WORD>(m_chartMonth);
+        st.wDay = static_cast<WORD>(barIndex + 1);  // barIndex is 0-based
+        
+        // Use user's locale for date format (long date)
+        GetDateFormatW(LOCALE_USER_DEFAULT, DATE_LONGDATE, &st, nullptr, detailedLabel, 128);
+    }
+    else  // MonthlyThisYear
+    {
+        // Monthly view: Show "Month Year" (e.g., "December 2024" or "décembre 2024")
+        st.wMonth = static_cast<WORD>(barIndex + 1);  // barIndex is 0-based
+        st.wDay = 1;
+        
+        // Use "MMMM yyyy" format for Month Year
+        GetDateFormatW(LOCALE_USER_DEFAULT, 0, &st, L"MMMM yyyy", detailedLabel, 128);
+    }
+
+    // Fallback to original label if formatting failed
+    if (detailedLabel[0] == L'\0')
+    {
+        wcscpy_s(detailedLabel, point.label.c_str());
+    }
+
     // Format tooltip text
     wchar_t tipText[256];
     std::wstring downStr = ChartRenderer::FormatBytes(point.valueDown);
     std::wstring upStr = ChartRenderer::FormatBytes(point.valueUp);
     swprintf_s(tipText, L"%s\n↓ %s  ↑ %s", 
-               point.label.c_str(), downStr.c_str(), upStr.c_str());
+               detailedLabel, downStr.c_str(), upStr.c_str());
 
     TOOLINFOW ti = {};
     ti.cbSize = sizeof(TOOLINFOW);
