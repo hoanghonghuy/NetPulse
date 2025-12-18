@@ -575,6 +575,13 @@ BEGIN
     IDS_SPEED_TEST_FAILED                "速度テスト失敗"
     IDS_SPEED_TEST_COMPLETE              "完了"
     IDS_SPEED_CANCEL                     "キャンセル"
+    
+    // Portable Mode strings
+    IDS_PORTABLE_MODE_BUTTON             "ポータブル設定を作成"
+    IDS_PORTABLE_MODE_CHECK              "ポータブルモードを使用"
+    IDS_PORTABLE_MODE_SUCCESS            "ポータブル設定を作成しました。\\n設定はnetpulse.iniに保存されます"
+    IDS_PORTABLE_MODE_ALREADY            "すでにポータブルモードで実行中です"
+    IDS_PORTABLE_MODE_FAILED             "ポータブル設定ファイルの作成に失敗しました"
 END
 
 // Korean resources
@@ -742,6 +749,13 @@ BEGIN
     IDS_SPEED_TEST_FAILED                "속도 테스트 실패"
     IDS_SPEED_TEST_COMPLETE              "완료"
     IDS_SPEED_CANCEL                     "취소"
+    
+    // Portable Mode strings
+    IDS_PORTABLE_MODE_BUTTON             "포터블 설정 만들기"
+    IDS_PORTABLE_MODE_CHECK              "포터블 모드 사용"
+    IDS_PORTABLE_MODE_SUCCESS            "포터블 설정이 생성되었습니다.\\n설정이 netpulse.ini에 저장됩니다"
+    IDS_PORTABLE_MODE_ALREADY            "이미 포터블 모드로 실행 중입니다"
+    IDS_PORTABLE_MODE_FAILED             "포터블 설정 파일 생성에 실패했습니다"
 END
 
 // Chinese Simplified resources
@@ -909,6 +923,13 @@ BEGIN
     IDS_SPEED_TEST_FAILED                "测速失败"
     IDS_SPEED_TEST_COMPLETE              "完成"
     IDS_SPEED_CANCEL                     "取消"
+    
+    // Portable Mode strings
+    IDS_PORTABLE_MODE_BUTTON             "创建便携配置"
+    IDS_PORTABLE_MODE_CHECK              "使用便携模式"
+    IDS_PORTABLE_MODE_SUCCESS            "便携配置创建成功。\\n设置将保存到netpulse.ini"
+    IDS_PORTABLE_MODE_ALREADY            "已在便携模式下运行"
+    IDS_PORTABLE_MODE_FAILED             "无法创建便携配置文件"
 END
 
 // Switch back to English for the rest of resources
