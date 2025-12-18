@@ -986,6 +986,13 @@ LRESULT CALLBACK DashboardDialog::ChartSubclassProc(HWND hwnd, UINT msg, WPARAM 
     {
         case WM_MOUSEMOVE:
         {
+            // Enable mouse tracking for WM_MOUSELEAVE
+            TRACKMOUSEEVENT tme = {};
+            tme.cbSize = sizeof(tme);
+            tme.dwFlags = TME_LEAVE;
+            tme.hwndTrack = hwnd;
+            TrackMouseEvent(&tme);
+
             int x = GET_X_LPARAM(lParam);
             int y = GET_Y_LPARAM(lParam);
             if (pThis) pThis->OnChartMouseMove(hwnd, x, y);
