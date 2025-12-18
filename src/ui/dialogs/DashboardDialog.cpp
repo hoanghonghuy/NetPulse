@@ -827,6 +827,29 @@ void DashboardDialog::DrawDashboardChart(HDC hdc, const RECT& rc)
         }
 
         chartData = ChartRenderer::ConvertMonthlyUsage(fullYearData);
+
+        // Localize month labels using app's language setting (short month names)
+        if (m_pConfig)
+        {
+            LANGID langId = LanguageManager::GetLangIdForLanguage(m_pConfig->language);
+            LCID lcid = MAKELCID(langId, SORT_DEFAULT);
+            
+            for (size_t i = 0; i < chartData.size() && i < 12; ++i)
+            {
+                SYSTEMTIME st = {};
+                st.wYear = static_cast<WORD>(m_chartYear);
+                st.wMonth = static_cast<WORD>(i + 1);
+                st.wDay = 1;
+                
+                wchar_t shortMonth[16] = {};
+                // Use MMM format for abbreviated month (max 3-4 chars to prevent overflow)
+                GetDateFormatW(lcid, 0, &st, L"MMM", shortMonth, 16);
+                if (shortMonth[0] != L'\0')
+                {
+                    chartData[i].label = shortMonth;
+                }
+            }
+        }
     }
 
     // Configure chart options
@@ -946,26 +969,37 @@ void DashboardDialog::UpdateChartTitle(HWND hDlg)
         return;
     }
 
-    static const wchar_t* monthNames[] = {
-        L"Jan", L"Feb", L"Mar", L"Apr", L"May", L"Jun",
-        L"Jul", L"Aug", L"Sep", L"Oct", L"Nov", L"Dec"
-    };
-
     wchar_t title[64] = {};
+    
+    // Get locale based on app's language setting
+    LCID lcid = LOCALE_USER_DEFAULT;
+    if (m_pConfig)
+    {
+        LANGID langId = LanguageManager::GetLangIdForLanguage(m_pConfig->language);
+        lcid = MAKELCID(langId, SORT_DEFAULT);
+    }
+
     if (m_chartViewMode == ChartViewMode::DailyThisMonth)
     {
-        if (m_chartMonth >= 1 && m_chartMonth <= 12)
-        {
-            swprintf_s(title, L"%s %d", monthNames[m_chartMonth - 1], m_chartYear);
-        }
-        else
+        // Daily view: Show "MMM yyyy" (e.g., "Dec 2024" or "Th12 2024")
+        SYSTEMTIME st = {};
+        st.wYear = static_cast<WORD>(m_chartYear);
+        st.wMonth = static_cast<WORD>(m_chartMonth);
+        st.wDay = 1;
+        
+        // Use short month + year format
+        GetDateFormatW(lcid, 0, &st, L"MMM yyyy", title, 64);
+        
+        // Fallback if formatting failed
+        if (title[0] == L'\0')
         {
             swprintf_s(title, L"%d/%d", m_chartMonth, m_chartYear);
         }
     }
     else
     {
-        swprintf_s(title, L"Year %d", m_chartYear);
+        // Monthly view: Show year only (numbers are universal)
+        swprintf_s(title, L"%d", m_chartYear);
     }
 
     SetWindowTextW(hTitle, title);
