@@ -230,12 +230,20 @@ static LRESULT CALLBACK DarkComboBoxProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
 // Shared color presets for overlay colors
 struct OverlayColorPreset { COLORREF down; COLORREF up; const wchar_t* label; };
 static const OverlayColorPreset s_overlayColorPresets[] = {
+    // Classic presets
     {RGB(0, 255, 255), RGB(0, 255, 0), L"Cyan/Green (Default)"},
     {RGB(50, 255, 100), RGB(255, 180, 50), L"Green/Orange"},
     {RGB(100, 200, 255), RGB(255, 100, 100), L"Blue/Red"},
     {RGB(255, 255, 255), RGB(200, 200, 200), L"White/Gray"},
+    // New presets
+    {RGB(180, 100, 255), RGB(255, 100, 180), L"Purple/Pink"},
+    {RGB(0, 200, 255), RGB(255, 200, 0), L"Ocean/Gold"},
+    {RGB(0, 255, 128), RGB(128, 0, 255), L"Mint/Violet"},
+    {RGB(255, 100, 0), RGB(0, 200, 100), L"Orange/Teal"},
+    {RGB(0, 255, 0), RGB(255, 0, 128), L"Neon Green/Magenta"},
+    {RGB(100, 150, 255), RGB(255, 150, 100), L"Soft Blue/Peach"},
 };
-static const int s_overlayColorPresetCount = 4;
+static const int s_overlayColorPresetCount = 10;
 
 SettingsDialog::SettingsDialog()
     : m_hDialog(nullptr)
