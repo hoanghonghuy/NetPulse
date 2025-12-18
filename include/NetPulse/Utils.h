@@ -28,17 +28,7 @@ std::wstring FormatBytes(ULONG64 bytes);
 
 std::wstring LoadStringResource(UINT resourceId);
 
-// ============================================================================
-// CONVERSION UTILITIES
-// ============================================================================
 
-/**
- * Convert bytes per second to target unit
- * @param bytesPerSecond Speed in bytes per second
- * @param unit Target unit
- * @return Converted value
- */
-double ConvertSpeed(double bytesPerSecond, SpeedUnit unit);
 
 // ============================================================================
 // TIME UTILITIES

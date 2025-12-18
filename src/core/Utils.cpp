@@ -142,30 +142,7 @@ std::wstring LoadStringResource(UINT resourceId)
     return std::wstring(buffer, length);
 }
 
-// ============================================================================
-// CONVERSION UTILITIES IMPLEMENTATION
-// ============================================================================
 
-double ConvertSpeed(double bytesPerSecond, SpeedUnit unit)
-{
-    switch (unit)
-    {
-    case SpeedUnit::BytesPerSecond:
-        return bytesPerSecond;
-
-    case SpeedUnit::KiloBytesPerSecond:
-        return bytesPerSecond / 1024.0;
-
-    case SpeedUnit::MegaBytesPerSecond:
-        return bytesPerSecond / (1024.0 * 1024.0);
-
-    case SpeedUnit::MegaBitsPerSecond:
-        return (bytesPerSecond * 8.0) / (1000.0 * 1000.0); // 1 Mbps = 1,000,000 bits
-
-    default:
-        return bytesPerSecond / 1024.0; // Default to KB/s
-    }
-}
 
 // ============================================================================
 // TIME UTILITIES IMPLEMENTATION
@@ -260,23 +237,10 @@ namespace
                 {
                     ThemeHelper::ApplyDarkTitleBar(hDlg, true);
 
-                    // Convert buttons to owner-drawn for dark theming
-                    auto makeOwnerDraw = [](HWND hButton) {
-                        if (hButton)
-                        {
-                            LONG_PTR style = GetWindowLongPtrW(hButton, GWL_STYLE);
-                            style &= ~BS_TYPEMASK;
-                            style |= BS_OWNERDRAW;
-                            SetWindowLongPtrW(hButton, GWL_STYLE, style);
-                            // Remove visual styles to prevent conflict
-                            SetWindowTheme(hButton, L"", L"");
-                        }
-                    };
-
-                    makeOwnerDraw(GetDlgItem(hDlg, IDOK));
-                    makeOwnerDraw(GetDlgItem(hDlg, IDCANCEL));
-                    makeOwnerDraw(GetDlgItem(hDlg, IDYES));
-                    makeOwnerDraw(GetDlgItem(hDlg, IDNO));
+                    DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDOK));
+                    DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDCANCEL));
+                    DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDYES));
+                    DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDNO));
                 }
 
                 UINT type = (data->flags & MB_TYPEMASK);
@@ -317,13 +281,8 @@ namespace
         case WM_CTLCOLORBTN:
             if (data && data->darkTheme)
             {
-                HDC hdc = reinterpret_cast<HDC>(wParam);
-                HBRUSH darkBrush = DialogThemeHelper::GetDarkBackgroundBrush();
-
-                SetTextColor(hdc, DialogThemeHelper::DARK_TEXT);
-                SetBkMode(hdc, TRANSPARENT);
-
-                return reinterpret_cast<INT_PTR>(darkBrush);
+                HBRUSH hBrush = DialogThemeHelper::HandleControlColor(reinterpret_cast<HDC>(wParam), true);
+                if (hBrush) return reinterpret_cast<INT_PTR>(hBrush);
             }
             break;
 

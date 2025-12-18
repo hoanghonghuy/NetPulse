@@ -92,6 +92,11 @@ public:
      * @param darkTheme true to apply dark theme
      */
     static void ApplyDarkListView(HWND hList, bool darkTheme);
+    
+    /**
+     * Apply owner-drawn style to button for dark theme support
+     */
+    static void ApplyDarkButton(HWND hButton);
 
     /**
      * Cleanup cached resources (call on application exit)

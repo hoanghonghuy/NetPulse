@@ -29,10 +29,28 @@ HBRUSH DialogThemeHelper::HandleControlColor(HDC hdc, bool darkTheme)
     if (darkTheme)
     {
         SetTextColor(hdc, DARK_TEXT);
-        SetBkColor(hdc, DARK_BACKGROUND);
+        SetBkMode(hdc, TRANSPARENT); // Use TRANSPARENT instead of SetBkColor for better UI
         return GetDarkBackgroundBrush();
     }
     return nullptr; // Use default system brush
+}
+
+void DialogThemeHelper::ApplyDarkButton(HWND hButton)
+{
+    if (!hButton) return;
+    
+    // Check if already owner-drawn
+    LONG_PTR style = GetWindowLongPtrW(hButton, GWL_STYLE);
+    if ((style & BS_OWNERDRAW) == 0)
+    {
+        style &= ~BS_TYPEMASK;
+        style |= BS_OWNERDRAW;
+        SetWindowLongPtrW(hButton, GWL_STYLE, style);
+        
+        // Remove visual styles to prevent conflict
+        SetWindowTheme(hButton, L"", L"");
+        InvalidateRect(hButton, nullptr, TRUE);
+    }
 }
 
 void DialogThemeHelper::FillDarkBackground(HDC hdc, const RECT& rect)

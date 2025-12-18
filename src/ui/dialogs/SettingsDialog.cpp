@@ -642,28 +642,11 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
             // dark backgrounds consistently.
             if (m_configCopy.darkTheme)
             {
-                auto makeOwnerDraw = [](HWND hButton)
-                {
-                    if (!hButton) return;
-                    LONG_PTR style = GetWindowLongPtrW(hButton, GWL_STYLE);
-                    if ((style & BS_OWNERDRAW) == 0)
-                    {
-                        style &= ~BS_TYPEMASK;  // clear existing button type (e.g., BS_DEFPUSHBUTTON)
-                        style |= BS_OWNERDRAW;
-                        SetWindowLongPtrW(hButton, GWL_STYLE, style);
-
-                        // Force immediate redraw using owner-draw logic so
-                        // the initial frame/background is also dark.
-                        InvalidateRect(hButton, nullptr, TRUE);
-                        UpdateWindow(hButton);
-                    }
-                };
-
-                makeOwnerDraw(GetDlgItem(hDlg, IDC_SETTINGS_BUTTON_OPEN_LOG));
-                makeOwnerDraw(GetDlgItem(hDlg, IDOK));
-                makeOwnerDraw(GetDlgItem(hDlg, IDC_SETTINGS_BUTTON_APPLY));
-                makeOwnerDraw(GetDlgItem(hDlg, IDCANCEL));
-                makeOwnerDraw(GetDlgItem(hDlg, IDC_PORTABLE_MODE_BUTTON));
+                DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDC_SETTINGS_BUTTON_OPEN_LOG));
+                DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDOK));
+                DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDC_SETTINGS_BUTTON_APPLY));
+                DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDCANCEL));
+                DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDC_PORTABLE_MODE_BUTTON));
 
                 // Make checkboxes owner-draw for dark theme
                 auto makeOwnerDrawCheckbox = [](HWND hCheck)
@@ -989,8 +972,8 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 else
                 {
                     // For labels, group boxes, buttons: transparent over dark dialog
-                    SetTextColor(hdc, DialogThemeHelper::DARK_TEXT);
-                    SetBkMode(hdc, TRANSPARENT);
+                    HBRUSH hBrush = DialogThemeHelper::HandleControlColor(hdc, true);
+                    if (hBrush) return reinterpret_cast<INT_PTR>(hBrush);
                 }
 
                 return reinterpret_cast<INT_PTR>(darkBrush);

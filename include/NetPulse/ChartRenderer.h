@@ -84,10 +84,6 @@ private:
     static void DrawYAxisLabels(HDC hdc, const RECT& chartArea, uint64_t maxValue,
                                 const ChartOptions& options);
     static void DrawLegend(HDC hdc, const RECT& rect, const ChartOptions& options);
-
-public:
-    // Utility method for formatting bytes (used for tooltips)
-    static std::wstring FormatBytes(uint64_t bytes);
 };
 
 } // namespace NetPulse

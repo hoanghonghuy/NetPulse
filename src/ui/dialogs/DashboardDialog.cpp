@@ -1184,8 +1184,8 @@ void DashboardDialog::UpdateTooltip(HWND hChart, int barIndex)
 
     // Format tooltip text
     wchar_t tipText[256];
-    std::wstring downStr = ChartRenderer::FormatBytes(point.valueDown);
-    std::wstring upStr = ChartRenderer::FormatBytes(point.valueUp);
+    std::wstring downStr = FormatBytes(point.valueDown);
+    std::wstring upStr = FormatBytes(point.valueUp);
     swprintf_s(tipText, L"%s\n↓ %s  ↑ %s", 
                detailedLabel, downStr.c_str(), upStr.c_str());
 

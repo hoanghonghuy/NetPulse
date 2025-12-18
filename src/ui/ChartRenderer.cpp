@@ -1,4 +1,5 @@
 #include "NetPulse/ChartRenderer.h"
+#include "NetPulse/Utils.h"
 #include <algorithm>
 #include <cmath>
 
@@ -51,31 +52,7 @@ COLORREF ChartRenderer::GetBorderColor(bool darkTheme)
     return darkTheme ? DARK_BORDER : LIGHT_BORDER;
 }
 
-std::wstring ChartRenderer::FormatBytes(uint64_t bytes)
-{
-    if (bytes < 1024ULL)
-    {
-        return std::to_wstring(bytes) + L" B";
-    }
-    else if (bytes < 1024ULL * 1024)
-    {
-        return std::to_wstring(bytes / 1024) + L" KB";
-    }
-    else if (bytes < 1024ULL * 1024 * 1024)
-    {
-        double mb = static_cast<double>(bytes) / (1024.0 * 1024.0);
-        wchar_t buf[32];
-        swprintf_s(buf, L"%.1f MB", mb);
-        return buf;
-    }
-    else
-    {
-        double gb = static_cast<double>(bytes) / (1024.0 * 1024.0 * 1024.0);
-        wchar_t buf[32];
-        swprintf_s(buf, L"%.2f GB", gb);
-        return buf;
-    }
-}
+// FormatBytes removed - using NetPulse::Utils version
 
 std::vector<ChartDataPoint> ChartRenderer::ConvertDailyUsage(const std::vector<DailyUsage>& daily)
 {

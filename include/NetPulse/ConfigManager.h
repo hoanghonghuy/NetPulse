@@ -143,7 +143,6 @@ private:
   bool WriteIniString(const wchar_t* section, const wchar_t* key, const std::wstring& value);
 
 private:
-  // FIX: Thêm const vào đây
   static constexpr const wchar_t *REGISTRY_PATH = L"Software\\NetworkMonitor";
   static constexpr const wchar_t *AUTOSTART_PATH =
       L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";

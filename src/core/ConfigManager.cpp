@@ -35,10 +35,18 @@ void ConfigManager::DetectPortableMode()
     DWORD attribs = GetFileAttributesW(m_portableFilePath.c_str());
     m_portableFileExists = (attribs != INVALID_FILE_ATTRIBUTES && !(attribs & FILE_ATTRIBUTE_DIRECTORY));
     
-    // FIX: Portable mode is active if the file exists. 
-    // We ignore the registry key 'UsePortableMode' because on a new machine (USB usage), 
-    // the registry key won't exist yet, but we still want Portable Mode to work.
-    m_isPortable = m_portableFileExists;
+    // Check Registry preference
+    // Default to TRUE (1) so that on a new machine (USB stick), it works automatically if the file is present.
+    // If the user explicitly disables it (sets to 0) on their machine, we respect that.
+    DWORD usePortableReg = 1;
+    HKEY hKey = nullptr;
+    if (OpenSettingsKey(hKey))
+    {
+        usePortableReg = ReadDWORD(hKey, L"UsePortableMode", 1);
+        RegCloseKey(hKey);
+    }
+    
+    m_isPortable = m_portableFileExists && (usePortableReg != 0);
     
     if (m_isPortable)
     {
@@ -47,6 +55,10 @@ void ConfigManager::DetectPortableMode()
     else
     {
         LogDebug(L"ConfigManager: Running in REGISTRY mode");
+        if (m_portableFileExists)
+        {
+             LogDebug(L"ConfigManager: Portable file exists but UsePortableMode registry key is 0");
+        }
     }
 }
 
@@ -753,6 +765,9 @@ bool ConfigManager::EnablePortableMode(const AppConfig& currentConfig)
     LogDebug(L"ConfigManager::EnablePortableMode: Successfully created portable config at " + m_portableFilePath);
     return true;
 }
+
+
+
 
 bool ConfigManager::SetPortableMode(bool enable)
 {

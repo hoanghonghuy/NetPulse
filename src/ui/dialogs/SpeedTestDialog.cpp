@@ -107,13 +107,11 @@ INT_PTR SpeedTestDialog::HandleMessage(HWND hDlg, UINT message, WPARAM wParam, L
         case WM_CTLCOLORBTN:
             if (m_pConfig && m_pConfig->darkTheme)
             {
-                HDC hdc = reinterpret_cast<HDC>(wParam);
-                HBRUSH darkBrush = DialogThemeHelper::GetDarkBackgroundBrush();
-                
-                SetTextColor(hdc, DialogThemeHelper::DARK_TEXT);
-                SetBkMode(hdc, TRANSPARENT);
-                
-                return reinterpret_cast<INT_PTR>(darkBrush);
+                HBRUSH hBrush = DialogThemeHelper::HandleControlColor(reinterpret_cast<HDC>(wParam), true);
+                if (hBrush)
+                {
+                    return reinterpret_cast<INT_PTR>(hBrush);
+                }
             }
             break;
             
@@ -197,22 +195,9 @@ void SpeedTestDialog::ApplyDarkTheme(HWND hDlg)
     ThemeHelper::ApplyDarkTitleBar(hDlg, true);
     
     // Make buttons owner-draw
-    auto makeOwnerDraw = [](HWND hButton)
-    {
-        if (!hButton) return;
-        LONG_PTR style = GetWindowLongPtrW(hButton, GWL_STYLE);
-        if ((style & BS_OWNERDRAW) == 0)
-        {
-            style &= ~BS_TYPEMASK;
-            style |= BS_OWNERDRAW;
-            SetWindowLongPtrW(hButton, GWL_STYLE, style);
-            SetWindowTheme(hButton, L"", L"");
-            InvalidateRect(hButton, nullptr, TRUE);
-        }
-    };
-    
-    makeOwnerDraw(m_hStartButton);
-    makeOwnerDraw(GetDlgItem(hDlg, IDCANCEL));
+    // Make buttons owner-draw
+    DialogThemeHelper::ApplyDarkButton(m_hStartButton);
+    DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDCANCEL));
     
     // Progress bar dark colors - strip visual styles first for PBM_SETBKCOLOR to work
     if (m_hProgressBar)
