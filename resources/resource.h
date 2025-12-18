@@ -384,6 +384,15 @@
 #define IDS_CONNLOG_COL_REMOTE_PORT     2276
 #define IDS_CONNLOG_COL_STATE           2277
 
+// Portable Mode
+#define IDC_PORTABLE_MODE_CHECK         2279
+#define IDC_PORTABLE_MODE_BUTTON        2280
+#define IDS_PORTABLE_MODE_CHECK         2285
+#define IDS_PORTABLE_MODE_BUTTON        2281
+#define IDS_PORTABLE_MODE_SUCCESS       2282
+#define IDS_PORTABLE_MODE_ALREADY       2283
+#define IDS_PORTABLE_MODE_FAILED        2284
+
 // ============================================================================
 // STANDARD DIALOG IDS
 // ============================================================================

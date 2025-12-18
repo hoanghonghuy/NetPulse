@@ -8,14 +8,75 @@ namespace NetPulse
 
 ConfigManager::ConfigManager()
 {
+    DetectPortableMode();
 }
 
 ConfigManager::~ConfigManager()
 {
 }
 
+void ConfigManager::DetectPortableMode()
+{
+    // Get the directory where the executable is located
+    wchar_t exePath[MAX_PATH] = {0};
+    GetModuleFileNameW(nullptr, exePath, MAX_PATH);
+    
+    // Find the last backslash to get directory
+    wchar_t* lastSlash = wcsrchr(exePath, L'\\');
+    if (lastSlash)
+    {
+        *(lastSlash + 1) = L'\0';  // Keep the trailing backslash
+    }
+    
+    m_portableFilePath = exePath;
+    m_portableFilePath += PORTABLE_FILENAME;
+    
+    // Check if the portable config file exists
+    DWORD attribs = GetFileAttributesW(m_portableFilePath.c_str());
+    m_portableFileExists = (attribs != INVALID_FILE_ATTRIBUTES && !(attribs & FILE_ATTRIBUTE_DIRECTORY));
+    
+    // Check Registry for portable mode preference
+    HKEY hKey = nullptr;
+    bool portableEnabled = false;
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, REGISTRY_PATH, 0, KEY_READ, &hKey) == ERROR_SUCCESS)
+    {
+        DWORD value = 0;
+        DWORD size = sizeof(DWORD);
+        DWORD type = REG_DWORD;
+        if (RegQueryValueExW(hKey, L"UsePortableMode", nullptr, &type, 
+                             reinterpret_cast<BYTE*>(&value), &size) == ERROR_SUCCESS)
+        {
+            portableEnabled = (value != 0);
+        }
+        RegCloseKey(hKey);
+    }
+    
+    // Portable mode is active if: file exists AND user has enabled the preference
+    m_isPortable = m_portableFileExists && portableEnabled;
+    
+    if (m_isPortable)
+    {
+        LogDebug(L"ConfigManager: Running in PORTABLE mode, config file: " + m_portableFilePath);
+    }
+    else if (m_portableFileExists)
+    {
+        LogDebug(L"ConfigManager: Portable file exists but mode is DISABLED, using Registry");
+    }
+    else
+    {
+        LogDebug(L"ConfigManager: Running in REGISTRY mode");
+    }
+}
+
 bool ConfigManager::LoadConfig(AppConfig& config)
 {
+    // If running in portable mode, load from INI file
+    if (m_isPortable)
+    {
+        return LoadConfigFromFile(config);
+    }
+
+    // Registry-based loading (original behavior)
     HKEY hKey = nullptr;
     if (!OpenSettingsKey(hKey))
     {
@@ -124,6 +185,13 @@ bool ConfigManager::LoadConfig(AppConfig& config)
 
 bool ConfigManager::SaveConfig(const AppConfig& config)
 {
+    // If running in portable mode, save to INI file
+    if (m_isPortable)
+    {
+        return SaveConfigToFile(config);
+    }
+
+    // Registry-based saving (original behavior)
     HKEY hKey = nullptr;
     if (!OpenSettingsKey(hKey))
     {
@@ -457,4 +525,296 @@ bool ConfigManager::WriteString(HKEY hKey, const wchar_t* valueName, const std::
     return (result == ERROR_SUCCESS);
 }
 
+// ========== INI File Helpers ==========
+
+DWORD ConfigManager::ReadIniDWORD(const wchar_t* section, const wchar_t* key, DWORD defaultValue)
+{
+    return GetPrivateProfileIntW(section, key, static_cast<int>(defaultValue), m_portableFilePath.c_str());
+}
+
+std::wstring ConfigManager::ReadIniString(const wchar_t* section, const wchar_t* key, const std::wstring& defaultValue)
+{
+    wchar_t buffer[512] = {0};
+    GetPrivateProfileStringW(section, key, defaultValue.c_str(), buffer, 
+                             sizeof(buffer) / sizeof(wchar_t), m_portableFilePath.c_str());
+    return std::wstring(buffer);
+}
+
+bool ConfigManager::WriteIniDWORD(const wchar_t* section, const wchar_t* key, DWORD value)
+{
+    wchar_t buffer[32] = {0};
+    swprintf_s(buffer, L"%lu", value);
+    return WritePrivateProfileStringW(section, key, buffer, m_portableFilePath.c_str()) != 0;
+}
+
+bool ConfigManager::WriteIniString(const wchar_t* section, const wchar_t* key, const std::wstring& value)
+{
+    return WritePrivateProfileStringW(section, key, value.c_str(), m_portableFilePath.c_str()) != 0;
+}
+
+// ========== Portable Mode Load/Save ==========
+
+bool ConfigManager::LoadConfigFromFile(AppConfig& config)
+{
+    // Check if file exists
+    DWORD attribs = GetFileAttributesW(m_portableFilePath.c_str());
+    if (attribs == INVALID_FILE_ATTRIBUTES)
+    {
+        // File doesn't exist, use defaults
+        config = AppConfig();
+        bool systemDark = ThemeHelper::IsSystemInDarkMode();
+        config.darkTheme = systemDark;
+        config.themeMode = ThemeMode::SystemDefault;
+        return true;
+    }
+
+    // Load settings from INI file
+    config.updateInterval = ReadIniDWORD(INI_SECTION, L"UpdateInterval", DEFAULT_UPDATE_INTERVAL);
+    config.displayUnit = static_cast<SpeedUnit>(ReadIniDWORD(INI_SECTION, L"DisplayUnit", static_cast<DWORD>(SpeedUnit::KiloBytesPerSecond)));
+    config.enableLogging = ReadIniDWORD(INI_SECTION, L"EnableLogging", 1) != 0;
+    config.debugLogging = ReadIniDWORD(INI_SECTION, L"DebugLogging", 0) != 0;
+    
+    bool defaultDark = ThemeHelper::IsSystemInDarkMode();
+    config.darkTheme = ReadIniDWORD(INI_SECTION, L"DarkTheme", defaultDark ? 1 : 0) != 0;
+
+    DWORD rawThemeMode = ReadIniDWORD(INI_SECTION, L"ThemeMode", static_cast<DWORD>(ThemeMode::SystemDefault));
+    if (rawThemeMode > static_cast<DWORD>(ThemeMode::Dark))
+    {
+        bool systemDark = ThemeHelper::IsSystemInDarkMode();
+        if (config.darkTheme == systemDark)
+        {
+            config.themeMode = ThemeMode::SystemDefault;
+        }
+        else
+        {
+            config.themeMode = config.darkTheme ? ThemeMode::Dark : ThemeMode::Light;
+        }
+    }
+    else
+    {
+        config.themeMode = static_cast<ThemeMode>(rawThemeMode);
+    }
+
+    config.darkTheme = IsDarkThemeEnabled(config);
+    config.historyAutoTrimDays = static_cast<int>(ReadIniDWORD(INI_SECTION, L"HistoryAutoTrimDays", DEFAULT_HISTORY_AUTO_TRIM_DAYS));
+    if (config.historyAutoTrimDays > MAX_HISTORY_AUTO_TRIM_DAYS)
+    {
+        config.historyAutoTrimDays = MAX_HISTORY_AUTO_TRIM_DAYS;
+    }
+    
+    DWORD langValue = ReadIniDWORD(INI_SECTION, L"Language", static_cast<DWORD>(AppLanguage::SystemDefault));
+    if (langValue > static_cast<DWORD>(AppLanguage::ChineseSimplified))
+    {
+        langValue = static_cast<DWORD>(AppLanguage::SystemDefault);
+    }
+    config.language = static_cast<AppLanguage>(langValue);
+    config.selectedInterface = ReadIniString(INI_SECTION, L"SelectedInterface", L"");
+    config.autoStart = IsAutoStartEnabled();
+    config.autoStartAsAdmin = ReadIniDWORD(INI_SECTION, L"AutoStartAsAdmin", 0) != 0;
+    config.enableConnectionNotification = ReadIniDWORD(INI_SECTION, L"EnableConnectionNotify", 1) != 0;
+    config.pingTarget = ReadIniString(INI_SECTION, L"PingTarget", L"8.8.8.8");
+    config.pingIntervalMs = ReadIniDWORD(INI_SECTION, L"PingIntervalMs", 5000);
+    config.hotkeyModifier = ReadIniDWORD(INI_SECTION, L"HotkeyModifier", MOD_WIN | MOD_SHIFT);
+    config.hotkeyKey = ReadIniDWORD(INI_SECTION, L"HotkeyKey", 'N');
+    config.overlayFontSize = static_cast<int>(ReadIniDWORD(INI_SECTION, L"OverlayFontSize", 13));
+    config.overlayDownloadColor = ReadIniDWORD(INI_SECTION, L"OverlayDownloadColor", RGB(0, 255, 255));
+    config.overlayUploadColor = ReadIniDWORD(INI_SECTION, L"OverlayUploadColor", RGB(0, 255, 0));
+    
+    // Data Usage Alerts
+    config.enableDataUsageAlerts = ReadIniDWORD(INI_SECTION, L"EnableDataUsageAlerts", 0) != 0;
+    DWORD quotaMB = ReadIniDWORD(INI_SECTION, L"DataQuotaMB", 0);
+    config.dataQuotaGB = static_cast<double>(quotaMB) / 1024.0;
+    config.dataAlertThreshold1 = static_cast<int>(ReadIniDWORD(INI_SECTION, L"DataAlertThreshold1", 80));
+    config.dataAlertThreshold2 = static_cast<int>(ReadIniDWORD(INI_SECTION, L"DataAlertThreshold2", 100));
+
+    // Floating Window
+    config.showFloatingWindow = ReadIniDWORD(INI_SECTION, L"ShowFloatingWindow", 0) != 0;
+    config.floatingWindowX = static_cast<int>(ReadIniDWORD(INI_SECTION, L"FloatingWindowX", static_cast<DWORD>(-1)));
+    config.floatingWindowY = static_cast<int>(ReadIniDWORD(INI_SECTION, L"FloatingWindowY", static_cast<DWORD>(-1)));
+    config.floatingWindowOpacity = static_cast<BYTE>(ReadIniDWORD(INI_SECTION, L"FloatingWindowOpacity", 200));
+    config.floatingShowNetwork = ReadIniDWORD(INI_SECTION, L"FloatingShowNetwork", 1) != 0;
+    config.floatingShowCPU = ReadIniDWORD(INI_SECTION, L"FloatingShowCPU", 1) != 0;
+    config.floatingShowRAM = ReadIniDWORD(INI_SECTION, L"FloatingShowRAM", 1) != 0;
+    config.floatingShowPing = ReadIniDWORD(INI_SECTION, L"FloatingShowPing", 1) != 0;
+    config.floatingShowDataToday = ReadIniDWORD(INI_SECTION, L"FloatingShowDataToday", 1) != 0;
+    config.floatingShowSparkline = ReadIniDWORD(INI_SECTION, L"FloatingShowSparkline", 1) != 0;
+    
+    // Tray Animation
+    config.trayAnimationEnabled = ReadIniDWORD(INI_SECTION, L"TrayAnimationEnabled", 1) != 0;
+    config.trayAnimationThresholdKB = static_cast<int>(ReadIniDWORD(INI_SECTION, L"TrayAnimationThresholdKB", 1024));
+    
+    // Sparkline Time Range
+    config.sparklineTimeRange = static_cast<int>(ReadIniDWORD(INI_SECTION, L"SparklineTimeRange", 0));
+
+    // Phase 3: VPN/Proxy Detection
+    config.floatingShowVpnStatus = ReadIniDWORD(INI_SECTION, L"FloatingShowVpnStatus", 1) != 0;
+    config.floatingShowPublicIP = ReadIniDWORD(INI_SECTION, L"FloatingShowPublicIP", 1) != 0;
+    config.publicIPUpdateIntervalMs = ReadIniDWORD(INI_SECTION, L"PublicIPUpdateIntervalMs", 300000);
+
+    return true;
+}
+
+bool ConfigManager::SaveConfigToFile(const AppConfig& config)
+{
+    bool success = true;
+    
+    success &= WriteIniDWORD(INI_SECTION, L"UpdateInterval", config.updateInterval);
+    success &= WriteIniDWORD(INI_SECTION, L"DisplayUnit", static_cast<DWORD>(config.displayUnit));
+    success &= WriteIniDWORD(INI_SECTION, L"EnableLogging", config.enableLogging ? 1 : 0);
+    success &= WriteIniDWORD(INI_SECTION, L"DebugLogging", config.debugLogging ? 1 : 0);
+    success &= WriteIniDWORD(INI_SECTION, L"DarkTheme", config.darkTheme ? 1 : 0);
+
+    ThemeMode modeToSave = config.themeMode;
+    if (modeToSave == ThemeMode::SystemDefault)
+    {
+        bool systemDark = ThemeHelper::IsSystemInDarkMode();
+        if (config.darkTheme == systemDark)
+        {
+            modeToSave = ThemeMode::SystemDefault;
+        }
+        else
+        {
+            modeToSave = config.darkTheme ? ThemeMode::Dark : ThemeMode::Light;
+        }
+    }
+
+    success &= WriteIniDWORD(INI_SECTION, L"ThemeMode", static_cast<DWORD>(modeToSave));
+    int trimDays = config.historyAutoTrimDays;
+    if (trimDays < 0)
+    {
+        trimDays = 0;
+    }
+    else if (trimDays > MAX_HISTORY_AUTO_TRIM_DAYS)
+    {
+        trimDays = MAX_HISTORY_AUTO_TRIM_DAYS;
+    }
+    success &= WriteIniDWORD(INI_SECTION, L"HistoryAutoTrimDays", static_cast<DWORD>(trimDays));
+    success &= WriteIniDWORD(INI_SECTION, L"Language", static_cast<DWORD>(config.language));
+    success &= WriteIniString(INI_SECTION, L"SelectedInterface", config.selectedInterface);
+    success &= WriteIniDWORD(INI_SECTION, L"EnableConnectionNotify", config.enableConnectionNotification ? 1 : 0);
+    success &= WriteIniString(INI_SECTION, L"PingTarget", config.pingTarget);
+    success &= WriteIniDWORD(INI_SECTION, L"PingIntervalMs", config.pingIntervalMs);
+    success &= WriteIniDWORD(INI_SECTION, L"HotkeyModifier", config.hotkeyModifier);
+    success &= WriteIniDWORD(INI_SECTION, L"HotkeyKey", config.hotkeyKey);
+    success &= WriteIniDWORD(INI_SECTION, L"OverlayFontSize", static_cast<DWORD>(config.overlayFontSize));
+    success &= WriteIniDWORD(INI_SECTION, L"OverlayDownloadColor", config.overlayDownloadColor);
+    success &= WriteIniDWORD(INI_SECTION, L"OverlayUploadColor", config.overlayUploadColor);
+    
+    // Data Usage Alerts
+    success &= WriteIniDWORD(INI_SECTION, L"EnableDataUsageAlerts", config.enableDataUsageAlerts ? 1 : 0);
+    DWORD quotaMB = static_cast<DWORD>(config.dataQuotaGB * 1024.0);
+    success &= WriteIniDWORD(INI_SECTION, L"DataQuotaMB", quotaMB);
+    success &= WriteIniDWORD(INI_SECTION, L"DataAlertThreshold1", static_cast<DWORD>(config.dataAlertThreshold1));
+    success &= WriteIniDWORD(INI_SECTION, L"DataAlertThreshold2", static_cast<DWORD>(config.dataAlertThreshold2));
+
+    // Floating Window
+    success &= WriteIniDWORD(INI_SECTION, L"ShowFloatingWindow", config.showFloatingWindow ? 1 : 0);
+    success &= WriteIniDWORD(INI_SECTION, L"FloatingWindowX", static_cast<DWORD>(config.floatingWindowX));
+    success &= WriteIniDWORD(INI_SECTION, L"FloatingWindowY", static_cast<DWORD>(config.floatingWindowY));
+    success &= WriteIniDWORD(INI_SECTION, L"FloatingWindowOpacity", static_cast<DWORD>(config.floatingWindowOpacity));
+    success &= WriteIniDWORD(INI_SECTION, L"FloatingShowNetwork", config.floatingShowNetwork ? 1 : 0);
+    success &= WriteIniDWORD(INI_SECTION, L"FloatingShowCPU", config.floatingShowCPU ? 1 : 0);
+    success &= WriteIniDWORD(INI_SECTION, L"FloatingShowRAM", config.floatingShowRAM ? 1 : 0);
+    success &= WriteIniDWORD(INI_SECTION, L"FloatingShowPing", config.floatingShowPing ? 1 : 0);
+    success &= WriteIniDWORD(INI_SECTION, L"FloatingShowDataToday", config.floatingShowDataToday ? 1 : 0);
+    success &= WriteIniDWORD(INI_SECTION, L"FloatingShowSparkline", config.floatingShowSparkline ? 1 : 0);
+    
+    // Tray Animation
+    success &= WriteIniDWORD(INI_SECTION, L"TrayAnimationEnabled", config.trayAnimationEnabled ? 1 : 0);
+    success &= WriteIniDWORD(INI_SECTION, L"TrayAnimationThresholdKB", static_cast<DWORD>(config.trayAnimationThresholdKB));
+    
+    // Sparkline Time Range
+    success &= WriteIniDWORD(INI_SECTION, L"SparklineTimeRange", static_cast<DWORD>(config.sparklineTimeRange));
+
+    // Phase 3: VPN/Proxy Detection
+    success &= WriteIniDWORD(INI_SECTION, L"FloatingShowVpnStatus", config.floatingShowVpnStatus ? 1 : 0);
+    success &= WriteIniDWORD(INI_SECTION, L"FloatingShowPublicIP", config.floatingShowPublicIP ? 1 : 0);
+    success &= WriteIniDWORD(INI_SECTION, L"PublicIPUpdateIntervalMs", config.publicIPUpdateIntervalMs);
+
+    // Save auto-start setting
+    success &= WriteIniDWORD(INI_SECTION, L"AutoStartAsAdmin", config.autoStartAsAdmin ? 1 : 0);
+
+    return success;
+}
+
+bool ConfigManager::EnablePortableMode(const AppConfig& currentConfig)
+{
+    // Create the INI file
+    HANDLE hFile = CreateFileW(m_portableFilePath.c_str(), GENERIC_WRITE, 0, nullptr, 
+                               CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (hFile == INVALID_HANDLE_VALUE)
+    {
+        // File might already exist, try to open it
+        hFile = CreateFileW(m_portableFilePath.c_str(), GENERIC_WRITE, 0, nullptr, 
+                           OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+        if (hFile == INVALID_HANDLE_VALUE)
+        {
+            LogError(L"ConfigManager::EnablePortableMode: Failed to create/open portable config file");
+            return false;
+        }
+    }
+    CloseHandle(hFile);
+
+    // Mark file as existing
+    m_portableFileExists = true;
+
+    // Save the current configuration to the new file
+    if (!SaveConfigToFile(currentConfig))
+    {
+        LogError(L"ConfigManager::EnablePortableMode: Failed to write configuration to file");
+        return false;
+    }
+
+    // Also enable portable mode preference
+    SetPortableMode(true);
+
+    LogDebug(L"ConfigManager::EnablePortableMode: Successfully created portable config at " + m_portableFilePath);
+    return true;
+}
+
+bool ConfigManager::SetPortableMode(bool enable)
+{
+    // Store preference in Registry
+    HKEY hKey = nullptr;
+    DWORD disposition = 0;
+    LONG result = RegCreateKeyExW(
+        HKEY_CURRENT_USER,
+        REGISTRY_PATH,
+        0,
+        nullptr,
+        REG_OPTION_NON_VOLATILE,
+        KEY_WRITE,
+        nullptr,
+        &hKey,
+        &disposition
+    );
+
+    if (result != ERROR_SUCCESS)
+    {
+        LogError(L"ConfigManager::SetPortableMode: Failed to open registry key");
+        return false;
+    }
+
+    DWORD value = enable ? 1 : 0;
+    result = RegSetValueExW(hKey, L"UsePortableMode", 0, REG_DWORD,
+                            reinterpret_cast<const BYTE*>(&value), sizeof(DWORD));
+    RegCloseKey(hKey);
+
+    if (result != ERROR_SUCCESS)
+    {
+        LogError(L"ConfigManager::SetPortableMode: Failed to write UsePortableMode to registry");
+        return false;
+    }
+
+    // Update internal state: only enable if file also exists
+    m_isPortable = enable && m_portableFileExists;
+
+    LogDebug(L"ConfigManager::SetPortableMode: Portable mode " + 
+             std::wstring(enable ? L"ENABLED" : L"DISABLED") +
+             L", active=" + std::to_wstring(m_isPortable));
+    return true;
+}
+
 } // namespace NetPulse
+
+

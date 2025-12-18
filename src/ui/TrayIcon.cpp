@@ -218,7 +218,11 @@ void TrayIcon::UpdateTooltip(const NetworkStats& stats, SpeedUnit unit)
     // Update tooltip
     wcscpy_s(m_notifyIconData.szTip, tooltip.c_str());
     m_notifyIconData.uFlags = NIF_TIP;
-    Shell_NotifyIconW(NIM_MODIFY, &m_notifyIconData);
+    Shell_NotifyIconW(NIM_MODIFY, &m_notifyIconData); // We ignore failure here as UpdateIcon will catch it soon, or we can add RestoreIcon here too
+    if (!Shell_NotifyIconW(NIM_MODIFY, &m_notifyIconData))
+    {
+        RestoreIcon();
+    }
 }
 
 void TrayIcon::UpdateIcon(double downloadSpeed, double uploadSpeed)
@@ -283,12 +287,14 @@ void TrayIcon::UpdateIcon(double downloadSpeed, double uploadSpeed)
         newIcon = useDark ? m_iconActiveDark : m_iconActive;
     }
 
-    // Update icon if changed
-    if (m_notifyIconData.hIcon != newIcon)
+    // Always try to update/modify the icon. 
+    // This allows us to detect if the icon has been removed (e.g. explorer restart or sleep/wake issue)
+    // and restore it automatically if NIM_MODIFY fails.
+    m_notifyIconData.hIcon = newIcon;
+    m_notifyIconData.uFlags = NIF_ICON;
+    if (!Shell_NotifyIconW(NIM_MODIFY, &m_notifyIconData))
     {
-        m_notifyIconData.hIcon = newIcon;
-        m_notifyIconData.uFlags = NIF_ICON;
-        Shell_NotifyIconW(NIM_MODIFY, &m_notifyIconData);
+        RestoreIcon();
     }
 }
 
@@ -575,7 +581,11 @@ void TrayIcon::RefreshIcon(bool useDarkTheme)
     // Select appropriate icon based on theme
     m_notifyIconData.hIcon = useDarkTheme ? m_iconIdleDark : m_iconIdle;
     m_notifyIconData.uFlags = NIF_ICON;
-    Shell_NotifyIconW(NIM_MODIFY, &m_notifyIconData);
+    m_notifyIconData.uFlags = NIF_ICON;
+    if (!Shell_NotifyIconW(NIM_MODIFY, &m_notifyIconData))
+    {
+        RestoreIcon();
+    }
 }
 
 void TrayIcon::HandleMenuMeasureItem(LPMEASUREITEMSTRUCT pMeasure)
@@ -714,6 +724,33 @@ void TrayIcon::StopAnimation()
     }
 }
 
+void TrayIcon::RestoreIcon()
+{
+    if (!m_initialized || !m_hwnd)
+    {
+        return;
+    }
+
+    // Save current flags
+    UINT oldFlags = m_notifyIconData.uFlags;
+
+    // Set required flags for adding a new icon
+    m_notifyIconData.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
+    // Note: hIcon is already set to the current intended icon
+    // tpTip is already set to the current tooltip
+    // uCallbackMessage is set in Initialize
+
+    if (Shell_NotifyIconW(NIM_ADD, &m_notifyIconData))
+    {
+        // Restore version behavior for modern tooltip/behavior
+        m_notifyIconData.uVersion = NOTIFYICON_VERSION_4;
+        Shell_NotifyIconW(NIM_SETVERSION, &m_notifyIconData);
+    }
+
+    // Restore original flags for future partial updates
+    m_notifyIconData.uFlags = oldFlags;
+}
+
 void TrayIcon::OnAnimationTick()
 {
     if (!m_animating || !m_initialized)
@@ -748,7 +785,11 @@ void TrayIcon::OnAnimationTick()
     
     m_notifyIconData.hIcon = newIcon;
     m_notifyIconData.uFlags = NIF_ICON;
-    Shell_NotifyIconW(NIM_MODIFY, &m_notifyIconData);
+    m_notifyIconData.uFlags = NIF_ICON;
+    if (!Shell_NotifyIconW(NIM_MODIFY, &m_notifyIconData))
+    {
+        RestoreIcon();
+    }
 }
 
 } // namespace NetPulse

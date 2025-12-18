@@ -543,6 +543,76 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
             InitializeTabControl(hDlg);
             SwitchTab(hDlg, 0); // Show General tab by default
 
+            // Create Portable Mode controls dynamically (not in resource file)
+            {
+                // Position them below Connection Notify checkbox in General tab
+                HWND hConnNotify = GetDlgItem(hDlg, IDC_CONNECTION_NOTIFY_CHECK);
+                RECT rcConnNotify = {0};
+                if (hConnNotify)
+                {
+                    GetWindowRect(hConnNotify, &rcConnNotify);
+                    MapWindowPoints(nullptr, hDlg, reinterpret_cast<LPPOINT>(&rcConnNotify), 2);
+                }
+                
+                HFONT hFont = reinterpret_cast<HFONT>(SendMessageW(hDlg, WM_GETFONT, 0, 0));
+                int baseY = rcConnNotify.bottom + 15;
+                
+                // Create checkbox for "Use Portable Mode"
+                std::wstring checkLabel = LoadStringResource(IDS_PORTABLE_MODE_CHECK);
+                if (checkLabel.empty()) checkLabel = L"Use Portable Mode";
+                
+                HWND hPortableCheck = CreateWindowExW(
+                    0, L"BUTTON", checkLabel.c_str(),
+                    WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
+                    rcConnNotify.left, baseY, 160, 20,
+                    hDlg, reinterpret_cast<HMENU>(static_cast<INT_PTR>(IDC_PORTABLE_MODE_CHECK)),
+                    GetModuleHandleW(nullptr), nullptr
+                );
+                
+                if (hPortableCheck && hFont)
+                {
+                    SendMessageW(hPortableCheck, WM_SETFONT, reinterpret_cast<WPARAM>(hFont), TRUE);
+                }
+                
+                // Create button for "Create Portable Config"
+                std::wstring btnLabel = LoadStringResource(IDS_PORTABLE_MODE_BUTTON);
+                if (btnLabel.empty()) btnLabel = L"Create Portable Config";
+                
+                HWND hPortableBtn = CreateWindowExW(
+                    0, L"BUTTON", btnLabel.c_str(),
+                    WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+                    rcConnNotify.left + 170, baseY - 2, 150, 24,
+                    hDlg, reinterpret_cast<HMENU>(static_cast<INT_PTR>(IDC_PORTABLE_MODE_BUTTON)),
+                    GetModuleHandleW(nullptr), nullptr
+                );
+                
+                if (hPortableBtn && hFont)
+                {
+                    SendMessageW(hPortableBtn, WM_SETFONT, reinterpret_cast<WPARAM>(hFont), TRUE);
+                }
+                
+                // Set initial states based on config provider
+                if (m_pConfigProvider)
+                {
+                    bool fileExists = m_pConfigProvider->HasPortableConfigFile();
+                    bool isPortable = m_pConfigProvider->IsPortableMode();
+                    
+                    // Checkbox: enabled only if file exists, checked if portable mode active
+                    if (hPortableCheck)
+                    {
+                        EnableWindow(hPortableCheck, fileExists);
+                        Button_SetCheck(hPortableCheck, isPortable ? BST_CHECKED : BST_UNCHECKED);
+                        SetCheckboxState(IDC_PORTABLE_MODE_CHECK, isPortable);
+                    }
+                    
+                    // Button: disabled if file already exists
+                    if (hPortableBtn)
+                    {
+                        EnableWindow(hPortableBtn, !fileExists);
+                    }
+                }
+            }
+
             // In dark theme, disable visual styles on tab control
             if (m_configCopy.darkTheme)
             {
@@ -585,6 +655,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 makeOwnerDraw(GetDlgItem(hDlg, IDOK));
                 makeOwnerDraw(GetDlgItem(hDlg, IDC_SETTINGS_BUTTON_APPLY));
                 makeOwnerDraw(GetDlgItem(hDlg, IDCANCEL));
+                makeOwnerDraw(GetDlgItem(hDlg, IDC_PORTABLE_MODE_BUTTON));
 
                 // Make checkboxes owner-draw for dark theme
                 auto makeOwnerDrawCheckbox = [](HWND hCheck)
@@ -610,6 +681,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_VPN_CHECK));
                 makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_FLOATING_SHOW_IP_CHECK));
                 makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_TRAY_ANIMATION_CHECK));
+                makeOwnerDrawCheckbox(GetDlgItem(hDlg, IDC_PORTABLE_MODE_CHECK));
 
                 // Clear default button to prevent the system from drawing an
                 // initial white default highlight before owner-draw kicks in.
@@ -627,6 +699,83 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                     OpenLogFileInExplorer();
                     return TRUE;
                 }
+
+                case IDC_PORTABLE_MODE_BUTTON:
+                {
+                    if (m_pConfigProvider)
+                    {
+                        if (m_pConfigProvider->HasPortableConfigFile())
+                        {
+                            // File already exists
+                            std::wstring msg = LoadStringResource(IDS_PORTABLE_MODE_ALREADY);
+                            if (msg.empty()) msg = L"Portable config file already exists";
+                            MessageBoxW(hDlg, msg.c_str(), L"NetPulse", MB_OK | MB_ICONINFORMATION);
+                        }
+                        else
+                        {
+                            // Try to create portable config
+                            if (m_pConfigProvider->EnablePortableMode(m_configCopy))
+                            {
+                                std::wstring msg = LoadStringResource(IDS_PORTABLE_MODE_SUCCESS);
+                                if (msg.empty()) msg = L"Portable configuration created successfully.\nSettings will now be saved to netpulse.ini";
+                                MessageBoxW(hDlg, msg.c_str(), L"NetPulse", MB_OK | MB_ICONINFORMATION);
+                                
+                                // Disable the button since file now exists
+                                HWND hBtn = GetDlgItem(hDlg, IDC_PORTABLE_MODE_BUTTON);
+                                if (hBtn) EnableWindow(hBtn, FALSE);
+                                
+                                // Enable and check the checkbox
+                                HWND hCheck = GetDlgItem(hDlg, IDC_PORTABLE_MODE_CHECK);
+                                if (hCheck)
+                                {
+                                    EnableWindow(hCheck, TRUE);
+                                    Button_SetCheck(hCheck, BST_CHECKED);
+                                    SetCheckboxState(IDC_PORTABLE_MODE_CHECK, true);
+                                    if (m_configCopy.darkTheme)
+                                    {
+                                        InvalidateRect(hCheck, nullptr, FALSE);
+                                        UpdateWindow(hCheck);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                std::wstring msg = LoadStringResource(IDS_PORTABLE_MODE_FAILED);
+                                if (msg.empty()) msg = L"Failed to create portable configuration file.";
+                                MessageBoxW(hDlg, msg.c_str(), L"NetPulse", MB_OK | MB_ICONERROR);
+                            }
+                        }
+                    }
+                    return TRUE;
+                }
+
+                case IDC_PORTABLE_MODE_CHECK:
+                {
+                    if (HIWORD(wParam) == BN_CLICKED && m_pConfigProvider)
+                    {
+                        HWND hCheck = GetDlgItem(hDlg, IDC_PORTABLE_MODE_CHECK);
+                        if (hCheck)
+                        {
+                            bool checked;
+                            if (m_configCopy.darkTheme)
+                            {
+                                ToggleCheckboxState(IDC_PORTABLE_MODE_CHECK);
+                                checked = GetCheckboxState(IDC_PORTABLE_MODE_CHECK);
+                                InvalidateRect(hCheck, nullptr, FALSE);
+                                UpdateWindow(hCheck);
+                            }
+                            else
+                            {
+                                checked = (Button_GetCheck(hCheck) == BST_CHECKED);
+                            }
+                            
+                            // Apply the change immediately - REMOVED, now handled in ApplySettingsFromDialog
+                            // m_pConfigProvider->SetPortableMode(checked);
+                        }
+                    }
+                    return TRUE;
+                }
+
 
                 case IDOK:
                 {
@@ -849,7 +998,8 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 {
                     UINT id = pDrawItem->CtlID;
                     if (id == IDC_SETTINGS_BUTTON_OPEN_LOG || id == IDOK || 
-                        id == IDC_SETTINGS_BUTTON_APPLY || id == IDCANCEL)
+                        id == IDC_SETTINGS_BUTTON_APPLY || id == IDCANCEL ||
+                        id == IDC_PORTABLE_MODE_BUTTON)
                     {
                         DialogThemeHelper::DrawButton(pDrawItem, true);
                         return TRUE;
@@ -870,7 +1020,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                     ctlId == IDC_FLOATING_SHOW_RAM_CHECK || ctlId == IDC_FLOATING_SHOW_PING_CHECK ||
                     ctlId == IDC_FLOATING_SHOW_DATA_TODAY_CHECK || ctlId == IDC_FLOATING_SHOW_SPARKLINE_CHECK ||
                     ctlId == IDC_FLOATING_SHOW_VPN_CHECK || ctlId == IDC_FLOATING_SHOW_IP_CHECK ||
-                    ctlId == IDC_TRAY_ANIMATION_CHECK)
+                    ctlId == IDC_TRAY_ANIMATION_CHECK || ctlId == IDC_PORTABLE_MODE_CHECK)
                 {
                     HDC hdc = pDrawItem->hDC;
                     RECT rc = pDrawItem->rcItem;
@@ -1772,8 +1922,33 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
     // Fix precision issue for data quota (round to 1 decimal place to match UI)
     tempConfig.dataQuotaGB = round(tempConfig.dataQuotaGB * 10.0) / 10.0;
     
+    // Check portable mode state
+    bool portableModeChanged = false;
+    bool newPortableMode = false;
+    if (m_pConfigProvider && m_pConfigProvider->HasPortableConfigFile())
+    {
+        HWND hCheck = GetDlgItem(hDlg, IDC_PORTABLE_MODE_CHECK);
+        if (hCheck)
+        {
+            if (m_configCopy.darkTheme)
+            {
+                newPortableMode = GetCheckboxState(IDC_PORTABLE_MODE_CHECK);
+            }
+            else
+            {
+                newPortableMode = (Button_GetCheck(hCheck) == BST_CHECKED);
+            }
+            
+            bool currentMode = m_pConfigProvider->IsPortableMode();
+            if (newPortableMode != currentMode)
+            {
+                portableModeChanged = true;
+            }
+        }
+    }
+
     // Compare and log differences
-    if (tempConfig == m_configCopy)
+    if (tempConfig == m_configCopy && !portableModeChanged)
     {
         LogDebug(L"ApplySettings: No changes detected.");
         return true;
@@ -1804,6 +1979,7 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
     if (tempConfig.floatingShowPing != m_configCopy.floatingShowPing) LogDebug(L"Settings Changed: floatingShowPing");
     if (tempConfig.floatingShowDataToday != m_configCopy.floatingShowDataToday) LogDebug(L"Settings Changed: floatingShowDataToday");
     if (tempConfig.floatingShowSparkline != m_configCopy.floatingShowSparkline) LogDebug(L"Settings Changed: floatingShowSparkline");
+    if (portableModeChanged) LogDebug(L"Settings Changed: portableMode");
 
     // Capture old auto-start state before updating m_configCopy
     bool oldAutoStart = m_configCopy.autoStart;
@@ -1815,6 +1991,11 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
     // Save to registry via config provider (ignore errors for now)
     if (m_pConfigProvider)
     {
+        if (portableModeChanged)
+        {
+            m_pConfigProvider->SetPortableMode(newPortableMode);
+        }
+
         m_pConfigProvider->SaveConfig(m_configCopy);
 
         // Explicitly update auto-start if changed
@@ -1927,7 +2108,8 @@ void SettingsDialog::SwitchTab(HWND hDlg, int tabIndex)
     const int generalControls[] = {
         IDC_SETTINGS_LABEL_LANGUAGE, IDC_LANGUAGE_COMBO,
         IDC_AUTOSTART_CHECK, IDC_AUTOSTART_ADMIN_CHECK, IDC_ENABLE_LOGGING_CHECK,
-        IDC_DEBUG_LOGGING_CHECK, IDC_CONNECTION_NOTIFY_CHECK
+        IDC_DEBUG_LOGGING_CHECK, IDC_CONNECTION_NOTIFY_CHECK,
+        IDC_PORTABLE_MODE_CHECK, IDC_PORTABLE_MODE_BUTTON
     };
 
     // Display tab controls

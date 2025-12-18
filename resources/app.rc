@@ -222,6 +222,13 @@ BEGIN
     IDS_SPEED_TEST_FAILED                "Speed test failed"
     IDS_SPEED_TEST_COMPLETE              "Test complete"
     IDS_SPEED_CANCEL                     "Cancel"
+    
+    // Portable Mode strings
+    IDS_PORTABLE_MODE_BUTTON             "Create Portable Config"
+    IDS_PORTABLE_MODE_CHECK              "Use Portable Mode"
+    IDS_PORTABLE_MODE_SUCCESS            "Portable configuration created successfully.\\nSettings will now be saved to netpulse.ini"
+    IDS_PORTABLE_MODE_ALREADY            "Already running in Portable Mode"
+    IDS_PORTABLE_MODE_FAILED             "Failed to create portable configuration file."
 END
 
 // Vietnamese resources
@@ -394,6 +401,13 @@ BEGIN
     IDS_SPEED_TEST_FAILED                "Kiểm tra tốc độ thất bại"
     IDS_SPEED_TEST_COMPLETE              "Hoàn tất"
     IDS_SPEED_CANCEL                     "Hủy"
+    
+    // Portable Mode strings
+    IDS_PORTABLE_MODE_BUTTON             "Tạo cấu hình di động"
+    IDS_PORTABLE_MODE_CHECK              "Sử dụng chế độ di động"
+    IDS_PORTABLE_MODE_SUCCESS            "Tạo cấu hình di động thành công.\\nCài đặt sẽ được lưu vào netpulse.ini"
+    IDS_PORTABLE_MODE_ALREADY            "Đã đang chạy ở chế độ di động"
+    IDS_PORTABLE_MODE_FAILED             "Không thể tạo tập tin cấu hình di động."
 END
 
 // Japanese resources

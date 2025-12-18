@@ -41,6 +41,38 @@ public:
      * @return true if successful, false otherwise
      */
     virtual bool SetAutoStart(bool enable, bool asAdmin = false) = 0;
+
+    /**
+     * Check if running in portable mode
+     * @return true if portable mode is enabled and INI file exists, false otherwise
+     */
+    virtual bool IsPortableMode() const { return false; }
+
+    /**
+     * Check if portable config file exists (regardless of whether portable mode is enabled)
+     * @return true if netpulse.ini exists, false otherwise
+     */
+    virtual bool HasPortableConfigFile() const { return false; }
+
+    /**
+     * Enable/disable portable mode preference
+     * @param enable true to enable portable mode, false to use Registry
+     * @return true if successful, false otherwise
+     */
+    virtual bool SetPortableMode(bool /* enable */) { return false; }
+
+    /**
+     * Enable portable mode by creating the INI file and migrating current settings
+     * @param currentConfig Current configuration to export
+     * @return true if successful, false otherwise
+     */
+    virtual bool EnablePortableMode(const AppConfig& /* currentConfig */) { return false; }
+
+    /**
+     * Get the path to the portable config file
+     * @return Full path to the INI file
+     */
+    virtual std::wstring GetPortableFilePath() const { return L""; }
 };
 
 } // namespace NetPulse

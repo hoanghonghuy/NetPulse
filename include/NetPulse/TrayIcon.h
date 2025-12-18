@@ -170,6 +170,11 @@ private:
      * Stop animation timer and reset to static icon
      */
     void StopAnimation();
+
+    /**
+     * Try to restore the icon if it's missing (e.g. Explorer crash or sleep/wake issue)
+     */
+    void RestoreIcon();
     
 public:
     /**
