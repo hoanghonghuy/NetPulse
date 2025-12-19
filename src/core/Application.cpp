@@ -81,10 +81,13 @@ bool Application::Initialize(HINSTANCE hInstance)
     SetDebugLoggingEnabled(m_config.debugLogging);
 
     // Initialize dark mode support for process-level elements (context
-    // menus, some common controls) based on the current system app theme
-    // so that shell-provided UI (like the tray menu) matches Windows.
-    bool systemDark = ThemeHelper::IsSystemInDarkMode();
-    ThemeHelper::AllowDarkModeForApp(systemDark);
+    // menus, some common controls) based on the user's configuration
+    // so that shell-provided UI (like the tray menu) matches our app theme.
+    // Important: The owner window (m_hwnd) of the tray menu MUST be dark-mode
+    // enabled for the context menu border to be drawn correctly by Windows.
+    bool useDark = m_config.darkTheme;
+    ThemeHelper::AllowDarkModeForApp(useDark);
+    ThemeHelper::AllowDarkModeForWindow(m_hwnd, useDark);
 
     // Initialize history logger with auto-trim settings
     if (m_config.historyAutoTrimDays > 0)
@@ -244,6 +247,10 @@ bool Application::Initialize(HINSTANCE hInstance)
         SetTimer(m_hwnd, TIMER_UPDATE_NETWORK, intervalMs, nullptr);
     });
     m_pDialogManager->SetApplyAllSettingsCallback([this]() {
+        // Apply Global Theme
+        ThemeHelper::AllowDarkModeForApp(m_config.darkTheme);
+        ThemeHelper::AllowDarkModeForWindow(m_hwnd, m_config.darkTheme);
+
         // Apply FloatingWindow settings
         if (m_pFloatingWindow)
         {
@@ -732,26 +739,6 @@ LRESULT CALLBACK Application::InstanceWindowProc(HWND hwnd, UINT message, WPARAM
             // Handle menu commands
             OnMenuCommand(LOWORD(wParam));
             return 0;
-        }
-
-        case WM_MEASUREITEM:
-        {
-            if (((LPMEASUREITEMSTRUCT)lParam)->CtlType == ODT_MENU)
-            {
-                m_pTrayIcon->HandleMenuMeasureItem((LPMEASUREITEMSTRUCT)lParam);
-                return TRUE;
-            }
-            return DefWindowProcW(hwnd, message, wParam, lParam);
-        }
-
-        case WM_DRAWITEM:
-        {
-            if (((LPDRAWITEMSTRUCT)lParam)->CtlType == ODT_MENU)
-            {
-                m_pTrayIcon->HandleMenuDrawItem((LPDRAWITEMSTRUCT)lParam);
-                return TRUE;
-            }
-            return DefWindowProcW(hwnd, message, wParam, lParam);
         }
 
         case WM_DESTROY:

@@ -5,7 +5,6 @@
 #include <windows.h>
 #include <shellapi.h>
 #include <functional>
-#include <map>
 
 #pragma comment(lib, "shell32.lib")
 
@@ -98,43 +97,28 @@ public:
     void RefreshIcon(bool useDarkTheme);
 
 private:
-    // Menu item data for owner-draw
-    struct MenuItemData
-    {
-        std::wstring text;
-        UINT id;
-        bool checked;
-        bool separator;
-        bool isSubmenu;
-    };
-
-    /**
-     * Create context menu
-     * @param config Current application configuration
-     * @return Menu handle
-     */
+    // Helper to create context menu
     HMENU CreateContextMenu(const AppConfig& config, bool overlayVisible, bool floatingVisible);
 
     /**
+     * Try to restore the icon if it's missing
+     */
+    void RestoreIcon();
+
+    /**
      * Load application icon
-     * @return Icon handle
      */
     HICON LoadAppIcon();
 
     /**
-     * Handle menu item measurement
+     * Start animation timer for high traffic pulse effect
      */
-    void HandleMenuMeasureItem(LPMEASUREITEMSTRUCT pMeasure);
-
+    void StartAnimation();
+    
     /**
-     * Handle menu item drawing
+     * Stop animation timer and reset to static icon
      */
-    void HandleMenuDrawItem(LPDRAWITEMSTRUCT pDraw);
-
-    /**
-     * Draw checkmark for checked menu items
-     */
-    static void DrawCheckmark(HDC hdc, const RECT& rc, COLORREF color);
+    void StopAnimation();
 
     // Make Application class a friend to access menu handlers
     friend class Application;
@@ -154,27 +138,11 @@ private:
     std::function<bool()> m_overlayVisibleProvider; // Overlay visibility provider
     std::function<bool()> m_floatingVisibleProvider; // Floating window visibility provider
     std::function<void()> m_doubleClickCallback;    // Double-click callback
-    std::map<UINT, MenuItemData> m_menuItems;       // Owner-draw menu item data
     
     // Animation members
     static const UINT_PTR ANIMATION_TIMER_ID = 9001;
     bool m_animating;                               // Is animation running
     int m_animationPhase;                           // Current animation frame (0 or 1)
-    
-    /**
-     * Start animation timer for high traffic pulse effect
-     */
-    void StartAnimation();
-    
-    /**
-     * Stop animation timer and reset to static icon
-     */
-    void StopAnimation();
-
-    /**
-     * Try to restore the icon if it's missing (e.g. Explorer crash or sleep/wake issue)
-     */
-    void RestoreIcon();
     
 public:
     /**
