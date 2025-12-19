@@ -26,6 +26,9 @@ public:
     static constexpr COLORREF DARK_BUTTON_PRESSED = RGB(50, 50, 50);
     static constexpr COLORREF DARK_BUTTON_BORDER = RGB(90, 90, 90);
     static constexpr COLORREF DARK_TEXT_DISABLED = RGB(160, 160, 160);
+    
+    // Input/Edit control colors
+    static constexpr COLORREF DARK_INPUT_BACKGROUND = RGB(25, 25, 25); // Darker than background for input fields
 
     // Light theme colors
     static constexpr COLORREF LIGHT_BACKGROUND = RGB(255, 255, 255);
@@ -44,6 +47,20 @@ public:
      * @return Brush handle for background
      */
     static HBRUSH HandleControlColor(HDC hdc, bool darkTheme);
+
+    /**
+     * Handle WM_CTLCOLOREDIT for dark theme
+     * @param hdc Device context
+     * @param darkTheme true if dark theme enabled
+     * @return Brush handle for background
+     */
+    static HBRUSH HandleEditControlColor(HDC hdc, bool darkTheme);
+
+    /**
+     * Apply dark theme style to an Edit control (remove ClientEdge, add Border)
+     * @param hEdit Handle to edit control
+     */
+    static void ApplyDarkEditControl(HWND hEdit);
 
     /**
      * Fill a rect with dark background

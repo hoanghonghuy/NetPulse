@@ -145,6 +145,8 @@ static LRESULT CALLBACK DarkTabProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
         EndPaint(hwnd, &ps);
         return 0;
     }
+
+
     
     // For other messages, use default
     return CallWindowProc(s_originalTabProc, hwnd, msg, wParam, lParam);
@@ -669,7 +671,19 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
             return TRUE;
         }
 
-        case WM_COMMAND:
+        // Handle Edit Control Colors for Dark Theme
+    case WM_CTLCOLOREDIT:
+    {
+        HDC hdc = reinterpret_cast<HDC>(wParam);
+        HBRUSH hBrush = DialogThemeHelper::HandleEditControlColor(hdc, m_configCopy.darkTheme);
+        if (hBrush)
+        {
+            return reinterpret_cast<INT_PTR>(hBrush);
+        }
+        break;
+    }
+            
+    case WM_COMMAND:
         {
             switch (LOWORD(wParam))
             {
@@ -918,7 +932,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
         case WM_CTLCOLORSTATIC:
         case WM_CTLCOLORBTN:
         case WM_CTLCOLORLISTBOX:
-        case WM_CTLCOLOREDIT:
+
         {
             if (m_configCopy.darkTheme)
             {
@@ -1484,6 +1498,19 @@ void SettingsDialog::PopulateDialog(HWND hDlg)
         if (hOverlayColorTheme) ThemeHelper::ApplyDarkThemeToControl(hOverlayColorTheme, true);
         if (hTrayThresholdTheme) ThemeHelper::ApplyDarkThemeToControl(hTrayThresholdTheme, true);
         if (hSparklineTimeTheme) ThemeHelper::ApplyDarkThemeToControl(hSparklineTimeTheme, true);
+
+        // Apply dark theme style to Edit controls (remove thick client edge)
+        const int editControls[] = {
+            IDC_PING_TARGET_EDIT,
+            IDC_DATA_USAGE_QUOTA_EDIT, 
+            IDC_DATA_USAGE_THRESHOLD1_EDIT, 
+            IDC_DATA_USAGE_THRESHOLD2_EDIT
+        };
+
+        for (int id : editControls)
+        {
+            DialogThemeHelper::ApplyDarkEditControl(GetDlgItem(hDlg, id));
+        }
 
         // Subclass comboboxes to draw dark dropdown button
         auto subclassComboBox = [](HWND hCombo)

@@ -35,6 +35,46 @@ HBRUSH DialogThemeHelper::HandleControlColor(HDC hdc, bool darkTheme)
     return nullptr; // Use default system brush
 }
 
+HBRUSH DialogThemeHelper::HandleEditControlColor(HDC hdc, bool darkTheme)
+{
+    if (darkTheme)
+    {
+        SetTextColor(hdc, DARK_TEXT);
+        SetBkColor(hdc, DARK_INPUT_BACKGROUND);
+        
+        static HBRUSH s_inputBrush = nullptr;
+        if (!s_inputBrush)
+        {
+            s_inputBrush = CreateSolidBrush(DARK_INPUT_BACKGROUND);
+        }
+        return s_inputBrush;
+    }
+    return nullptr; // Use default system brush
+}
+
+void DialogThemeHelper::ApplyDarkEditControl(HWND hEdit)
+{
+    if (!hEdit) return;
+
+    // Remove client edge (thick border)
+    LONG_PTR exStyle = GetWindowLongPtrW(hEdit, GWL_EXSTYLE);
+    if (exStyle & WS_EX_CLIENTEDGE)
+    {
+        SetWindowLongPtrW(hEdit, GWL_EXSTYLE, exStyle & ~WS_EX_CLIENTEDGE);
+    }
+
+    // Add simple border
+    LONG_PTR style = GetWindowLongPtrW(hEdit, GWL_STYLE);
+    if ((style & WS_BORDER) == 0)
+    {
+        SetWindowLongPtrW(hEdit, GWL_STYLE, style | WS_BORDER);
+    }
+    
+    // Force redraw
+    SetWindowPos(hEdit, nullptr, 0, 0, 0, 0, 
+        SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+}
+
 void DialogThemeHelper::ApplyDarkButton(HWND hButton)
 {
     if (!hButton) return;
