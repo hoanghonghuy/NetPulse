@@ -153,7 +153,7 @@ bool TaskbarOverlay::RegisterWindowClass(HINSTANCE hInstance)
 
     if (!RegisterClassExW(&wc))
     {
-        ShowErrorMessage(L"Failed to register taskbar overlay window class");
+        ShowErrorMessage(LoadStringResource(IDS_ERR_REGISTER_OVERLAY));
         return false;
     }
 
@@ -174,7 +174,7 @@ bool TaskbarOverlay::CreateOverlayWindow(HINSTANCE hInstance)
 
     if (!m_hwnd)
     {
-        ShowErrorMessage(L"Failed to create taskbar overlay window");
+        ShowErrorMessage(LoadStringResource(IDS_ERR_CREATE_OVERLAY));
         return false;
     }
 

@@ -11,9 +11,12 @@
 #include <winhttp.h>
 #include <chrono>
 #include <vector>
+#include <vector>
 #include <random>
 #include <string>
 #include <algorithm>
+#include "NetPulse/Utils.h"
+#include "../../resources/resource.h"
 
 #pragma comment(lib, "winhttp.lib")
 #pragma comment(lib, "ws2_32.lib")
@@ -105,8 +108,11 @@ void SpeedTester::RunTest(std::function<void(int progress, const std::wstring& s
             goto done;
         }
         
-        if (progressCallback) progressCallback(10, L"Testing download speed...");
-        result.downloadMbps = MeasureDownloadSpeed([&progressCallback](int p, const std::wstring& s) {
+        std::wstring downloadStatus = LoadStringResource(IDS_SPEED_TEST_DOWNLOAD);
+        if (downloadStatus.empty()) downloadStatus = L"Testing download speed...";
+        if (progressCallback) progressCallback(10, downloadStatus);
+        
+        result.downloadMbps = MeasureDownloadSpeed([&progressCallback, downloadStatus](int p, const std::wstring& s) {
             if (progressCallback) progressCallback(10 + (p * 50 / 100), s);
         });
         
@@ -118,13 +124,18 @@ void SpeedTester::RunTest(std::function<void(int progress, const std::wstring& s
             goto done;
         }
         
-        if (progressCallback) progressCallback(60, L"Testing upload speed...");
-        result.uploadMbps = MeasureUploadSpeed([&progressCallback](int p, const std::wstring& s) {
+        std::wstring uploadStatus = LoadStringResource(IDS_SPEED_TEST_UPLOAD);
+        if (uploadStatus.empty()) uploadStatus = L"Testing upload speed...";
+        if (progressCallback) progressCallback(60, uploadStatus);
+        
+        result.uploadMbps = MeasureUploadSpeed([&progressCallback, uploadStatus](int p, const std::wstring& s) {
             if (progressCallback) progressCallback(60 + (p * 40 / 100), s);
         });
         
         result.success = true;
-        if (progressCallback) progressCallback(100, L"Test complete");
+        std::wstring completeStatus = LoadStringResource(IDS_SPEED_TEST_COMPLETE);
+        if (completeStatus.empty()) completeStatus = L"Test complete";
+        if (progressCallback) progressCallback(100, completeStatus);
     }
     catch (const std::exception& e)
     {

@@ -69,6 +69,8 @@ BEGIN
     IDS_ERR_START_NETWORK_MONITOR    "Failed to start network monitoring"
     IDS_ERR_LOAD_APP_ICON            "Failed to load application icon"
     IDS_ERR_CREATE_TRAY_ICON         "Failed to create tray icon"
+    IDS_ERR_REGISTER_OVERLAY         "Failed to register taskbar overlay window class"
+    IDS_ERR_CREATE_OVERLAY           "Failed to create taskbar overlay window"
     IDS_MENU_UPDATE_INTERVAL         "Update Interval"
     IDS_MENU_UPDATE_FAST             "Fast (1s)"
     IDS_MENU_UPDATE_NORMAL           "Normal (2s)"
@@ -222,7 +224,9 @@ BEGIN
     IDS_SPEED_TEST_FAILED                "Speed test failed"
     IDS_SPEED_TEST_COMPLETE              "Test complete"
     IDS_SPEED_CANCEL                     "Cancel"
-    
+    IDS_SPEED_TEST_DOWNLOAD              "Testing download speed..."
+    IDS_SPEED_TEST_UPLOAD                "Testing upload speed..."
+
     // Portable Mode strings
     IDS_PORTABLE_MODE_BUTTON             "Create Portable Config"
     IDS_PORTABLE_MODE_CHECK              "Use Portable Mode"
@@ -243,6 +247,8 @@ BEGIN
     IDS_ERR_REGISTER_WINDOW_CLASS    "Không thể đăng ký lớp cửa sổ"
     IDS_ERR_CREATE_WINDOW            "Không thể tạo cửa sổ"
     IDS_ERR_INIT_TRAY_ICON           "Không thể khởi tạo biểu tượng khay hệ thống"
+    IDS_ERR_REGISTER_OVERLAY         "Không thể đăng ký lớp cửa sổ overlay"
+    IDS_ERR_CREATE_OVERLAY           "Không thể tạo cửa sổ overlay"
     IDS_ERR_INIT_TASKBAR_OVERLAY     "Không thể khởi tạo hiển thị trên taskbar"
     IDS_ERR_START_NETWORK_MONITOR    "Không thể bắt đầu giám sát mạng"
     IDS_ERR_LOAD_APP_ICON            "Không thể tải biểu tượng ứng dụng"
@@ -401,6 +407,8 @@ BEGIN
     IDS_SPEED_TEST_FAILED                "Kiểm tra tốc độ thất bại"
     IDS_SPEED_TEST_COMPLETE              "Hoàn tất"
     IDS_SPEED_CANCEL                     "Hủy"
+    IDS_SPEED_TEST_DOWNLOAD              "Đang kiểm tra tốc độ tải xuống..."
+    IDS_SPEED_TEST_UPLOAD                "Đang kiểm tra tốc độ tải lên..."
     
     // Portable Mode strings
     IDS_PORTABLE_MODE_BUTTON             "Tạo cấu hình di động"
@@ -423,6 +431,8 @@ BEGIN
     IDS_ERR_CREATE_WINDOW            "ウィンドウの作成に失敗しました"
     IDS_ERR_INIT_TRAY_ICON           "トレイアイコンの初期化に失敗しました"
     IDS_ERR_INIT_TASKBAR_OVERLAY     "タスクバーオーバーレイの初期化に失敗しました"
+    IDS_ERR_REGISTER_OVERLAY         "タスクバーオーバーレイのウィンドウクラスの登録に失敗しました"
+    IDS_ERR_CREATE_OVERLAY           "タスクバーオーバーレイウィンドウの作成に失敗しました"
     IDS_ERR_START_NETWORK_MONITOR    "ネットワーク監視の開始に失敗しました"
     IDS_ERR_LOAD_APP_ICON            "アプリケーションアイコンの読み込みに失敗しました"
     IDS_ERR_CREATE_TRAY_ICON         "トレイアイコンの作成に失敗しました"
@@ -575,6 +585,8 @@ BEGIN
     IDS_SPEED_TEST_FAILED                "速度テスト失敗"
     IDS_SPEED_TEST_COMPLETE              "完了"
     IDS_SPEED_CANCEL                     "キャンセル"
+    IDS_SPEED_TEST_DOWNLOAD              "ダウンロード速度をテスト中..."
+    IDS_SPEED_TEST_UPLOAD                "アップロード速度をテスト中..."
     
     // Portable Mode strings
     IDS_PORTABLE_MODE_BUTTON             "ポータブル設定を作成"
@@ -597,6 +609,8 @@ BEGIN
     IDS_ERR_CREATE_WINDOW            "윈도우 생성에 실패했습니다"
     IDS_ERR_INIT_TRAY_ICON           "트레이 아이콘 초기화에 실패했습니다"
     IDS_ERR_INIT_TASKBAR_OVERLAY     "작업 표시줄 오버레이 초기화에 실패했습니다"
+    IDS_ERR_REGISTER_OVERLAY         "작업 표시줄 오버레이 창 클래스 등록 실패"
+    IDS_ERR_CREATE_OVERLAY           "작업 표시줄 오버레이 창 생성 실패"
     IDS_ERR_START_NETWORK_MONITOR    "네트워크 모니터링 시작에 실패했습니다"
     IDS_ERR_LOAD_APP_ICON            "응용 프로그램 아이콘 로드에 실패했습니다"
     IDS_ERR_CREATE_TRAY_ICON         "트레이 아이콘 생성에 실패했습니다"
@@ -749,7 +763,9 @@ BEGIN
     IDS_SPEED_TEST_FAILED                "속도 테스트 실패"
     IDS_SPEED_TEST_COMPLETE              "완료"
     IDS_SPEED_CANCEL                     "취소"
-    
+    IDS_SPEED_TEST_DOWNLOAD              "다운로드 속도 테스트 중..."
+    IDS_SPEED_TEST_UPLOAD                "업로드 속도 테스트 중..."
+
     // Portable Mode strings
     IDS_PORTABLE_MODE_BUTTON             "포터블 설정 만들기"
     IDS_PORTABLE_MODE_CHECK              "포터블 모드 사용"
@@ -771,6 +787,8 @@ BEGIN
     IDS_ERR_CREATE_WINDOW            "创建窗口失败"
     IDS_ERR_INIT_TRAY_ICON           "初始化托盘图标失败"
     IDS_ERR_INIT_TASKBAR_OVERLAY     "初始化任务栏覆盖失败"
+    IDS_ERR_REGISTER_OVERLAY         "注册任务栏覆盖窗口类失败"
+    IDS_ERR_CREATE_OVERLAY           "创建任务栏覆盖窗口失败"
     IDS_ERR_START_NETWORK_MONITOR    "启动网络监控失败"
     IDS_ERR_LOAD_APP_ICON            "加载应用程序图标失败"
     IDS_ERR_CREATE_TRAY_ICON         "创建托盘图标失败"
@@ -923,6 +941,8 @@ BEGIN
     IDS_SPEED_TEST_FAILED                "测速失败"
     IDS_SPEED_TEST_COMPLETE              "完成"
     IDS_SPEED_CANCEL                     "取消"
+    IDS_SPEED_TEST_DOWNLOAD              "正在测试下载速度..."
+    IDS_SPEED_TEST_UPLOAD                "正在测试上传速度..."
     
     // Portable Mode strings
     IDS_PORTABLE_MODE_BUTTON             "创建便携配置"
