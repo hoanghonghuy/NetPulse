@@ -121,8 +121,8 @@ private:
     DataUsageAlertCallback m_dataUsageAlertCallback;
 
     // Data usage monitoring
-    std::unique_ptr<DataUsageMonitor> m_pDataUsageMonitor;
     uint64_t m_currentMonthUsageBytes;
+    std::unique_ptr<DataUsageMonitor> m_pDataUsageMonitor;
 };
 
 } // namespace NetPulse

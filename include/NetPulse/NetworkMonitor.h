@@ -77,7 +77,7 @@ private:
      * @param ifRow Interface row data
      * @return true if should monitor, false otherwise
      */
-    bool ShouldMonitorInterface(const MIB_IF_ROW2* ifRow);
+    static bool ShouldMonitorInterface(const MIB_IF_ROW2* ifRow);
 
 private:
     NetworkCalculator m_calculator;                    // Calculator for network statistics

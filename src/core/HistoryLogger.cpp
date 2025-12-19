@@ -384,7 +384,6 @@ bool HistoryLogger::GetRecentSamples(int limit, std::vector<HistorySample>& outS
     if (useFilter)
     {
         sql += hasWhere ? " AND interface = ?" : " WHERE interface = ?";
-        hasWhere = true;
     }
 
     sql += " ORDER BY timestamp DESC LIMIT ?";

@@ -263,7 +263,7 @@ void PerAppMonitor::AggregateByProcess()
         });
 }
 
-std::wstring PerAppMonitor::IpAddressToString(DWORD ip) const
+std::wstring PerAppMonitor::IpAddressToString(DWORD ip)
 {
     if (ip == 0)
     {
@@ -283,16 +283,7 @@ std::wstring PerAppMonitor::IpAddressToString(DWORD ip) const
     return buffer;
 }
 
-std::wstring PerAppMonitor::Ip6AddressToString(const UCHAR* ip) const
-{
-    wchar_t buffer[64];
-    swprintf_s(buffer, L"%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
-        ip[0], ip[1], ip[2], ip[3], ip[4], ip[5], ip[6], ip[7],
-        ip[8], ip[9], ip[10], ip[11], ip[12], ip[13], ip[14], ip[15]);
-    return buffer;
-}
-
-std::wstring PerAppMonitor::GetTcpStateString(DWORD state) const
+std::wstring PerAppMonitor::GetTcpStateString(DWORD state)
 {
     switch (state)
     {

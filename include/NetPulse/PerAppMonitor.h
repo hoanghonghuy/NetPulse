@@ -120,9 +120,8 @@ private:
     void EnumerateTcpConnections();
     void EnumerateUdpConnections();
     void AggregateByProcess();
-    std::wstring IpAddressToString(DWORD ip) const;
-    std::wstring Ip6AddressToString(const UCHAR* ip) const;
-    std::wstring GetTcpStateString(DWORD state) const;
+    static std::wstring IpAddressToString(DWORD ip);
+    static std::wstring GetTcpStateString(DWORD state);
 
     bool m_initialized;
     bool m_etwEnabled;

@@ -581,7 +581,6 @@ void TrayIcon::RefreshIcon(bool useDarkTheme)
     // Select appropriate icon based on theme
     m_notifyIconData.hIcon = useDarkTheme ? m_iconIdleDark : m_iconIdle;
     m_notifyIconData.uFlags = NIF_ICON;
-    m_notifyIconData.uFlags = NIF_ICON;
     if (!Shell_NotifyIconW(NIM_MODIFY, &m_notifyIconData))
     {
         RestoreIcon();
@@ -784,7 +783,6 @@ void TrayIcon::OnAnimationTick()
     }
     
     m_notifyIconData.hIcon = newIcon;
-    m_notifyIconData.uFlags = NIF_ICON;
     m_notifyIconData.uFlags = NIF_ICON;
     if (!Shell_NotifyIconW(NIM_MODIFY, &m_notifyIconData))
     {

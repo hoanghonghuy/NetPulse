@@ -24,8 +24,7 @@ private:
     INT_PTR CALLBACK InstanceDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
     // Dialog helper methods
-    void UpdateHistoryInfo(HWND hDlg);
-    void CenterDialogOnScreen(HWND hDlg);
+    static void CenterDialogOnScreen(HWND hDlg);
 
     // Member variables
     HWND m_hDialog;

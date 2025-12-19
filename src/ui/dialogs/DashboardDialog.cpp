@@ -432,7 +432,7 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                             size_t lastSlash = folder.find_last_of(L"\\/");
                             if (lastSlash != std::wstring::npos)
                             {
-                                folder = folder.substr(0, lastSlash);
+                                folder.resize(lastSlash);
                             }
                             ShellExecuteW(nullptr, L"explore", folder.c_str(), nullptr, nullptr, SW_SHOW);
                         }
@@ -517,7 +517,7 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                                 size_t lastSlash = folder.find_last_of(L"\\/");
                                 if (lastSlash != std::wstring::npos)
                                 {
-                                    folder = folder.substr(0, lastSlash);
+                                    folder.resize(lastSlash);
                                 }
                                 ShellExecuteW(nullptr, L"explore", folder.c_str(), nullptr, nullptr, SW_SHOW);
                             }
@@ -619,7 +619,7 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
     return FALSE;
 }
 
-void DashboardDialog::UpdateDashboardData(HWND hDlg)
+void DashboardDialog::UpdateDashboardData(HWND hDlg) const
 {
     unsigned long long todayDown = 0;
     unsigned long long todayUp = 0;

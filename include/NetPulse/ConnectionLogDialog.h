@@ -31,7 +31,7 @@ private:
     void InitializeListView();
     void PopulateList();
     void RefreshData();
-    void ApplyTheme(HWND hDlg);
+    void ApplyTheme(HWND hDlg) const;
 
     // Member variables
     HWND m_hDialog;

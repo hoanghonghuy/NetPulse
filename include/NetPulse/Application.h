@@ -30,7 +30,7 @@ public:
 
     // Application lifecycle
     bool Initialize(HINSTANCE hInstance);
-    int Run();
+    int Run() const;
     void Cleanup();
 
     // Component access

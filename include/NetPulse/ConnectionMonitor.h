@@ -96,7 +96,6 @@ private:
     
     // Convert IP address to string
     static std::wstring IpToString(DWORD ip);
-    static std::wstring Ip6ToString(const IN6_ADDR& ip6);
     
     // Convert TCP state to string
     static std::wstring TcpStateToString(DWORD state);

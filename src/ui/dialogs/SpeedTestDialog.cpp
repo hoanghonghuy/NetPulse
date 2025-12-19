@@ -345,7 +345,7 @@ void SpeedTestDialog::PopulateHistoryList()
         
         // Format time
         wchar_t timeStr[64];
-        struct tm tm;
+        struct tm tm = {};
         localtime_s(&tm, &result.timestamp);
         wcsftime(timeStr, 64, L"%Y-%m-%d %H:%M", &tm);
         
@@ -540,7 +540,7 @@ void SpeedTestDialog::OnClose(HWND hDlg)
     EndDialog(hDlg, IDCANCEL);
 }
 
-bool SpeedTestDialog::OnDrawItem(DRAWITEMSTRUCT* pDrawItem)
+bool SpeedTestDialog::OnDrawItem(DRAWITEMSTRUCT* pDrawItem) const
 {
     if (pDrawItem->CtlType != ODT_BUTTON) return false;
     

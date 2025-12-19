@@ -22,7 +22,7 @@ public:
      * Apply language from configuration
      * @param language The language to apply
      */
-    void ApplyLanguage(AppLanguage language);
+    static void ApplyLanguage(AppLanguage language);
 
     /**
      * Get the Windows LANGID for a given AppLanguage

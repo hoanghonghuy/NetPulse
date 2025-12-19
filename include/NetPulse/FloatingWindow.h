@@ -49,7 +49,7 @@ public:
     /**
      * Update displayed network speed
      */
-    void UpdateSpeed(double downloadBytesPerSec, double uploadBytesPerSec, SpeedUnit unit);
+    void UpdateSpeed(double downloadSpeed, double uploadSpeed, SpeedUnit unit);
 
     /**
      * Update displayed CPU usage percentage
@@ -184,13 +184,13 @@ private:
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
     LRESULT HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam);
 
-    void RegisterWindowClass(HINSTANCE hInstance);
+    static void RegisterWindowClass(HINSTANCE hInstance);
     void Paint(HDC hdc);
     void PaintNormal(HDC hdc);
     void PaintMiniMode(HDC hdc);
     void Invalidate();
     void RecalculateWindowSize();
-    void ApplySnapToEdge(RECT* pRect);
+    void ApplySnapToEdge(RECT* pRect) const;
 
 
     HWND m_hwnd;

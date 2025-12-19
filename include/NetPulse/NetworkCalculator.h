@@ -20,20 +20,20 @@ public:
      * @param currentBytesOut Current total bytes sent
      * @return true if update successful, false otherwise
      */
-    bool UpdateStats(NetworkStats& stats, ULONG64 currentBytesIn, ULONG64 currentBytesOut);
+    static bool UpdateStats(NetworkStats& stats, ULONG64 currentBytesIn, ULONG64 currentBytesOut);
 
     /**
      * Calculate aggregate statistics from multiple interfaces
      * @param statsList List of network stats from all interfaces
      * @return Aggregated network stats
      */
-    NetworkStats CalculateAggregate(const std::vector<NetworkStats>& statsList);
+    static NetworkStats CalculateAggregate(const std::vector<NetworkStats>& statsList);
 
     /**
      * Reset statistics for a network interface
      * @param stats Network stats to reset
      */
-    void ResetStats(NetworkStats& stats);
+    static void ResetStats(NetworkStats& stats);
 
 private:
     /**
@@ -42,7 +42,7 @@ private:
      * @param timeIntervalSeconds Time interval in seconds
      * @return Speed in bytes per second
      */
-    double CalculateSpeed(ULONG64 byteDelta, double timeIntervalSeconds);
+    static double CalculateSpeed(ULONG64 byteDelta, double timeIntervalSeconds);
 };
 
 } // namespace NetPulse

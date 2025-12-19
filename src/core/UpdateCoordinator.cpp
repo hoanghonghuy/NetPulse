@@ -20,8 +20,8 @@ UpdateCoordinator::UpdateCoordinator()
     , m_prevTotalsValid(false)
     , m_wasConnected(false)
     , m_currentMonthUsageBytes(0)
+    , m_pDataUsageMonitor(std::make_unique<DataUsageMonitor>())
 {
-    m_pDataUsageMonitor = std::make_unique<DataUsageMonitor>();
 }
 
 UpdateCoordinator::~UpdateCoordinator()

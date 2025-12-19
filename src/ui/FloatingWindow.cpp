@@ -629,8 +629,6 @@ void FloatingWindow::PaintNormal(HDC hdc)
             SetTextColor(hdc, ipColor);
             TextOutW(hdc, startX, y, ipStr.c_str(), static_cast<int>(ipStr.length()));
         }
-        
-        y += LINE_HEIGHT;
     }
 
     SelectObject(hdc, hOldFont);
@@ -676,7 +674,7 @@ void FloatingWindow::RecalculateWindowSize()
 
 // ========== PHASE 1: SNAP-TO-EDGE ==========
 
-void FloatingWindow::ApplySnapToEdge(RECT* pRect)
+void FloatingWindow::ApplySnapToEdge(RECT* pRect) const
 {
     if (!pRect) return;
     
@@ -876,7 +874,7 @@ bool FloatingWindow::ExportChartAsPNG(const std::wstring& filePath)
     std::wstring bmpPath = filePath;
     if (bmpPath.size() > 4 && bmpPath.substr(bmpPath.size() - 4) == L".png")
     {
-        bmpPath = bmpPath.substr(0, bmpPath.size() - 4) + L".bmp";
+        bmpPath.replace(bmpPath.size() - 4, 4, L".bmp");
     }
     
     HANDLE hFile = CreateFileW(bmpPath.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);

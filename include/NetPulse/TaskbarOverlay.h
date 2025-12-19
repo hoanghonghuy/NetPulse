@@ -72,7 +72,7 @@ private:
      * @param hInstance Application instance
      * @return true if successful
      */
-    bool RegisterWindowClass(HINSTANCE hInstance);
+    static bool RegisterWindowClass(HINSTANCE hInstance);
 
     /**
      * Create overlay window
@@ -85,14 +85,6 @@ private:
      * Position window on taskbar
      */
     void PositionOnTaskbar();
-
-    /**
-     * Get taskbar information
-     * @param rect Output taskbar rectangle
-     * @param edge Output taskbar edge (ABE_BOTTOM, ABE_TOP, etc.)
-     * @return true if successful
-     */
-    bool GetTaskbarInfo(RECT& rect, UINT& edge);
 
     /**
      * Window procedure for overlay window

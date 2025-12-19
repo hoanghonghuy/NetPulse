@@ -69,9 +69,9 @@ public:
 private:
     uint64_t m_quotaBytes;
     uint64_t m_currentUsageBytes;
+    int m_pendingAlertPercentage;
     std::vector<int> m_thresholds;
     std::set<int> m_alertedThresholds;  // Thresholds already alerted this cycle
-    int m_pendingAlertPercentage;
 };
 
 } // namespace NetPulse

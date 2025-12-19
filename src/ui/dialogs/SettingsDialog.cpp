@@ -621,7 +621,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 }
             }
 
-            // In dark theme, disable visual styles on tab control
+            // In dark theme, disable visual styles on tab control and apply dark buttons
             if (m_configCopy.darkTheme)
             {
                 HWND hTab = GetDlgItem(hDlg, IDC_SETTINGS_TAB);
@@ -636,12 +636,8 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                     s_originalTabProc = reinterpret_cast<WNDPROC>(
                         SetWindowLongPtrW(hTab, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(DarkTabProc)));
                 }
-            }
 
-            // In dark theme, make bottom buttons owner-drawn so we can paint
-            // dark backgrounds consistently.
-            if (m_configCopy.darkTheme)
-            {
+                // Make bottom buttons owner-drawn for dark backgrounds
                 DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDC_SETTINGS_BUTTON_OPEN_LOG));
                 DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDOK));
                 DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDC_SETTINGS_BUTTON_APPLY));
@@ -739,21 +735,13 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                         HWND hCheck = GetDlgItem(hDlg, IDC_PORTABLE_MODE_CHECK);
                         if (hCheck)
                         {
-                            bool checked;
                             if (m_configCopy.darkTheme)
                             {
                                 ToggleCheckboxState(IDC_PORTABLE_MODE_CHECK);
-                                checked = GetCheckboxState(IDC_PORTABLE_MODE_CHECK);
                                 InvalidateRect(hCheck, nullptr, FALSE);
                                 UpdateWindow(hCheck);
                             }
-                            else
-                            {
-                                checked = (Button_GetCheck(hCheck) == BST_CHECKED);
-                            }
-                            
-                            // Apply the change immediately - REMOVED, now handled in ApplySettingsFromDialog
-                            // m_pConfigProvider->SetPortableMode(checked);
+                            // Note: Actual portable mode change is handled in ApplySettingsFromDialog
                         }
                     }
                     return TRUE;

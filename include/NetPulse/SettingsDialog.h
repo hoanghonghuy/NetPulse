@@ -36,9 +36,9 @@ private:
     void PopulateDialog(HWND hDlg);
     bool ApplySettingsFromDialog(HWND hDlg);
     void PopulateInterfaceCombo(HWND hDlg);
-    void CenterDialogOnScreen(HWND hDlg);
-    void InitializeTabControl(HWND hDlg);
-    void SwitchTab(HWND hDlg, int tabIndex);
+    static void CenterDialogOnScreen(HWND hDlg);
+    static void InitializeTabControl(HWND hDlg);
+    static void SwitchTab(HWND hDlg, int tabIndex);
     
     // Checkbox state helpers for dark theme (BS_OWNERDRAW doesn't store state)
     bool GetCheckboxState(UINT ctrlId) const;

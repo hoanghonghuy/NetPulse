@@ -17,8 +17,8 @@ PerAppDialog::PerAppDialog()
     , m_hImageList(nullptr)
     , m_pConfig(nullptr)
     , m_pExternalHandle(nullptr)
+    , m_pMonitor(std::make_unique<PerAppMonitor>())
 {
-    m_pMonitor = std::make_unique<PerAppMonitor>();
 }
 
 PerAppDialog::~PerAppDialog()
@@ -346,7 +346,7 @@ void PerAppDialog::RefreshData(HWND hDlg)
     PopulateList(hDlg);
 }
 
-void PerAppDialog::ApplyTheme(HWND hDlg)
+void PerAppDialog::ApplyTheme(HWND hDlg) const
 {
     if (m_pConfig && m_pConfig->darkTheme)
     {

@@ -21,7 +21,7 @@ public:
     
     // ISpeedTestProvider implementation
     void StartTest(std::function<void(int progress, const std::wstring& status)> progressCallback) override;
-    void CancelTest() override;
+    void CancelTest() final;
     bool IsRunning() const override;
     SpeedTestResult GetLastResult() const override;
     void SetResultCallback(std::function<void(const SpeedTestResult&)> callback) override;

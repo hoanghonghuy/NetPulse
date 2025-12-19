@@ -70,7 +70,7 @@ private:
     // Message handlers
     void OnCommand(HWND hDlg, WPARAM wParam);
     void OnClose(HWND hDlg);
-    bool OnDrawItem(DRAWITEMSTRUCT* pDrawItem);
+    bool OnDrawItem(DRAWITEMSTRUCT* pDrawItem) const;
 
     // Helpers
 

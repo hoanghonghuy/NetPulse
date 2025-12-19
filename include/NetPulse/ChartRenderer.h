@@ -71,7 +71,6 @@ public:
 
 private:
     // Theme colors
-    static COLORREF GetBackgroundColor(bool darkTheme);
     static COLORREF GetTextColor(bool darkTheme);
     static COLORREF GetGridColor(bool darkTheme);
     static COLORREF GetDownloadColor(bool darkTheme);

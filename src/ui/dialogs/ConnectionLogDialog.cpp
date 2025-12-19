@@ -402,7 +402,7 @@ void ConnectionLogDialog::RefreshData()
     PopulateList();
 }
 
-void ConnectionLogDialog::ApplyTheme(HWND hDlg)
+void ConnectionLogDialog::ApplyTheme(HWND hDlg) const
 {
     bool darkTheme = (m_pConfig && m_pConfig->darkTheme);
     

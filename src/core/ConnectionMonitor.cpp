@@ -293,13 +293,6 @@ std::wstring ConnectionMonitor::IpToString(DWORD ip)
     return buffer;
 }
 
-std::wstring ConnectionMonitor::Ip6ToString(const IN6_ADDR& ip6)
-{
-    wchar_t buffer[INET6_ADDRSTRLEN] = {0};
-    InetNtopW(AF_INET6, &ip6, buffer, INET6_ADDRSTRLEN);
-    return buffer;
-}
-
 std::wstring ConnectionMonitor::TcpStateToString(DWORD state)
 {
     switch (state)

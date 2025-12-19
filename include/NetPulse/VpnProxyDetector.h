@@ -101,12 +101,12 @@ private:
      * Fetch public IP from external API
      * @return Public IP string, or empty if failed
      */
-    std::wstring FetchPublicIP();
+    static std::wstring FetchPublicIP();
 
     /**
      * Check if adapter is a VPN adapter based on type and description
      */
-    bool IsVpnAdapter(DWORD adapterType, const std::wstring& description) const;
+    static bool IsVpnAdapter(DWORD adapterType, const std::wstring& description);
 
 private:
     bool m_initialized;

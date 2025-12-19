@@ -384,7 +384,7 @@ bool Application::Initialize(HINSTANCE hInstance)
     return true;
 }
 
-int Application::Run()
+int Application::Run() const
 {
     if (!m_initialized)
     {

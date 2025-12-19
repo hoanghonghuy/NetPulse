@@ -9,9 +9,8 @@ DataUsageMonitor::DataUsageMonitor()
     : m_quotaBytes(0)
     , m_currentUsageBytes(0)
     , m_pendingAlertPercentage(-1)
+    , m_thresholds({80, 100})  // Default thresholds: 80% and 100%
 {
-    // Default thresholds: 80% and 100%
-    m_thresholds = {80, 100};
 }
 
 DataUsageMonitor::~DataUsageMonitor()

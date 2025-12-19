@@ -282,12 +282,6 @@ INT_PTR CALLBACK HistoryDialog::InstanceDialogProc(HWND hDlg, UINT message, WPAR
     return FALSE;
 }
 
-void HistoryDialog::UpdateHistoryInfo(HWND hDlg)
-{
-    UNREFERENCED_PARAMETER(hDlg);
-    // No additional info section in current dialog resource.
-}
-
 void HistoryDialog::CenterDialogOnScreen(HWND hDlg)
 {
     CenterWindowOnScreen(hDlg);

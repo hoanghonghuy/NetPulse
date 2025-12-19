@@ -134,7 +134,7 @@ private:
     /**
      * Draw checkmark for checked menu items
      */
-    void DrawCheckmark(HDC hdc, const RECT& rc, COLORREF color);
+    static void DrawCheckmark(HDC hdc, const RECT& rc, COLORREF color);
 
     // Make Application class a friend to access menu handlers
     friend class Application;

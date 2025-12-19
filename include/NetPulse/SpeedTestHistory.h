@@ -38,7 +38,7 @@ public:
     /**
      * @brief Get the path to the history file
      */
-    std::wstring GetHistoryFilePath() const;
+    const std::wstring& GetHistoryFilePath() const;
     
 private:
     void LoadFromFile();

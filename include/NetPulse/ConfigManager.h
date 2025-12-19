@@ -96,7 +96,7 @@ private:
    * @param hKey Output key handle
    * @return true if successful, false otherwise
    */
-  bool OpenSettingsKey(HKEY &hKey);
+  static bool OpenSettingsKey(HKEY &hKey);
 
   /**
    * Read DWORD value from registry
@@ -105,7 +105,7 @@ private:
    * @param defaultValue Default value if not found
    * @return Value read from registry or default
    */
-  DWORD ReadDWORD(HKEY hKey, const wchar_t *valueName, DWORD defaultValue);
+  static DWORD ReadDWORD(HKEY hKey, const wchar_t *valueName, DWORD defaultValue);
 
   /**
    * Write DWORD value to registry
@@ -114,7 +114,7 @@ private:
    * @param value Value to write
    * @return true if successful, false otherwise
    */
-  bool WriteDWORD(HKEY hKey, const wchar_t *valueName, DWORD value);
+  static bool WriteDWORD(HKEY hKey, const wchar_t *valueName, DWORD value);
 
   /**
    * Read string value from registry
@@ -123,7 +123,7 @@ private:
    * @param defaultValue Default value if not found
    * @return Value read from registry or default
    */
-  std::wstring ReadString(HKEY hKey, const wchar_t *valueName,
+  static std::wstring ReadString(HKEY hKey, const wchar_t *valueName,
                           const std::wstring &defaultValue);
 
   /**
@@ -133,7 +133,7 @@ private:
    * @param value Value to write
    * @return true if successful, false otherwise
    */
-  bool WriteString(HKEY hKey, const wchar_t *valueName,
+  static bool WriteString(HKEY hKey, const wchar_t *valueName,
                    const std::wstring &value);
 
   // INI file helpers

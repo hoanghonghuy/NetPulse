@@ -228,7 +228,7 @@ bool VpnProxyDetector::DetectVpnAdapters()
     return vpnFound;
 }
 
-bool VpnProxyDetector::IsVpnAdapter(DWORD /*adapterType*/, const std::wstring& description) const
+bool VpnProxyDetector::IsVpnAdapter(DWORD /*adapterType*/, const std::wstring& description)
 {
     if (description.empty())
         return false;

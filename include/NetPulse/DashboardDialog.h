@@ -35,9 +35,9 @@ private:
     INT_PTR CALLBACK InstanceDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
     // Dialog helper methods
-    void UpdateDashboardData(HWND hDlg);
+    void UpdateDashboardData(HWND hDlg) const;
     void DrawDashboardChart(HDC hdc, const RECT& rc);
-    void CenterDialogOnScreen(HWND hDlg);
+    static void CenterDialogOnScreen(HWND hDlg);
     void UpdateChartTitle(HWND hDlg);
     void CreateChartControls(HWND hDlg);
 

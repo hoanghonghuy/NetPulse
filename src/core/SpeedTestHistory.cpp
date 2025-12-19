@@ -62,7 +62,7 @@ void SpeedTestHistory::ClearHistory()
     SaveToFile();
 }
 
-std::wstring SpeedTestHistory::GetHistoryFilePath() const
+const std::wstring& SpeedTestHistory::GetHistoryFilePath() const
 {
     return m_filePath;
 }

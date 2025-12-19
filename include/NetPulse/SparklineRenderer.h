@@ -19,7 +19,7 @@ namespace NetPulse
 class SparklineRenderer
 {
 public:
-    SparklineRenderer(size_t maxPoints = 30);
+    explicit SparklineRenderer(size_t maxPoints = 30);
     ~SparklineRenderer() = default;
 
     /**
@@ -40,7 +40,7 @@ public:
      * @param lineColor Color of the sparkline
      * @param fillColor Optional fill color under the line (0 = no fill)
      */
-    void Render(HDC hdc, const RECT& bounds, COLORREF lineColor, COLORREF fillColor = 0);
+    void Render(HDC hdc, const RECT& bounds, COLORREF lineColor, COLORREF fillColor = 0) const;
 
     /**
      * Get the number of data points currently stored

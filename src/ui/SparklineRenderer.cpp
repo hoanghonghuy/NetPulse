@@ -84,7 +84,7 @@ void SparklineRenderer::RecalculateMinMax()
     }
 }
 
-void SparklineRenderer::Render(HDC hdc, const RECT& bounds, COLORREF lineColor, COLORREF fillColor)
+void SparklineRenderer::Render(HDC hdc, const RECT& bounds, COLORREF lineColor, COLORREF fillColor) const
 {
     if (m_dataPoints.size() < 2)
     {

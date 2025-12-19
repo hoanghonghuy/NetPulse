@@ -22,11 +22,6 @@ constexpr COLORREF LIGHT_DOWNLOAD = RGB(0, 120, 215);  // Blue
 constexpr COLORREF LIGHT_UPLOAD = RGB(40, 167, 69);    // Green
 constexpr COLORREF LIGHT_BORDER = RGB(180, 180, 180);
 
-COLORREF ChartRenderer::GetBackgroundColor(bool darkTheme)
-{
-    return darkTheme ? DARK_BG : LIGHT_BG;
-}
-
 COLORREF ChartRenderer::GetTextColor(bool darkTheme)
 {
     return darkTheme ? DARK_TEXT : LIGHT_TEXT;

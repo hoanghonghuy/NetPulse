@@ -277,47 +277,6 @@ void TaskbarOverlay::PositionOnTaskbar()
     }
 }
 
-bool TaskbarOverlay::GetTaskbarInfo(RECT& rect, UINT& edge)
-{
-    if (!m_hTaskbar)
-    {
-        return false;
-    }
-
-    GetWindowRect(m_hTaskbar, &rect);
-
-    APPBARDATA abd = { 0 };
-    abd.cbSize = sizeof(APPBARDATA);
-    abd.hWnd = m_hTaskbar;
-
-    if (SHAppBarMessage(ABM_GETTASKBARPOS, &abd))
-    {
-        edge = abd.uEdge;
-        return true;
-    }
-
-    // Fallback: detect based on position
-    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-    if (rect.bottom >= screenHeight - 10)
-    {
-        edge = ABE_BOTTOM;
-    }
-    else if (rect.top <= 10)
-    {
-        edge = ABE_TOP;
-    }
-    else if (rect.left <= 10)
-    {
-        edge = ABE_LEFT;
-    }
-    else
-    {
-        edge = ABE_RIGHT;
-    }
-
-    return true;
-}
-
 void TaskbarOverlay::ForceShow()
 {
     if (!m_hwnd || !m_isVisible)

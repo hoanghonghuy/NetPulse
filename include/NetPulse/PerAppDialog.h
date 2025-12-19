@@ -37,7 +37,7 @@ private:
     void InitializeDialog(HWND hDlg);
     void PopulateList(HWND hDlg);
     void RefreshData(HWND hDlg);
-    void ApplyTheme(HWND hDlg);
+    void ApplyTheme(HWND hDlg) const;
     
     // Header subclass for custom painting
 
