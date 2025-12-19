@@ -36,6 +36,8 @@ namespace NetPulse
 SpeedTestDialog::SpeedTestDialog()
     : m_speedTester(std::make_unique<SpeedTester>())
     , m_speedTestHistory(std::make_unique<SpeedTestHistory>())
+    , m_isTestRunning(false)
+    , m_isTestComplete(false)
 {
 }
 
@@ -107,6 +109,23 @@ INT_PTR SpeedTestDialog::HandleMessage(HWND hDlg, UINT message, WPARAM wParam, L
         case WM_CTLCOLORBTN:
             if (m_pConfig && m_pConfig->darkTheme)
             {
+                HDC hdc = reinterpret_cast<HDC>(wParam);
+                int id = GetDlgCtrlID(reinterpret_cast<HWND>(lParam));
+
+                // Status Label - Green if complete, Blue if Running
+                if (id == IDC_SPEED_STATUS_LABEL)
+                {
+                    SetBkMode(hdc, TRANSPARENT);
+                    if (m_isTestComplete)
+                         SetTextColor(hdc, RGB(0, 255, 128)); // Bright Green
+                    else if (m_isTestRunning)
+                         SetTextColor(hdc, RGB(80, 160, 240)); // Blue (matches progress bar)
+                    else
+                         SetTextColor(hdc, DialogThemeHelper::DARK_TEXT);
+                    
+                    return reinterpret_cast<INT_PTR>(DialogThemeHelper::GetDarkBackgroundBrush());
+                }
+
                 HBRUSH hBrush = DialogThemeHelper::HandleControlColor(reinterpret_cast<HDC>(wParam), true);
                 if (hBrush)
                 {
@@ -251,11 +270,23 @@ void SpeedTestDialog::LocalizeControls(HWND hDlg)
     HWND hPingLabel = GetDlgItem(hDlg, IDC_SPEED_PING_LABEL);
     if (hPingLabel) SetWindowTextW(hPingLabel, pingText.c_str());
     
-    // History label
-    std::wstring histText = LoadStringResource(IDS_SPEED_HISTORY);
-    if (histText.empty()) histText = L"History";
-    HWND hHistLabel = GetDlgItem(hDlg, IDC_SPEED_RESULT_GROUP);
-    if (hHistLabel) SetWindowTextW(hHistLabel, histText.c_str());
+    // GroupBox Title - Change to "Results"
+    std::wstring groupText = LoadStringResource(IDS_SPEED_RESULTS);
+    if (groupText.empty()) groupText = L"Results";
+    HWND hGroup = GetDlgItem(hDlg, IDC_SPEED_RESULT_GROUP);
+    if (hGroup) SetWindowTextW(hGroup, groupText.c_str());
+
+    // History Label
+    std::wstring historyText = LoadStringResource(IDS_SPEED_HISTORY);
+    if (historyText.empty()) historyText = L"History:";
+    HWND hHistoryLabel = GetDlgItem(hDlg, IDC_SPEED_HISTORY_LABEL);
+    if (hHistoryLabel) SetWindowTextW(hHistoryLabel, historyText.c_str());
+    
+    // Cancel button
+    std::wstring cancelText = LoadStringResource(IDS_SPEED_CANCEL);
+    if (cancelText.empty()) cancelText = L"Cancel";
+    HWND hCancel = GetDlgItem(hDlg, IDCANCEL);
+    if (hCancel) SetWindowTextW(hCancel, cancelText.c_str());
 }
 
 void SpeedTestDialog::InitializeHistoryList(HWND /*hDlg*/)
@@ -271,20 +302,28 @@ void SpeedTestDialog::InitializeHistoryList(HWND /*hDlg*/)
     col.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_FMT;
     col.fmt = LVCFMT_LEFT;
     
-    col.pszText = const_cast<LPWSTR>(L"Time");
+    std::wstring timeHeader = LoadStringResource(IDS_DASHBOARD_COL_TIME);
+    if (timeHeader.empty()) timeHeader = L"Time";
+    col.pszText = const_cast<LPWSTR>(timeHeader.c_str());
     col.cx = 120;
     ListView_InsertColumn(m_hHistoryList, 0, &col);
     
-    col.pszText = const_cast<LPWSTR>(L"Download");
+    std::wstring downHeader = LoadStringResource(IDS_DASHBOARD_COL_DOWN);
+    if (downHeader.empty()) downHeader = L"Download";
+    col.pszText = const_cast<LPWSTR>(downHeader.c_str());
     col.cx = 80;
     col.fmt = LVCFMT_RIGHT;
     ListView_InsertColumn(m_hHistoryList, 1, &col);
     
-    col.pszText = const_cast<LPWSTR>(L"Upload");
+    std::wstring upHeader = LoadStringResource(IDS_DASHBOARD_COL_UP);
+    if (upHeader.empty()) upHeader = L"Upload";
+    col.pszText = const_cast<LPWSTR>(upHeader.c_str());
     col.cx = 80;
     ListView_InsertColumn(m_hHistoryList, 2, &col);
     
-    col.pszText = const_cast<LPWSTR>(L"Ping");
+    std::wstring pingHeader = LoadStringResource(IDS_FLOATING_SHOW_PING);
+    if (pingHeader.empty()) pingHeader = L"Ping";
+    col.pszText = const_cast<LPWSTR>(pingHeader.c_str());
     col.cx = 60;
     ListView_InsertColumn(m_hHistoryList, 3, &col);
 }
@@ -337,6 +376,7 @@ void SpeedTestDialog::StartSpeedTest()
     if (!m_speedTester || m_isTestRunning) return;
     
     m_isTestRunning = true;
+    m_isTestComplete = false; // Reset complete flag
     
     // Update UI
     std::wstring testingText = LoadStringResource(IDS_SPEED_TESTING);
@@ -355,7 +395,7 @@ void SpeedTestDialog::StartSpeedTest()
     if (m_hDownloadValue) SetWindowTextW(m_hDownloadValue, L"...");
     if (m_hUploadValue) SetWindowTextW(m_hUploadValue, L"...");
     if (m_hPingValue) SetWindowTextW(m_hPingValue, L"...");
-    if (m_hStatusLabel) SetWindowTextW(m_hStatusLabel, testingText.c_str());
+    if (m_hStatusLabel) SetWindowTextW(m_hStatusLabel, L""); // Hide text in Status Label
     
     // Set callbacks
     HWND hDlg = m_hDlg;
@@ -408,6 +448,7 @@ void SpeedTestDialog::UpdateProgress(int progress, const std::wstring& status)
 void SpeedTestDialog::DisplayResult(const SpeedTestResult& result)
 {
     m_isTestRunning = false;
+    m_isTestComplete = true; // Mark as complete for green text
     
     // Re-enable button
     std::wstring startText = LoadStringResource(IDS_SPEED_TEST_BUTTON);
@@ -431,7 +472,12 @@ void SpeedTestDialog::DisplayResult(const SpeedTestResult& result)
         
         std::wstring completeText = LoadStringResource(IDS_SPEED_TEST_COMPLETE);
         if (completeText.empty()) completeText = L"Test complete";
-        if (m_hStatusLabel) SetWindowTextW(m_hStatusLabel, completeText.c_str());
+        if (m_hStatusLabel)
+        {
+            SetWindowTextW(m_hStatusLabel, completeText.c_str());
+            // Force repaint to show green text
+            InvalidateRect(m_hStatusLabel, nullptr, TRUE);
+        }
         
         // Save to history
         if (m_speedTestHistory)
@@ -501,6 +547,33 @@ bool SpeedTestDialog::OnDrawItem(DRAWITEMSTRUCT* pDrawItem)
     UINT id = pDrawItem->CtlID;
     if (id != IDC_SPEED_START_BUTTON && id != IDCANCEL) return false;
     
+    // Custom draw for Start Button when running to show Blue Text
+    if (id == IDC_SPEED_START_BUTTON && m_isTestRunning)
+    {
+        HDC hdc = pDrawItem->hDC;
+        RECT rc = pDrawItem->rcItem;
+        
+        // Background (Disabled Dark Button)
+        HBRUSH hBg = CreateSolidBrush(RGB(40, 40, 40)); // Standard dark bg
+        FillRect(hdc, &rc, hBg);
+        DeleteObject(hBg);
+        
+        // Border
+        HBRUSH hBorder = CreateSolidBrush(RGB(90, 90, 90));
+        FrameRect(hdc, &rc, hBorder);
+        DeleteObject(hBorder);
+        
+        // Text
+        SetBkMode(hdc, TRANSPARENT);
+        SetTextColor(hdc, RGB(80, 160, 240)); // Blue Text
+        
+        wchar_t text[256];
+        GetWindowTextW(pDrawItem->hwndItem, text, 256);
+        DrawTextW(hdc, text, -1, &rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+        
+        return true;
+    }
+
     DialogThemeHelper::DrawButton(pDrawItem, m_pConfig && m_pConfig->darkTheme);
     return true;
 }

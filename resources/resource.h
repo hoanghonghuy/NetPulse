@@ -343,7 +343,6 @@
 #define IDS_FLOATING_IP_LABEL           2196
 
 // Phase 3: Speed Test
-#define IDC_SPEED_TEST_BUTTON           2200
 #define IDC_SPEED_TEST_PROGRESS         2201
 #define IDC_SPEED_DOWNLOAD_LABEL        2202
 #define IDC_SPEED_DOWNLOAD_VALUE        2203
@@ -351,11 +350,11 @@
 #define IDC_SPEED_UPLOAD_VALUE          2205
 #define IDC_SPEED_PING_LABEL            2206
 #define IDC_SPEED_PING_VALUE            2207
-#define IDC_SPEED_HISTORY_BUTTON        2208
 #define IDC_SPEED_STATUS_LABEL          2209
 #define IDC_SPEED_HISTORY_LIST          2210
 #define IDC_SPEED_START_BUTTON          2211
 #define IDC_SPEED_RESULT_GROUP          2212
+#define IDC_SPEED_HISTORY_LABEL         2213
 
 #define IDS_SPEED_TEST_BUTTON           2220
 #define IDS_SPEED_TESTING               2221
@@ -363,10 +362,13 @@
 #define IDS_SPEED_UPLOAD                2223
 #define IDS_SPEED_PING                  2224
 #define IDS_SPEED_HISTORY               2225
+#define IDS_SPEED_RESULTS               2232
 #define IDS_SPEED_TEST_FAILED           2226
 #define IDS_SPEED_TEST_COMPLETE         2227
 #define IDS_SPEED_CANCEL                2228
 #define IDS_SPEED_TEST_DIALOG_TITLE     2229
+#define IDS_SPEED_TEST_DOWNLOAD         2230
+#define IDS_SPEED_TEST_UPLOAD           2231
 
 // Menu item for Speed Test
 #define IDM_SPEED_TEST                  2250

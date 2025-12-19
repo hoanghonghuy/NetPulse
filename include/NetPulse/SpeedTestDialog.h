@@ -94,6 +94,7 @@ private:
     
     // Test state
     bool m_isTestRunning = false;
+    bool m_isTestComplete = false;
 
     // External handle storage
     HWND* m_pExternalHandle = nullptr;

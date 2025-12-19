@@ -403,7 +403,8 @@ BEGIN
     IDS_SPEED_DOWNLOAD                   "Tải xuống:"
     IDS_SPEED_UPLOAD                     "Tải lên:"
     IDS_SPEED_PING                       "Ping:"
-    IDS_SPEED_HISTORY                    "Lịch sử"
+    IDS_SPEED_HISTORY                    "Lịch sử:"
+    IDS_SPEED_RESULTS                    "Kết quả"
     IDS_SPEED_TEST_FAILED                "Kiểm tra tốc độ thất bại"
     IDS_SPEED_TEST_COMPLETE              "Hoàn tất"
     IDS_SPEED_CANCEL                     "Hủy"
@@ -581,7 +582,8 @@ BEGIN
     IDS_SPEED_DOWNLOAD                   "ダウンロード:"
     IDS_SPEED_UPLOAD                     "アップロード:"
     IDS_SPEED_PING                       "Ping:"
-    IDS_SPEED_HISTORY                    "履歴"
+    IDS_SPEED_HISTORY                    "履歴:"
+    IDS_SPEED_RESULTS                    "結果"
     IDS_SPEED_TEST_FAILED                "速度テスト失敗"
     IDS_SPEED_TEST_COMPLETE              "完了"
     IDS_SPEED_CANCEL                     "キャンセル"
@@ -759,7 +761,8 @@ BEGIN
     IDS_SPEED_DOWNLOAD                   "다운로드:"
     IDS_SPEED_UPLOAD                     "업로드:"
     IDS_SPEED_PING                       "Ping:"
-    IDS_SPEED_HISTORY                    "기록"
+    IDS_SPEED_HISTORY                    "기록:"
+    IDS_SPEED_RESULTS                    "결과"
     IDS_SPEED_TEST_FAILED                "속도 테스트 실패"
     IDS_SPEED_TEST_COMPLETE              "완료"
     IDS_SPEED_CANCEL                     "취소"
@@ -937,7 +940,8 @@ BEGIN
     IDS_SPEED_DOWNLOAD                   "下载:"
     IDS_SPEED_UPLOAD                     "上传:"
     IDS_SPEED_PING                       "Ping:"
-    IDS_SPEED_HISTORY                    "历史"
+    IDS_SPEED_HISTORY                    "历史:"
+    IDS_SPEED_RESULTS                    "结果"
     IDS_SPEED_TEST_FAILED                "测速失败"
     IDS_SPEED_TEST_COMPLETE              "完成"
     IDS_SPEED_CANCEL                     "取消"
@@ -1152,7 +1156,8 @@ BEGIN
     LTEXT           "--",IDC_SPEED_PING_VALUE,65,92,60,10
     
     // History list
-    LTEXT           "History:",IDC_STATIC,10,118,30,10
+    // History list
+    LTEXT           "History:",IDC_SPEED_HISTORY_LABEL,10,118,30,10
     CONTROL         "",IDC_SPEED_HISTORY_LIST,"SysListView32",WS_TABSTOP | WS_BORDER | LVS_REPORT | LVS_SINGLESEL,10,130,260,45
     
     // Close button

@@ -600,7 +600,6 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                 UINT id = pDrawItem->CtlID;
                 if (id == IDC_DASHBOARD_BUTTON_EXPORT || id == IDC_DASHBOARD_EXPORT_CHART || 
                     id == IDC_HISTORY_MANAGE || id == IDC_DASHBOARD_REFRESH || id == IDOK ||
-                    id == IDC_SPEED_TEST_BUTTON ||
                     id == IDC_CHART_VIEW_DAILY || id == IDC_CHART_VIEW_MONTHLY ||
                     id == IDC_CHART_NAV_PREV || id == IDC_CHART_NAV_NEXT)
                 {

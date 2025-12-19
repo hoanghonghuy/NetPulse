@@ -297,6 +297,7 @@ bool SpeedTester::HttpDownload(const std::wstring& host, const std::wstring& pat
                                 size_t expectedBytes, double& speedMbps,
                                 std::function<void(size_t bytesReceived)> progressCallback)
 {
+    (void)expectedBytes; // Unused parameter
     HINTERNET hSession = WinHttpOpen(L"NetPulse/1.0",
                                       WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
                                       WINHTTP_NO_PROXY_NAME,
