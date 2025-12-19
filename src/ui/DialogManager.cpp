@@ -1,4 +1,5 @@
-﻿#include "NetPulse/DialogManager.h"
+﻿#include "NetPulse/Common.h"
+#include "NetPulse/DialogManager.h"
 #include "NetPulse/NetworkMonitor.h"
 #include "NetPulse/SettingsDialog.h"
 #include "NetPulse/DashboardDialog.h"
@@ -331,6 +332,10 @@ static INT_PTR CALLBACK AboutDialogProc(HWND hDlg, UINT message, WPARAM wParam, 
             OffsetRect(&rcDlg, -rcDlg.left, -rcDlg.top);
             OffsetRect(&rc, -rc.left, -rc.top);
             OffsetRect(&rc, -rcDlg.right, -rcDlg.bottom);
+
+            // Set version text dynamically from Common.h
+            std::wstring versionText = std::wstring(L"Version ") + APP_VERSION;
+            SetDlgItemTextW(hDlg, IDC_VERSION_TEXT, versionText.c_str());
 
             SetWindowPos(hDlg,
                 HWND_TOP,

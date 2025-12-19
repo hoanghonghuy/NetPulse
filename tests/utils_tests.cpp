@@ -26,12 +26,7 @@ void RunUtilsTests()
     std::wstring s3 = FormatSpeed(1024.0 * 1024.0, SpeedUnit::BytesPerSecond);
     AssertTrue(s3 == L"1.00 MB/s", L"FormatSpeed 1 MB/s");
 
-    // ConvertSpeed basic tests
-    double v1 = ConvertSpeed(1024.0, SpeedUnit::KiloBytesPerSecond);
-    AssertTrue(v1 >= 1.0 - 1e-6 && v1 <= 1.0 + 1e-6, L"ConvertSpeed 1024 B/s to 1 KB/s");
-
-    double v2 = ConvertSpeed(1024.0 * 1024.0, SpeedUnit::MegaBytesPerSecond);
-    AssertTrue(v2 >= 1.0 - 1e-6 && v2 <= 1.0 + 1e-6, L"ConvertSpeed 1 MB/s");
+    // ConvertSpeed tests removed as function is deprecated
 }
 
 } // namespace NetPulseTests

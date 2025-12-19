@@ -369,6 +369,7 @@
 #define IDS_SPEED_TEST_DIALOG_TITLE     2229
 #define IDS_SPEED_TEST_DOWNLOAD         2230
 #define IDS_SPEED_TEST_UPLOAD           2231
+// Verified IDs present
 
 // Menu item for Speed Test
 #define IDM_SPEED_TEST                  2250
