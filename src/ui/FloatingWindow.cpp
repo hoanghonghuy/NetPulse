@@ -349,14 +349,34 @@ LRESULT FloatingWindow::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 
 void FloatingWindow::Paint(HDC hdc)
 {
+    // Double buffering to prevent flicker
+    RECT rc;
+    GetClientRect(m_hwnd, &rc);
+    int width = rc.right - rc.left;
+    int height = rc.bottom - rc.top;
+
+    // Create memory DC and bitmap
+    HDC hdcMem = CreateCompatibleDC(hdc);
+    HBITMAP hbmMem = CreateCompatibleBitmap(hdc, width, height);
+    HBITMAP hbmOld = (HBITMAP)SelectObject(hdcMem, hbmMem);
+
+    // Paint to memory DC
     if (m_miniMode)
     {
-        PaintMiniMode(hdc);
+        PaintMiniMode(hdcMem);
     }
     else
     {
-        PaintNormal(hdc);
+        PaintNormal(hdcMem);
     }
+
+    // copy to screen
+    BitBlt(hdc, 0, 0, width, height, hdcMem, 0, 0, SRCCOPY);
+
+    // Cleanup
+    SelectObject(hdcMem, hbmOld);
+    DeleteObject(hbmMem);
+    DeleteDC(hdcMem);
 }
 
 void FloatingWindow::PaintMiniMode(HDC hdc)
