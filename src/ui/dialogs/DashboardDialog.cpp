@@ -296,6 +296,9 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                     ti.lpszText = LPSTR_TEXTCALLBACKW;
                     SendMessageW(m_hChartTooltip, TTM_ADDTOOL, 0, reinterpret_cast<LPARAM>(&ti));
                     SendMessageW(m_hChartTooltip, TTM_SETMAXTIPWIDTH, 0, 300);
+
+                    // Subclass to handle full custom drawing for dark theme
+                    SetWindowSubclass(m_hChartTooltip, TooltipSubclassProc, 1, reinterpret_cast<DWORD_PTR>(this));
                 }
 
                 // Subclass chart control for mouse events
@@ -609,11 +612,7 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
             }
             break;
         }
-        case WM_NOTIFY:
-        {
-            // Currently unused; header is subclassed directly in dark theme.
-            break;
-        }
+
     }
 
     return FALSE;
@@ -1166,6 +1165,72 @@ void DashboardDialog::UpdateTooltip(HWND hChart, int barIndex)
     SendMessageW(m_hChartTooltip, TTM_UPDATETIPTEXT, 0, reinterpret_cast<LPARAM>(&ti));
 }
 
+
+
+LRESULT CALLBACK DashboardDialog::TooltipSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam,
+                                             UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
+{
+    DashboardDialog* pThis = reinterpret_cast<DashboardDialog*>(dwRefData);
+    
+    // Only engage if dark theme is active
+    if (pThis && pThis->m_pConfig && pThis->m_pConfig->darkTheme)
+    {
+        switch (msg)
+        {
+            case WM_NCPAINT:
+                // Prevent system from drawing non-client borders (white border)
+                return 0;
+
+            case WM_ERASEBKGND:
+                return 1; // We handle painting
+
+            case WM_PAINT:
+            {
+                PAINTSTRUCT ps;
+                HDC hdc = BeginPaint(hwnd, &ps);
+                
+                RECT rc;
+                GetClientRect(hwnd, &rc);
+                
+                // Draw background
+                HBRUSH hBg = DialogThemeHelper::GetDarkBackgroundBrush();
+                FillRect(hdc, &rc, hBg);
+                // Cached brush, do not delete
+                
+                // Draw border
+                HBRUSH hBorder = CreateSolidBrush(DialogThemeHelper::DARK_BORDER);
+                FrameRect(hdc, &rc, hBorder);
+                DeleteObject(hBorder);
+                
+                // Get text
+                wchar_t text[512] = {};
+                GetWindowTextW(hwnd, text, 512);
+                
+                // Draw text
+                SetBkMode(hdc, TRANSPARENT);
+                SetTextColor(hdc, DialogThemeHelper::DARK_TEXT);
+                
+                // Padding
+                RECT rcText = rc;
+                InflateRect(&rcText, -4, -2);
+                
+                // Standard font
+                HFONT hFont = (HFONT)SendMessageW(hwnd, WM_GETFONT, 0, 0);
+                HGDIOBJ hOldFont = nullptr;
+                if (hFont) hOldFont = SelectObject(hdc, hFont);
+                
+                DrawTextW(hdc, text, -1, &rcText, DT_LEFT | DT_TOP | DT_WORDBREAK | DT_NOPREFIX);
+                
+                if (hOldFont) SelectObject(hdc, hOldFont);
+                
+                EndPaint(hwnd, &ps);
+                return 0;
+            }
+        }
+    }
+
+    return DefSubclassProc(hwnd, msg, wParam, lParam);
+}
 
 } // namespace NetPulse
 

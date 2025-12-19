@@ -64,6 +64,10 @@ private:
     void OnChartMouseMove(HWND hChart, int x, int y);
     void OnChartLButtonDown(HWND hChart, int x, int y);
     void UpdateTooltip(HWND hChart, int barIndex);
+
+    // Tooltip subclass
+    static LRESULT CALLBACK TooltipSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam,
+                                                UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
 };
 
 } // namespace NetPulse
