@@ -380,6 +380,9 @@
 #define IDM_CONNECTION_LOG              2260
 #define IDS_MENU_CONNECTION_LOG         2261
 
+// Menu item for Check for Updates
+#define IDS_MENU_CHECK_FOR_UPDATES      2280
+
 // Connection Log Dialog column headers (i18n)
 #define IDS_CONNLOG_COL_PROCESS         2270
 #define IDS_CONNLOG_COL_PID             2271

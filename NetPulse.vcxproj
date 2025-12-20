@@ -231,6 +231,7 @@
     <ClCompile Include="src\ui\dialogs\SpeedTestDialog.cpp" />
     <ClCompile Include="src\ui\dialogs\ConnectionLogDialog.cpp" />
     <ClCompile Include="src\core\ConnectionMonitor.cpp" />
+    <ClCompile Include="src\core\UpdateChecker.cpp" />
     <ClCompile Include="third_party\sqlite\sqlite3.c" />
   </ItemGroup>
   <!-- ====================================================================== -->
@@ -272,6 +273,7 @@
     <ClInclude Include="include\NetPulse\ConnectionLogDialog.h" />
     <ClInclude Include="include\NetPulse\Interfaces\IVpnProxyProvider.h" />
     <ClInclude Include="include\NetPulse\Interfaces\ISpeedTestProvider.h" />
+    <ClInclude Include="include\NetPulse\UpdateChecker.h" />
     <ClInclude Include="resources\resource.h" />
   </ItemGroup>
   <!-- ====================================================================== -->

@@ -487,6 +487,7 @@ HMENU TrayIcon::CreateContextMenu(const AppConfig& config, bool overlayVisible, 
     AddNativeMenuItem(hMenu, IDM_SPEED_TEST, LoadStringResource(IDS_MENU_SPEED_TEST));
     AddNativeMenuItem(hMenu, IDM_CONNECTION_LOG, LoadStringResource(IDS_MENU_CONNECTION_LOG));
     AddNativeMenuItem(hMenu, IDM_ABOUT, LoadStringResource(IDS_MENU_ABOUT));
+    AddNativeMenuItem(hMenu, IDM_CHECK_FOR_UPDATES, LoadStringResource(IDS_MENU_CHECK_FOR_UPDATES));
     
     AddNativeMenuItem(hMenu, 0, L"", false, true); // Separator
 
