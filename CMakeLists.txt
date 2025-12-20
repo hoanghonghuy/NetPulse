@@ -71,6 +71,7 @@ set(HEADER_FILES
     include/NetPulse/HotkeyManager.h
     include/NetPulse/MenuHandler.h
     include/NetPulse/UpdateCoordinator.h
+    include/NetPulse/UpdateChecker.h
     include/NetPulse/DialogManager.h
     include/NetPulse/LanguageManager.h
     include/NetPulse/DataUsageMonitor.h
@@ -109,6 +110,7 @@ set(SOURCE_FILES
     src/core/HotkeyManager.cpp
     src/core/MenuHandler.cpp
     src/core/UpdateCoordinator.cpp
+    src/core/UpdateChecker.cpp
     src/core/LanguageManager.cpp
     src/core/DataUsageMonitor.cpp
     src/core/SystemMonitor.cpp

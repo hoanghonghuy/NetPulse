@@ -46,6 +46,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "&Settings...",            IDM_SETTINGS
         MENUITEM "&Dashboard...",           IDM_DASHBOARD
+        MENUITEM "Check for &Updates",      IDM_CHECK_FOR_UPDATES
         MENUITEM "&About...",               IDM_ABOUT
         MENUITEM SEPARATOR
         MENUITEM "E&xit",                   IDM_EXIT

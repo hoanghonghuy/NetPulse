@@ -25,6 +25,7 @@ public:
     using ExitCallback = std::function<void()>;
     using UpdateTimerCallback = std::function<void(UINT intervalMs)>;
     using ToggleFloatingWindowCallback = std::function<void()>;
+    using CheckForUpdatesCallback = std::function<void()>;
 
     MenuHandler();
     ~MenuHandler();
@@ -51,6 +52,7 @@ public:
     void SetToggleFloatingWindowCallback(ToggleFloatingWindowCallback callback);
     void SetShowPerAppCallback(ShowDialogCallback callback);
     void SetShowConnectionLogCallback(ShowDialogCallback callback);
+    void SetCheckForUpdatesCallback(CheckForUpdatesCallback callback);
 
     /**
      * Handle a menu command
@@ -74,6 +76,7 @@ private:
     ToggleFloatingWindowCallback m_toggleFloatingWindowCallback;
     ShowDialogCallback m_showPerAppCallback;
     ShowDialogCallback m_showConnectionLogCallback;
+    CheckForUpdatesCallback m_checkForUpdatesCallback;
 };
 
 } // namespace NetPulse

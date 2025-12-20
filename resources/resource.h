@@ -45,6 +45,7 @@
 #define IDM_DASHBOARD                   1009
 #define IDM_SHOW_FLOATING_WINDOW        1010
 #define IDM_PERAPP                      1011
+#define IDM_CHECK_FOR_UPDATES           1012
 
 // ============================================================================
 // DIALOG RESOURCES

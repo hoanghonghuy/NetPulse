@@ -76,6 +76,11 @@ void MenuHandler::SetShowConnectionLogCallback(ShowDialogCallback callback)
     m_showConnectionLogCallback = callback;
 }
 
+void MenuHandler::SetCheckForUpdatesCallback(CheckForUpdatesCallback callback)
+{
+    m_checkForUpdatesCallback = callback;
+}
+
 void MenuHandler::HandleCommand(UINT menuId)
 {
     if (!m_pConfig)
@@ -142,6 +147,10 @@ void MenuHandler::HandleCommand(UINT menuId)
 
         case IDM_ABOUT:
             if (m_showAboutCallback) m_showAboutCallback();
+            break;
+
+        case IDM_CHECK_FOR_UPDATES:
+            if (m_checkForUpdatesCallback) m_checkForUpdatesCallback();
             break;
 
         case IDM_EXIT:

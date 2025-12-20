@@ -6,6 +6,7 @@
 #include "NetPulse/HistoryDialog.h"
 
 #include "NetPulse/ThemeHelper.h"
+#include "NetPulse/UpdateChecker.h"
 #include "../../resources/resource.h"
 #include <windowsx.h>
 #include <commctrl.h>
@@ -194,6 +195,7 @@ bool Application::Initialize(HINSTANCE hInstance)
     m_pMenuHandler->SetShowPerAppCallback([this]() { ShowPerAppDialog(); });
     m_pMenuHandler->SetShowSpeedTestCallback([this]() { ShowSpeedTestDialog(); });
     m_pMenuHandler->SetShowConnectionLogCallback([this]() { ShowConnectionLogDialog(); });
+    m_pMenuHandler->SetCheckForUpdatesCallback([this]() { CheckForUpdates(); });
 
     // Create and initialize UpdateCoordinator
     m_pUpdateCoordinator = std::make_unique<UpdateCoordinator>();
@@ -847,6 +849,12 @@ void Application::OnHotkey(int hotkeyId)
             LogDebug(L"Application::OnHotkey: Toggled overlay visibility");
         }
     }
+}
+
+
+void Application::CheckForUpdates()
+{
+    UpdateChecker::CheckForUpdates(nullptr, false);
 }
 
 } // namespace NetPulse

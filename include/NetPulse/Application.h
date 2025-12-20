@@ -56,6 +56,8 @@ public:
     void ShowPerAppDialog();
     void ShowSpeedTestDialog();
     void ShowConnectionLogDialog();
+    void CheckForUpdates();
+
     void OnTaskbarOverlayRightClick();
 
     // Menu command handling (delegated to MenuHandler)
