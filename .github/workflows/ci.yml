@@ -30,9 +30,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build
-          key: ${{ runner.os }}-cmake-${{ matrix.build_type }}-${{ hashFiles('CMakeLists.txt', 'tests/CMakeLists.txt', 'src/**', 'include/**') }}
+          key: v2-${{ runner.os }}-cmake-${{ matrix.build_type }}-${{ hashFiles('CMakeLists.txt', 'tests/CMakeLists.txt', 'src/**', 'include/**') }}
           restore-keys: |
-            ${{ runner.os }}-cmake-${{ matrix.build_type }}-
+            v2-${{ runner.os }}-cmake-${{ matrix.build_type }}-
 
       - name: Configure CMake
         run: cmake -S . -B build -DBUILD_TESTS=ON
