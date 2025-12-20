@@ -273,8 +273,8 @@ namespace
                      return TRUE;
                  }
              }
-             break;
         }
+        break;
 
         case WM_CTLCOLORDLG:
         case WM_CTLCOLORSTATIC:

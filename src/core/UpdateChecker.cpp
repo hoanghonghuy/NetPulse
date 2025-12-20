@@ -1,14 +1,11 @@
 #include "NetPulse/UpdateChecker.h"
 #include "NetPulse/Utils.h"
-#include <windows.h>
 #include <shellapi.h>
 #include <winhttp.h>
 #include <thread>
 #include <vector>
 #include <sstream>
 #include <regex>
-
-#pragma comment(lib, "winhttp.lib")
 
 namespace NetPulse
 {
