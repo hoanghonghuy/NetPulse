@@ -11,7 +11,7 @@ cmake_minimum_required(VERSION 3.15)
 # ============================================================================
 
 project(NetPulse
-    VERSION 2.0.0
+    VERSION 2.2.0
     DESCRIPTION "Network Traffic Monitor for Windows System Tray"
     LANGUAGES C CXX
 )

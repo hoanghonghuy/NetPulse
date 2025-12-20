@@ -2,6 +2,16 @@
 
 All notable changes to NetworkMonitor will be documented in this file.
 
+## [2.2.0] - 2025-12-20
+
+### Improved
+- **Native Dark Mode Menus**: Transitioned Tray Menu from legacy Owner-Draw to Native Windows Menu to resolve white border issues and improve Windows 11 compatibility.
+- **Dashboard Tooltips**: Completely rewritten chart tooltips using Window Subclassing to support full Dark Mode (Dark background, Light text, Custom border), removing the default system style.
+
+### Fixed
+- **UI Consistency**: Fixed various themed controls (Buttons, Edit Boxes) to respect Dark Mode settings immediately without restart.
+- **Code Cleanup**: Removed legacy owner-draw code and unused headers.
+
 ## [2.1.0] - 2025-12-18
 
 ### Added
