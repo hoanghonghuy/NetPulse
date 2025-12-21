@@ -1,174 +1,82 @@
-# NetworkMonitor
+# NetPulse
 
-NetworkMonitor is a lightweight C++ Win32 application for monitoring network traffic on Windows. It displays real-time download/upload speeds in the system tray and taskbar, and logs history to SQLite for statistics.
+NetPulse is a lightweight C++ Win32 application for monitoring network traffic on Windows. It displays real-time download/upload speeds in the system tray, taskbar overlay, and desktop widget, while offering advanced tools like Speed Test, Connection Monitoring, and History logging.
 
 ## Main Features
 
-- **Tray icon**: displays current speed, detailed tooltip, icon changes according to load level (idle / active / high).
-- **Taskbar overlay**: 2 lines of text (Down / Up) located next to the system tray area, always displaying real-time speed.
-- **Speed Test**: Integrated tool to measure download/upload bandwidth and latency.
-- **Ping Monitor**: Real-time latency display on overlay with color coding (green <100ms, yellow 100-200ms, red >200ms, "---" on timeout).
-- **Keyboard Shortcut**: Press `Win+Shift+N` to toggle overlay visibility (customizable in Settings).
-- **Connection Notifications**: Optional balloon notification when network connects/disconnects.
-- **Multiple Network Interfaces**: can monitor all interfaces or select a specific interface.
-- **Dashboard**:
-  - Total traffic **Today / This month**.
-  - List of recent samples (time, interface, download, upload).
-  - Simple charts based on historical data.
-- **History logging (SQLite)**:
-  - Record usage by interval to the file `network_usage.db` next to `NetworkMonitor.exe`.
-  - Automatically clean history by the number of days configured.
-  - Dialog "Manage history" to delete all or keep only the last 30 / 90 days.
-- **Settings**:
-  - Update cycle: Fast (1s) / Normal (2s) / Slow (5s).
-  - Display units: B/s, KB/s, MB/s, Mbps.
-  - Autostart with Windows.
-  - Turn on/off history recording.
-  - Select the interface to monitor.
-  - Select UI language: System / English / Vietnamese.
-  - Configure ping target (IP/domain) and interval.
-  - Customize hotkey for overlay toggle.
-  - Enable/disable connection notifications.
-- **Detailed Connection Log**: Real-time view of TCP/UDP connections, processes, and ports (Mini DPI).
-- **Portable Mode**: Run entirely from a USB drive without installation or registry usage.
-- **Per-App Usage**: Monitor network usage per application (process). **Requires Administrator privileges.**
-- **Floating Widget**: Desktop widget for quick stats overview (Network, CPU, RAM).
-- **System Monitor**: Real-time CPU and RAM usage monitoring.
-- **Data Usage Alerts**: Monthly quota tracking and configurable alerts.
-- **Multilingual (i18n)**:
-  - All menus, dialogs, message boxes use STRINGTABLE.
-  - Supports: English, Vietnamese, Japanese, Korean, Chinese (Simplified).
-- **Performance**:
-  - Very light background application, CPU almost 0%, RAM only a few MB.
+- **System Integration**:
+  - **Tray Icon**: Displays current speed, detailed tooltip, and animated icon based on traffic load.
+  - **Taskbar Overlay**: unobtrusive 2-line speed display (Down/Up) right on your taskbar.
+  - **Floating Widget**: Desktop widget showing Network (with Sparkline graph), CPU, and RAM usage.
+  - **VPN & Proxy Detection**: Automatically detects active VPN connections (OpenVPN, WireGuard, etc.) and displays your real-time Public IP.
+
+- **Network Tools**:
+  - **Speed Test**: Integrated bandwidth test for Download, Upload, and Ping latency with history tracking.
+  - **Ping Monitor**: Real-time latency tracking with color-coded status (Green/Yellow/Red).
+  - **Connection Log (Mini DPI)**: Real-time monitoring of active TCP/UDP connections, processes, and remote hosts.
+  - **Data Usage Monitor**: Track daily/monthly usage with configurable quotas and alerts.
+
+- **Dashboard & Analytics**:
+  - **Interactive Charts**: Visualize traffic history with hover tooltips and drill-down capabilities (Monthly -> Daily).
+  - **History Logging**: SQLite-based logging of all network activity.
+  - **Export Data**: Export usage history to CSV or save Dashboard charts as images (BMP).
+
+- **Customization & UI**:
+  - **Native Dark Mode**: Fully themed UI including menus, dialogs, and tooltips to match Windows 11/10 aesthetics.
+  - **Multilingual**: Complete support for English, Vietnamese, Japanese, Korean, and Chinese (Simplified).
+  - **Portable Mode**: Run entirely from a USB drive by simply placing a `netpulse.ini` file next to the executable.
 
 ## Requirements
 
-- **OS**: Windows 10/11 (Win7+ can build but not tested thoroughly).
-- **Architecture**: x64.
-- **Build**:
-  - Visual Studio 2019/2022 with Windows 10 SDK (C++17).
-  - Or CMake ≥ 3.15 + MSVC.
+- **OS**: Windows 10/11 x64.
+- **Build**: Visual Studio 2019/2022 (C++17) or CMake ≥ 3.15.
 
-## Build from source
+## Build from Source
 
-### Visual Studio (recommended)
+### Visual Studio (Recommended)
 
-1. Clone repo:
-
-```bash
-git clone https://github.com/hoanghonghuy/NetworkMonitor.git
-cd NetworkMonitor
-```
-
-2. Open `NetworkMonitor.sln` in Visual Studio.
-3. Select the **Release | x64** configuration.
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/hoanghonghuy/NetPulse.git
+   cd NetPulse
+   ```
+2. Open `NetPulse.sln` in Visual Studio.
+3. Select **Release | x64** configuration.
 4. Build solution (`Ctrl+Shift+B`).
-5. Run `NetworkMonitor.exe` in the output folder.
+5. Run `NetPulse.exe` from the output directory.
 
 ### CMake
 
-1. Clone the repo and create a build folder:
-
-```bash
-git clone https://github.com/hoanghonghuy/NetworkMonitor.git
-cd NetworkMonitor
-mkdir build
-cd build
-```
-
-2. Generate & build (example for VS 2022 x64):
-
-```bash
-cmake .. -G "Visual Studio 17 2022" -A x64
-cmake --build . --config Release
-```
-
-3. Run `NetworkMonitor.exe` in `build/Release`.
-
-### Run tests with CMake
-
-To enable and run the test suite using CMake (Debug configuration):
-
-```bash
-cmake -S . -B build -DBUILD_TESTS=ON
-cmake --build build --config Debug
-cd build
-ctest -C Debug --output-on-failure
-```
+1. Clone and prepare build directory:
+   ```bash
+   git clone https://github.com/hoanghonghuy/NetPulse.git
+   cd NetPulse
+   mkdir build && cd build
+   ```
+2. Generate and build:
+   ```bash
+   cmake .. -G "Visual Studio 17 2022" -A x64
+   cmake --build . --config Release
+   ```
 
 ## Usage
 
-- After running, the application is located in the **system tray**.
-- **Right‑click** tray icon to open the menu:
-  - Update Interval.
-  - Start with Windows.
-  - Dashboard…
-  - Settings…
-  - About…
-  - Exit.
-- **Keyboard shortcut**: Press `Win+Shift+N` to toggle overlay visibility.
-- **Dashboard**:
-  - Open from the context menu.
-  - **Refresh** button to update data.
-  - **Manage history…** button to clean the DB (delete all / keep 30 / 90 days).
-- **Settings**:
-  - Adjust update interval, display unit, logging, auto‑start, interface and language.
-  - Configure ping target, interval, and hotkey in the Advanced section.
-  - Changing the Language will apply to the texts retrieved from the resource (menu, dialog, message).
+- **Tray Menu**: Right-click the system tray icon to access:
+  - **Dashboard**: View charts, history, and usage details.
+  - **Speed Test**: Run bandwidth tests.
+  - **Connection Log**: View active connections.
+  - **Check for Updates**: Check for the latest version.
+  - **Settings**: Configure language, units, auto-start, and more.
+- **Shortcuts**:
+  - `Win+Shift+N`: Toggle Taskbar Overlay visibility (customizable).
+  - `F5/F6`: Adjust brightness (if supported).
 
-## Architecture overview
+## Configuration
 
-The codebase is organized into clear layers:
-
-- **src/entry**
-  - `main.cpp`: Win32 `WinMain` entry. Creates a single-instance mutex and runs `NetworkMonitor::Application`.
-
-- **src/core**
-  - `Application`: main controller that owns the hidden message window, timer, `ConfigManager`, `NetworkMonitorClass`, `TrayIcon`, `TaskbarOverlay` and drives the app lifecycle (`Initialize`, `Run`, `Cleanup`).
-  - `NetworkMonitorClass`: collects per-interface traffic statistics using Win32/IP Helper APIs.
-  - `ConfigManager`: loads/saves settings (registry) into `AppConfig`.
-  - `HistoryLogger`: singleton that logs samples to SQLite and exposes queries used by the dashboard.
-  - `PingMonitor`: ICMP ping monitor using Windows ICMP API.
-  - `NetworkCalculator`, `Utils` helpers.
-
-- **src/ui**
-  - `TrayIcon`: creates the system tray icon, context menu and routes menu commands back to `Application::OnMenuCommand`.
-  - `TaskbarOverlay`: draws the 2-line speed overlay window near the taskbar and forwards right-clicks to the tray menu.
-
-- **src/ui/dialogs**
-  - `SettingsDialog`: modal settings dialog; edits `AppConfig` through `ConfigManager`.
-  - `DashboardDialog`: shows Today/This month totals, chart and recent samples, backed by `HistoryLogger`.
-  - `HistoryDialog`: simple dialog that calls `HistoryLogger::DeleteAll` / `TrimToRecentDays`.
-
-- **resources**
-  - `app.rc`, `resource.h`, icons, manifest and all STRINGTABLEs (EN/VI) for menus and dialogs.
-
-High-level data flow:
-
-1. `WinMain` → `Application::Initialize()` sets up window class, hidden window, timer and components.
-2. Timer (`WM_TIMER`) → `Application::OnTimer()` updates `NetworkMonitorClass`, logs samples via `HistoryLogger` and refreshes tray icon & overlay.
-3. Tray menu commands → `Application::OnMenuCommand()` (update interval, settings, dashboard, history, about, exit).
-4. Dialogs are created by `Application` as needed and operate purely on `AppConfig`/`HistoryLogger`, keeping UI logic separate from core.
-
-## Configuration & Data
-
-- **Registry**: save configuration under key
-
-```text
-HKEY_CURRENT_USER\Software\NetworkMonitor
-```
-
-Includes: `UpdateInterval`, `DisplayUnit`, `EnableLogging`, `HistoryAutoTrimDays`,
-`Language`, `SelectedInterface`, `PingTarget`, `PingIntervalMs`, `HotkeyModifier`, `HotkeyKey`, and auto‑start status (Run key).
-
-- **History**:
-  - SQLite file: `network_usage.db` placed next to `NetworkMonitor.exe`.
-  - Table `usage(timestamp, interface, bytes_down, bytes_up)` + index by `timestamp`.
-  - Automatically trim by `HistoryAutoTrimDays` if value > 0.
-
-- **Auto‑start**:
-  - Use `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` with value name `NetworkMonitor`.
+Settings are saved in the Registry (`HKCU\Software\NetworkMonitor`) or in `netpulse.ini` (Portable Mode).
+- **Auto-start**: Option to start with Windows (Standard or Administrator privileges).
+- **History**: SQLite database `network_usage.db` stores all traffic data.
 
 ## License
 
-The project is released under the **MIT** license. See the `LICENSE` file for details.
+This project is licensed under the **MIT License**. See the `LICENSE` file for details.
