@@ -23,6 +23,7 @@ NetPulse is a lightweight C++ Win32 application for monitoring network traffic o
 
 - **Customization & UI**:
   - **Native Dark Mode**: Fully themed UI including menus, dialogs, and tooltips to match Windows 11/10 aesthetics.
+  - **Theme Presets**: 13 built-in themes including Dark, Light, Dracula, Cyberpunk, Nord, Forest, OLED Black, Solarized Light, Morning Mist, Soft Paper, Mint Fresh, Lavender, and Rose Pink.
   - **Multilingual**: Complete support for English, Vietnamese, Japanese, Korean, and Chinese (Simplified).
   - **Portable Mode**: Run entirely from a USB drive by simply placing a `netpulse.ini` file next to the executable.
 
