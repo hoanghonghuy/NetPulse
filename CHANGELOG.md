@@ -2,6 +2,15 @@
 
 All notable changes to NetworkMonitor will be documented in this file.
 
+## [2.3.0] - 2025-12-22
+
+### Added
+- **Rose Pink Theme**: New light pink/rose color theme preset with soft, warm tones for a gentle aesthetic.
+
+### Changed
+- **Codebase Cleanup**: Removed unused ImGui library (~500KB) and legacy build artifacts for a cleaner, smaller repository.
+- **Updated .gitignore**: Added `temp_build/` to prevent CMake artifacts from being tracked.
+
 ## [2.2.0] - 2025-12-20
 
 ### Improved
