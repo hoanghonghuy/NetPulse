@@ -5,11 +5,19 @@ All notable changes to NetworkMonitor will be documented in this file.
 ## [2.3.0] - 2025-12-22
 
 ### Added
-- **Rose Pink Theme**: New light pink/rose color theme preset with soft, warm tones for a gentle aesthetic.
+- **Unified Theming System**: Introduced a new, robust `ThemeColors` architecture to standardize and manage application themes, enabling easy expansion and consistent styling.
+- **13 Theme Presets**: The application now features a comprehensive collection of 13 high-quality built-in themes:
+  - **Dark**: Standard Dark, Dracula, Cyberpunk (Neon), Nord, Forest (Matcha), OLED Black.
+  - **Light**: Standard Light, Solarized Light, Morning Mist (Blue), Soft Paper (Warm/Sepia), Mint Fresh (Green), Lavender (Purple), Rose Pink.
+- **Check for Updates**: New menu item in the Tray Icon context menu to manually check for application updates.
 
 ### Changed
 - **Codebase Cleanup**: Removed unused ImGui library (~500KB) and legacy build artifacts for a cleaner, smaller repository.
 - **Updated .gitignore**: Added `temp_build/` to prevent CMake artifacts from being tracked.
+- **README**: Added complete list of 13 theme presets.
+
+### Fixed
+- **Dark Theme Polish**: Resolved remaining dark mode issues for consistent UI rendering across all dialogs.
 
 ## [2.2.0] - 2025-12-20
 
