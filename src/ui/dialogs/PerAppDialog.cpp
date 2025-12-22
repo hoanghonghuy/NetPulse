@@ -99,7 +99,7 @@ INT_PTR PerAppDialog::InstanceDialogProc(HWND hDlg, UINT message, WPARAM wParam,
         break;
 
     case WM_DRAWITEM:
-        if (m_pConfig && m_pConfig->darkTheme)
+        if (m_pConfig && IsCustomThemeEnabled(*m_pConfig))
         {
             DRAWITEMSTRUCT* pDrawItem = reinterpret_cast<DRAWITEMSTRUCT*>(lParam);
             if (pDrawItem->CtlType == ODT_BUTTON)
@@ -124,7 +124,7 @@ INT_PTR PerAppDialog::InstanceDialogProc(HWND hDlg, UINT message, WPARAM wParam,
         return TRUE;
 
     case WM_CTLCOLORDLG:
-        if (m_pConfig && m_pConfig->darkTheme)
+        if (m_pConfig && IsCustomThemeEnabled(*m_pConfig))
         {
             HDC hdc = reinterpret_cast<HDC>(wParam);
             HBRUSH hBrush = DialogThemeHelper::HandleControlColor(hdc, true);
@@ -140,7 +140,7 @@ INT_PTR PerAppDialog::InstanceDialogProc(HWND hDlg, UINT message, WPARAM wParam,
     case WM_CTLCOLORBTN:
     case WM_CTLCOLOREDIT:
     case WM_CTLCOLORLISTBOX:
-        if (m_pConfig && m_pConfig->darkTheme)
+        if (m_pConfig && IsCustomThemeEnabled(*m_pConfig))
         {
             HDC hdc = reinterpret_cast<HDC>(wParam);
             return reinterpret_cast<INT_PTR>(DialogThemeHelper::HandleControlColor(hdc, true));
@@ -157,20 +157,21 @@ void PerAppDialog::InitializeDialog(HWND hDlg)
     CenterWindowOnScreen(hDlg);
 
     // Determine theme from config (not system theme!)
-    bool darkTheme = (m_pConfig && m_pConfig->darkTheme);
+    bool customTheme = (m_pConfig && IsCustomThemeEnabled(*m_pConfig));
+    bool darkTheme = (m_pConfig && IsDarkThemeEnabled(*m_pConfig));
     
     // Enable dark mode for the window FIRST (required before DwmSetWindowAttribute)
+    // Only strictly needed for actual Dark Mode - light themes use light title bar
     if (darkTheme)
     {
         ThemeHelper::AllowDarkModeForWindow(hDlg, true);
     }
     
-    // Apply dark title bar (like Dashboard, Settings dialogs)
+    // Apply dark title bar only for dark themes
     ThemeHelper::ApplyDarkTitleBar(hDlg, darkTheme);
     
     // Apply DialogThemeHelper for consistent theming with Settings/Dashboard
-    // DialogThemeHelper::ApplyToDialog(hDlg, darkTheme); // REMOVED: Breaks dark title bar
-    if (darkTheme) {
+    if (customTheme) {
         DialogThemeHelper::SetThinWindowBorder(hDlg);
     }
     
@@ -348,40 +349,27 @@ void PerAppDialog::RefreshData(HWND hDlg)
 
 void PerAppDialog::ApplyTheme(HWND hDlg) const
 {
-    if (m_pConfig && m_pConfig->darkTheme)
+    bool customTheme = (m_pConfig && IsCustomThemeEnabled(*m_pConfig));
+    bool useDarkScrollbar = (m_pConfig && IsDarkThemeEnabled(*m_pConfig));
+    
+    if (customTheme)
     {
         // Apply thin window border (fixes white frame issue)
         DialogThemeHelper::SetThinWindowBorder(hDlg);
         
-        // Apply dark theme to list view
-        // Apply dark theme to list view
+        // Apply theme to list view (scrollbar dark/light based on IsDarkThemeEnabled)
         if (m_hList)
         {
-            DialogThemeHelper::ApplyDarkListView(m_hList, true);
+            DialogThemeHelper::ApplyDarkListView(m_hList, useDarkScrollbar);
         }
-    }
-    else
-    {
-        // Apply light theme to dialog
-        DialogThemeHelper::ApplyToDialog(hDlg, false);
         
-        // Light theme colors
-        if (m_hList)
-        {
-            DialogThemeHelper::ApplyDarkListView(m_hList, false);
-        }
-    }
-
-    // Toggle BS_OWNERDRAW on buttons based on theme
-    bool useOwnerDraw = (m_pConfig && m_pConfig->darkTheme);
-    if (useOwnerDraw)
-    {
+        // Toggle BS_OWNERDRAW on buttons for custom theme
         DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDOK));
         DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDC_PERAPP_REFRESH));
         DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDCANCEL));
     }
+    // For SystemDefault/Light theme: use default Windows controls - no custom styling needed
 }
-
 
 
 } // namespace NetPulse

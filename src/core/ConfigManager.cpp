@@ -95,7 +95,7 @@ bool ConfigManager::LoadConfig(AppConfig& config)
 
     // Load theme mode if present; otherwise infer from legacy DarkTheme
     DWORD rawThemeMode = ReadDWORD(hKey, L"ThemeMode", static_cast<DWORD>(ThemeMode::SystemDefault));
-    if (rawThemeMode > static_cast<DWORD>(ThemeMode::Dark))
+    if (rawThemeMode > static_cast<DWORD>(ThemeMode::RosePink))
     {
         // Registry does not contain a valid ThemeMode value yet.
         // Infer mode from legacy DarkTheme and current system theme so

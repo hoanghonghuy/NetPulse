@@ -1,6 +1,8 @@
 ﻿#ifndef NETWORK_MONITOR_THEMEHELPER_H
 #define NETWORK_MONITOR_THEMEHELPER_H
 
+#include "NetPulse/ThemeColors.h"
+#include "NetPulse/Common.h"
 #include <windows.h>
 #include <dwmapi.h>
 
@@ -57,6 +59,21 @@ public:
      * Called automatically by other methods, but can be called explicitly.
      */
     static void Initialize();
+
+    /**
+     * Get the current color palette based on theme preference.
+     * @param dark true for Dark Mode, false for Light Mode
+     * @return Reference to the ThemeColors structure
+     */
+    static const struct ThemeColors& GetColors(ThemeMode mode);
+    static const struct ThemeColors& GetColors(bool dark);
+
+    /**
+     * Set the current application theme mode.
+     * Use this to update the global theme state so GetColors(bool) returns the correct preset.
+     */
+    static void SetCurrentTheme(ThemeMode mode);
+    static ThemeMode GetCurrentTheme();
 };
 
 } // namespace NetPulse

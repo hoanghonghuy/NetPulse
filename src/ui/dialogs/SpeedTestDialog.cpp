@@ -107,7 +107,7 @@ INT_PTR SpeedTestDialog::HandleMessage(HWND hDlg, UINT message, WPARAM wParam, L
         case WM_CTLCOLORDLG:
         case WM_CTLCOLORSTATIC:
         case WM_CTLCOLORBTN:
-            if (m_pConfig && m_pConfig->darkTheme)
+            if (m_pConfig && IsCustomThemeEnabled(*m_pConfig))
             {
                 HDC hdc = reinterpret_cast<HDC>(wParam);
                 int id = GetDlgCtrlID(reinterpret_cast<HWND>(lParam));
@@ -116,12 +116,14 @@ INT_PTR SpeedTestDialog::HandleMessage(HWND hDlg, UINT message, WPARAM wParam, L
                 if (id == IDC_SPEED_STATUS_LABEL)
                 {
                     SetBkMode(hdc, TRANSPARENT);
+                    const auto& colors = ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme());
+                    
                     if (m_isTestComplete)
-                         SetTextColor(hdc, RGB(0, 255, 128)); // Bright Green
+                         SetTextColor(hdc, colors.chartUpload); // Use Upload/Success green
                     else if (m_isTestRunning)
-                         SetTextColor(hdc, RGB(80, 160, 240)); // Blue (matches progress bar)
+                         SetTextColor(hdc, colors.chartDownload); // Use Download/Active blue
                     else
-                         SetTextColor(hdc, DialogThemeHelper::DARK_TEXT);
+                         SetTextColor(hdc, colors.dialogText);
                     
                     return reinterpret_cast<INT_PTR>(DialogThemeHelper::GetDarkBackgroundBrush());
                 }
@@ -135,7 +137,7 @@ INT_PTR SpeedTestDialog::HandleMessage(HWND hDlg, UINT message, WPARAM wParam, L
             break;
             
         case WM_DRAWITEM:
-            if (m_pConfig && m_pConfig->darkTheme)
+            if (m_pConfig && IsCustomThemeEnabled(*m_pConfig))
             {
                 if (OnDrawItem(reinterpret_cast<DRAWITEMSTRUCT*>(lParam)))
                 {
@@ -202,7 +204,7 @@ void SpeedTestDialog::OnInitDialog(HWND hDlg)
     PopulateHistoryList();
     
     // Apply dark theme if enabled
-    if (m_pConfig && m_pConfig->darkTheme)
+    if (m_pConfig && IsCustomThemeEnabled(*m_pConfig))
     {
         ApplyDarkTheme(hDlg);
     }
@@ -210,10 +212,11 @@ void SpeedTestDialog::OnInitDialog(HWND hDlg)
 
 void SpeedTestDialog::ApplyDarkTheme(HWND hDlg)
 {
-    // Apply dark title bar
-    ThemeHelper::ApplyDarkTitleBar(hDlg, true);
+    bool useDarkScrollbar = (m_pConfig && IsDarkThemeEnabled(*m_pConfig));
     
-    // Make buttons owner-draw
+    // Apply dark title bar only for dark themes
+    ThemeHelper::ApplyDarkTitleBar(hDlg, useDarkScrollbar);
+    
     // Make buttons owner-draw
     DialogThemeHelper::ApplyDarkButton(m_hStartButton);
     DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDCANCEL));
@@ -222,14 +225,15 @@ void SpeedTestDialog::ApplyDarkTheme(HWND hDlg)
     if (m_hProgressBar)
     {
         SetWindowTheme(m_hProgressBar, L"", L"");
-        SendMessageW(m_hProgressBar, PBM_SETBARCOLOR, 0, RGB(80, 160, 240));
-        SendMessageW(m_hProgressBar, PBM_SETBKCOLOR, 0, DialogThemeHelper::DARK_PANEL);
+        const auto& colors = ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme());
+        SendMessageW(m_hProgressBar, PBM_SETBARCOLOR, 0, colors.chartDownload);
+        SendMessageW(m_hProgressBar, PBM_SETBKCOLOR, 0, colors.dialogPanel);
     }
     
-    // History list dark theme
+    // History list theme - use IsDarkThemeEnabled for scrollbar styling
     if (m_hHistoryList)
     {
-        DialogThemeHelper::ApplyDarkListView(m_hHistoryList, true);
+        DialogThemeHelper::ApplyDarkListView(m_hHistoryList, useDarkScrollbar);
     }
     
     // Strip visual styles from GroupBox for proper dark text rendering
@@ -553,19 +557,20 @@ bool SpeedTestDialog::OnDrawItem(DRAWITEMSTRUCT* pDrawItem) const
         HDC hdc = pDrawItem->hDC;
         RECT rc = pDrawItem->rcItem;
         
+        const auto& colors = ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme());
         // Background (Disabled Dark Button)
-        HBRUSH hBg = CreateSolidBrush(RGB(40, 40, 40)); // Standard dark bg
+        HBRUSH hBg = CreateSolidBrush(colors.buttonBackground); // Standard dark bg
         FillRect(hdc, &rc, hBg);
         DeleteObject(hBg);
         
         // Border
-        HBRUSH hBorder = CreateSolidBrush(RGB(90, 90, 90));
+        HBRUSH hBorder = CreateSolidBrush(colors.buttonBorder);
         FrameRect(hdc, &rc, hBorder);
         DeleteObject(hBorder);
         
         // Text
         SetBkMode(hdc, TRANSPARENT);
-        SetTextColor(hdc, RGB(80, 160, 240)); // Blue Text
+        SetTextColor(hdc, colors.chartDownload); // Blue Text
         
         wchar_t text[256];
         GetWindowTextW(pDrawItem->hwndItem, text, 256);
@@ -574,7 +579,7 @@ bool SpeedTestDialog::OnDrawItem(DRAWITEMSTRUCT* pDrawItem) const
         return true;
     }
 
-    DialogThemeHelper::DrawButton(pDrawItem, m_pConfig && m_pConfig->darkTheme);
+    DialogThemeHelper::DrawButton(pDrawItem, m_pConfig && IsCustomThemeEnabled(*m_pConfig));
     return true;
 }
 

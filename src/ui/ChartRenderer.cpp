@@ -1,4 +1,5 @@
 #include "NetPulse/ChartRenderer.h"
+#include "NetPulse/ThemeHelper.h"
 #include "NetPulse/Utils.h"
 #include <algorithm>
 #include <cmath>
@@ -6,45 +7,32 @@
 namespace NetPulse
 {
 
-// Theme colors - dark
-constexpr COLORREF DARK_BG = RGB(30, 30, 30);
-constexpr COLORREF DARK_TEXT = RGB(230, 230, 230);
-constexpr COLORREF DARK_GRID = RGB(60, 60, 60);
-constexpr COLORREF DARK_DOWNLOAD = RGB(0, 150, 255);   // Blue
-constexpr COLORREF DARK_UPLOAD = RGB(0, 200, 100);     // Green
-constexpr COLORREF DARK_BORDER = RGB(80, 80, 80);
-
-// Theme colors - light
-constexpr COLORREF LIGHT_BG = RGB(255, 255, 255);
-constexpr COLORREF LIGHT_TEXT = RGB(30, 30, 30);
-constexpr COLORREF LIGHT_GRID = RGB(220, 220, 220);
-constexpr COLORREF LIGHT_DOWNLOAD = RGB(0, 120, 215);  // Blue
-constexpr COLORREF LIGHT_UPLOAD = RGB(40, 167, 69);    // Green
-constexpr COLORREF LIGHT_BORDER = RGB(180, 180, 180);
+// Theme colors are now managed by ThemeHelper
+// Old constants removed
 
 COLORREF ChartRenderer::GetTextColor(bool darkTheme)
 {
-    return darkTheme ? DARK_TEXT : LIGHT_TEXT;
+    return ThemeHelper::GetColors(darkTheme).chartText;
 }
 
 COLORREF ChartRenderer::GetGridColor(bool darkTheme)
 {
-    return darkTheme ? DARK_GRID : LIGHT_GRID;
+    return ThemeHelper::GetColors(darkTheme).chartGrid;
 }
 
 COLORREF ChartRenderer::GetDownloadColor(bool darkTheme)
 {
-    return darkTheme ? DARK_DOWNLOAD : LIGHT_DOWNLOAD;
+    return ThemeHelper::GetColors(darkTheme).chartDownload;
 }
 
 COLORREF ChartRenderer::GetUploadColor(bool darkTheme)
 {
-    return darkTheme ? DARK_UPLOAD : LIGHT_UPLOAD;
+    return ThemeHelper::GetColors(darkTheme).chartUpload;
 }
 
 COLORREF ChartRenderer::GetBorderColor(bool darkTheme)
 {
-    return darkTheme ? DARK_BORDER : LIGHT_BORDER;
+    return ThemeHelper::GetColors(darkTheme).chartBorder;
 }
 
 // FormatBytes removed - using NetPulse::Utils version

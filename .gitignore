@@ -33,3 +33,4 @@ notes/
 
 .agent/
 build_log*.txt
+temp_build/

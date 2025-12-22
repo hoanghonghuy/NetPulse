@@ -126,7 +126,7 @@ void DialogManager::ShowSettings()
             if (m_configReloadCallback && m_configReloadCallback())
             {
                 SetDebugLoggingEnabled(m_pConfig->debugLogging);
-                ThemeHelper::AllowDarkModeForApp(ThemeHelper::IsSystemInDarkMode());
+                ThemeHelper::AllowDarkModeForApp(m_pConfig->darkTheme);
 
                 // Apply timer changes
                 if (m_pConfig->updateInterval != oldConfig.updateInterval)
@@ -166,7 +166,32 @@ void DialogManager::ShowSettings()
                     m_applyAllSettingsCallback();
                 }
 
-                // Refresh UI
+                // Refresh UI of open dialogs
+                bool useDarkTitleBar = IsDarkThemeEnabled(*m_pConfig);
+                bool useCustomTheme = IsCustomThemeEnabled(*m_pConfig);
+                
+                if (m_hDashboardDialog && IsWindow(m_hDashboardDialog))
+                {
+                    ThemeHelper::ApplyDarkTitleBar(m_hDashboardDialog, useDarkTitleBar);
+                    DialogThemeHelper::ApplyToDialog(m_hDashboardDialog, useCustomTheme);
+                    InvalidateRect(m_hDashboardDialog, nullptr, TRUE);
+                    // Send dummy update to force control refresh if possible
+                    SendMessage(m_hDashboardDialog, WM_UPDATE_STATS, 0, 0); 
+                }
+                if (m_hHistoryDialog && IsWindow(m_hHistoryDialog))
+                {
+                    ThemeHelper::ApplyDarkTitleBar(m_hHistoryDialog, useDarkTitleBar);
+                    DialogThemeHelper::ApplyToDialog(m_hHistoryDialog, useCustomTheme);
+                    InvalidateRect(m_hHistoryDialog, nullptr, TRUE);
+                }
+                if (m_hConnectionLogDialog && IsWindow(m_hConnectionLogDialog))
+                {
+                    ThemeHelper::ApplyDarkTitleBar(m_hConnectionLogDialog, useDarkTitleBar);
+                    DialogThemeHelper::ApplyToDialog(m_hConnectionLogDialog, useCustomTheme);
+                    InvalidateRect(m_hConnectionLogDialog, nullptr, TRUE);
+                }
+
+                // Refresh UI logic update
                 if (m_pUpdateCoordinator)
                 {
                     m_pUpdateCoordinator->OnNetworkUpdateTick();
@@ -344,10 +369,11 @@ static INT_PTR CALLBACK AboutDialogProc(HWND hDlg, UINT message, WPARAM wParam, 
                 0, 0,          // Ignores size arguments.
                 SWP_NOSIZE);
 
-            // Apply dark theme LAST, matching SpeedTestDialog logic
-            if (s_pConfig && s_pConfig->darkTheme)
+            // Apply theme LAST, matching SpeedTestDialog logic
+            if (s_pConfig && IsCustomThemeEnabled(*s_pConfig))
             {
-                ThemeHelper::ApplyDarkTitleBar(hDlg, true);
+                bool useDarkTitleBar = IsDarkThemeEnabled(*s_pConfig);
+                ThemeHelper::ApplyDarkTitleBar(hDlg, useDarkTitleBar);
                 
                 // Make OK button owner-draw for dark theme
                 HWND hButton = GetDlgItem(hDlg, IDOK);
@@ -372,7 +398,7 @@ static INT_PTR CALLBACK AboutDialogProc(HWND hDlg, UINT message, WPARAM wParam, 
         }
 
     case WM_DRAWITEM:
-        if (s_pConfig && s_pConfig->darkTheme)
+        if (s_pConfig && IsCustomThemeEnabled(*s_pConfig))
         {
             DRAWITEMSTRUCT* pDrawItem = reinterpret_cast<DRAWITEMSTRUCT*>(lParam);
             if (pDrawItem->CtlType == ODT_BUTTON && pDrawItem->CtlID == IDOK)
@@ -407,13 +433,13 @@ static INT_PTR CALLBACK AboutDialogProc(HWND hDlg, UINT message, WPARAM wParam, 
         
     case WM_CTLCOLORDLG:
     case WM_CTLCOLORSTATIC:
-        if (s_pConfig && s_pConfig->darkTheme)
+        if (s_pConfig && IsCustomThemeEnabled(*s_pConfig))
         {
             HDC hdc = (HDC)wParam;
-            SetTextColor(hdc, RGB(255, 255, 255));
-            SetBkColor(hdc, RGB(32, 32, 32));
-            static HBRUSH hBrush = CreateSolidBrush(RGB(32, 32, 32));
-            return (INT_PTR)hBrush;
+            const auto& colors = ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme());
+            SetTextColor(hdc, colors.dialogText);
+            SetBkColor(hdc, colors.dialogBackground);
+            return (INT_PTR)DialogThemeHelper::GetDarkBackgroundBrush();
         }
         break;
     }

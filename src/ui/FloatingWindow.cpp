@@ -1,6 +1,7 @@
 ﻿// NOTE: This class manages its own GDI resources (Fonts, Brushes, Bitmaps) for performance and stability.
 // Refactoring to shared helpers is discouraged to avoid object lifetime issues.
 #include "NetPulse/FloatingWindow.h"
+#include "NetPulse/ThemeHelper.h"
 #include "NetPulse/Utils.h"
 #include "../../resources/resource.h"
 #include <windowsx.h>
@@ -384,17 +385,16 @@ void FloatingWindow::PaintMiniMode(HDC hdc)
     RECT rc;
     GetClientRect(m_hwnd, &rc);
 
-    // Colors
-    COLORREF bgColor = m_darkTheme ? RGB(30, 30, 30) : RGB(245, 245, 245);
-    COLORREF downColor = m_darkTheme ? RGB(0, 200, 255) : RGB(0, 120, 180);
+    // Get theme colors
+    const auto& colors = ThemeHelper::GetColors(m_darkTheme);
 
     // Fill background
-    HBRUSH hBgBrush = CreateSolidBrush(bgColor);
+    HBRUSH hBgBrush = CreateSolidBrush(colors.background);
     FillRect(hdc, &rc, hBgBrush);
     DeleteObject(hBgBrush);
 
     // Draw thin border
-    HPEN hBorderPen = CreatePen(PS_SOLID, 1, m_darkTheme ? RGB(80, 80, 80) : RGB(180, 180, 180));
+    HPEN hBorderPen = CreatePen(PS_SOLID, 1, colors.border);
     HPEN hOldPen = (HPEN)SelectObject(hdc, hBorderPen);
     HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, GetStockObject(NULL_BRUSH));
     RoundRect(hdc, rc.left, rc.top, rc.right, rc.bottom, 4, 4);
@@ -414,7 +414,7 @@ void FloatingWindow::PaintMiniMode(HDC hdc)
     // Show primary metric: download speed (most relevant)
     std::wstring text = L"\u2193" + FormatSpeed(m_downloadSpeed, m_speedUnit);
     
-    SetTextColor(hdc, downColor);
+    SetTextColor(hdc, colors.download);
     TextOutW(hdc, 4, 4, text.c_str(), static_cast<int>(text.length()));
 
     SelectObject(hdc, hOldFont);
@@ -426,20 +426,16 @@ void FloatingWindow::PaintNormal(HDC hdc)
     RECT rc;
     GetClientRect(m_hwnd, &rc);
 
-    // Colors
-    COLORREF bgColor = m_darkTheme ? RGB(30, 30, 30) : RGB(245, 245, 245);
-    COLORREF downColor = m_darkTheme ? RGB(0, 200, 255) : RGB(0, 120, 180);
-    COLORREF upColor = m_darkTheme ? RGB(0, 220, 100) : RGB(0, 150, 60);
-    COLORREF cpuColor = m_darkTheme ? RGB(255, 180, 50) : RGB(200, 120, 0);
-    COLORREF ramColor = m_darkTheme ? RGB(200, 100, 255) : RGB(140, 60, 180);
+    // Get theme colors
+    const auto& colors = ThemeHelper::GetColors(m_darkTheme);
 
     // Fill background with rounded rectangle effect
-    HBRUSH hBgBrush = CreateSolidBrush(bgColor);
+    HBRUSH hBgBrush = CreateSolidBrush(colors.background);
     FillRect(hdc, &rc, hBgBrush);
     DeleteObject(hBgBrush);
 
     // Draw border
-    HPEN hBorderPen = CreatePen(PS_SOLID, 1, m_darkTheme ? RGB(80, 80, 80) : RGB(180, 180, 180));
+    HPEN hBorderPen = CreatePen(PS_SOLID, 1, colors.border);
     HPEN hOldPen = (HPEN)SelectObject(hdc, hBorderPen);
     HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, GetStockObject(NULL_BRUSH));
     RoundRect(hdc, rc.left, rc.top, rc.right, rc.bottom, 8, 8);
@@ -464,10 +460,10 @@ void FloatingWindow::PaintNormal(HDC hdc)
         std::wstring downText = L"\u2193 " + FormatSpeed(m_downloadSpeed, m_speedUnit);
         std::wstring upText = L"\u2191 " + FormatSpeed(m_uploadSpeed, m_speedUnit);
         
-        SetTextColor(hdc, downColor);
+        SetTextColor(hdc, colors.download);
         TextOutW(hdc, PADDING, y, downText.c_str(), static_cast<int>(downText.length()));
         
-        SetTextColor(hdc, upColor);
+        SetTextColor(hdc, colors.upload);
         TextOutW(hdc, PADDING + 85, y, upText.c_str(), static_cast<int>(upText.length()));
         y += LINE_HEIGHT;
         
@@ -481,11 +477,10 @@ void FloatingWindow::PaintNormal(HDC hdc)
             sparkRect.bottom = y + SPARKLINE_HEIGHT;
             
             // Use semi-transparent fill for download sparkline
-            COLORREF downFill = m_darkTheme ? RGB(0, 60, 80) : RGB(200, 235, 250);
-            m_downloadSparkline->Render(hdc, sparkRect, downColor, downFill);
+            m_downloadSparkline->Render(hdc, sparkRect, colors.download, colors.downloadFill);
             
             // Overlay upload sparkline (line only, no fill)
-            m_uploadSparkline->Render(hdc, sparkRect, upColor, 0);
+            m_uploadSparkline->Render(hdc, sparkRect, colors.upload, 0);
             
             y += SPARKLINE_HEIGHT + 4;  // +4 for spacing
         }
@@ -500,7 +495,7 @@ void FloatingWindow::PaintNormal(HDC hdc)
         {
             wchar_t buf[32];
             swprintf_s(buf, L"CPU: %.0f%%", m_cpuPercent);
-            SetTextColor(hdc, cpuColor);
+            SetTextColor(hdc, colors.cpu);
             TextOutW(hdc, xPos, y, buf, static_cast<int>(wcslen(buf)));
             xPos = PADDING + 85; // Move to second column for RAM
         }
@@ -509,7 +504,7 @@ void FloatingWindow::PaintNormal(HDC hdc)
         {
             wchar_t buf[32];
             swprintf_s(buf, L"RAM: %.0f%%", m_ramPercent);
-            SetTextColor(hdc, ramColor);
+            SetTextColor(hdc, colors.ram);
             // If CPU is hidden, RAM aligns left; otherwise aligns to second column
             TextOutW(hdc, xPos, y, buf, static_cast<int>(wcslen(buf)));
         }
@@ -533,22 +528,22 @@ void FloatingWindow::PaintNormal(HDC hdc)
             if (m_pingLatency < 0)
             {
                 swprintf_s(buf, L"%s --", pingLabel.c_str());
-                pingColor = m_darkTheme ? RGB(128, 128, 128) : RGB(150, 150, 150);
+                pingColor = colors.pingNone;
             }
             else if (m_pingLatency < 50)
             {
                 swprintf_s(buf, L"%s %dms", pingLabel.c_str(), m_pingLatency);
-                pingColor = m_darkTheme ? RGB(0, 220, 100) : RGB(0, 150, 60);
+                pingColor = colors.pingLow;
             }
             else if (m_pingLatency < 100)
             {
                 swprintf_s(buf, L"%s %dms", pingLabel.c_str(), m_pingLatency);
-                pingColor = m_darkTheme ? RGB(255, 200, 50) : RGB(200, 140, 0);
+                pingColor = colors.pingMed;
             }
             else
             {
                 swprintf_s(buf, L"%s %dms", pingLabel.c_str(), m_pingLatency);
-                pingColor = m_darkTheme ? RGB(255, 80, 80) : RGB(200, 40, 40);
+                pingColor = colors.pingHigh;
             }
             
             SetTextColor(hdc, pingColor);
@@ -568,9 +563,7 @@ void FloatingWindow::PaintNormal(HDC hdc)
             if (todayLabel.empty()) todayLabel = L"Today:";
             
             std::wstring todayStr = todayLabel + L" " + FormatBytes(m_todayBytesDown + m_todayBytesUp);
-            // Use a subtler color (e.g., CPU/RAM color or gray)
-            COLORREF dateColor = m_darkTheme ? RGB(200, 200, 200) : RGB(80, 80, 80);
-            SetTextColor(hdc, dateColor);
+            SetTextColor(hdc, colors.textSecondary);
             
             // If Ping is hidden, Data Today aligns left (startX = PADDING)
             // If Ping is shown, Data Today aligns to second column (startX = PADDING + 85)
@@ -595,19 +588,19 @@ void FloatingWindow::PaintNormal(HDC hdc)
             {
                 std::wstring vpnOn = LoadStringResource(IDS_FLOATING_VPN_STATE_ON);
                 wcscpy_s(vpnBuf, vpnOn.empty() ? L"VPN: ON" : vpnOn.c_str());
-                vpnColor = m_darkTheme ? RGB(0, 220, 100) : RGB(0, 150, 60);
+                vpnColor = colors.vpnOn;
             }
             else if (m_isProxyActive)
             {
                 std::wstring proxyOn = LoadStringResource(IDS_FLOATING_PROXY_STATE_ON);
                 wcscpy_s(vpnBuf, proxyOn.empty() ? L"Proxy: ON" : proxyOn.c_str());
-                vpnColor = m_darkTheme ? RGB(255, 200, 50) : RGB(200, 140, 0);
+                vpnColor = colors.vpnProxy;
             }
             else
             {
                 std::wstring vpnOff = LoadStringResource(IDS_FLOATING_VPN_STATE_OFF);
                 wcscpy_s(vpnBuf, vpnOff.empty() ? L"VPN: OFF" : vpnOff.c_str());
-                vpnColor = m_darkTheme ? RGB(128, 128, 128) : RGB(150, 150, 150);
+                vpnColor = colors.vpnOff;
             }
             
             SetTextColor(hdc, vpnColor);
@@ -625,8 +618,7 @@ void FloatingWindow::PaintNormal(HDC hdc)
             std::wstring ipLabel = LoadStringResource(IDS_FLOATING_IP_LABEL);
             if (ipLabel.empty()) ipLabel = L"IP: ";
             std::wstring ipStr = ipLabel + m_publicIP;
-            COLORREF ipColor = m_darkTheme ? RGB(180, 180, 180) : RGB(100, 100, 100);
-            SetTextColor(hdc, ipColor);
+            SetTextColor(hdc, colors.textSecondary); // Using Secondary here for consistency, effectively ipColor
             TextOutW(hdc, startX, y, ipStr.c_str(), static_cast<int>(ipStr.length()));
         }
     }

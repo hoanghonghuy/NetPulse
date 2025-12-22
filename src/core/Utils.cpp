@@ -235,7 +235,17 @@ namespace
 
                 if (data->darkTheme)
                 {
-                    ThemeHelper::ApplyDarkTitleBar(hDlg, true);
+                    // Use actual current theme mode for title bar
+                    ThemeMode currentTheme = ThemeHelper::GetCurrentTheme();
+                    bool useDarkTitleBar = (currentTheme != ThemeMode::SystemDefault && 
+                                            currentTheme != ThemeMode::Light &&
+                                            currentTheme != ThemeMode::SolarizedLight &&
+                                            currentTheme != ThemeMode::MorningMist &&
+                                            currentTheme != ThemeMode::SoftPaper &&
+                                            currentTheme != ThemeMode::MintFresh &&
+                                            currentTheme != ThemeMode::Lavender &&
+                                            currentTheme != ThemeMode::RosePink);
+                    ThemeHelper::ApplyDarkTitleBar(hDlg, useDarkTitleBar);
 
                     DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDOK));
                     DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDCANCEL));
@@ -479,15 +489,45 @@ bool IsDarkThemeEnabled(const AppConfig& config)
     switch (config.themeMode)
     {
     case ThemeMode::Light:
+    case ThemeMode::SolarizedLight:
+    case ThemeMode::MorningMist:
+    case ThemeMode::SoftPaper:
+    case ThemeMode::MintFresh:
+    case ThemeMode::Lavender:
+    case ThemeMode::RosePink:
         return false;
 
     case ThemeMode::Dark:
+    case ThemeMode::Dracula:
+    case ThemeMode::Cyberpunk:
+    case ThemeMode::Nord:
+    case ThemeMode::Forest:
+    case ThemeMode::OLED:
         return true;
 
     case ThemeMode::SystemDefault:
     default:
         return ThemeHelper::IsSystemInDarkMode();
     }
+}
+
+bool IsCustomThemeEnabled(const AppConfig& config)
+{
+    // Basic Light uses Windows default styling (no custom painting)
+    if (config.themeMode == ThemeMode::Light)
+    {
+        return false;
+    }
+    
+    // SystemDefault: use custom dark styling when Windows is in dark mode
+    // Otherwise use Windows default light styling
+    if (config.themeMode == ThemeMode::SystemDefault)
+    {
+        return ThemeHelper::IsSystemInDarkMode();
+    }
+    
+    // All other themes (dark presets AND light presets) use custom painting
+    return true;
 }
 
 } // namespace NetPulse

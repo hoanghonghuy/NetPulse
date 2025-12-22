@@ -14,12 +14,29 @@ namespace NetPulse
 
 // Static member initialization
 HBRUSH DialogThemeHelper::s_darkBrush = nullptr;
+HBRUSH DialogThemeHelper::s_inputBrush = nullptr;
+static ThemeMode s_cachedThemeMode = ThemeMode::SystemDefault; // Track which theme brushes were created for
 
 HBRUSH DialogThemeHelper::GetDarkBackgroundBrush()
 {
+    ThemeMode currentTheme = ThemeHelper::GetCurrentTheme();
+    
+    // If theme changed since brush was created, invalidate old brush
+    if (s_darkBrush && s_cachedThemeMode != currentTheme)
+    {
+        DeleteObject(s_darkBrush);
+        s_darkBrush = nullptr;
+        if (s_inputBrush)
+        {
+            DeleteObject(s_inputBrush);
+            s_inputBrush = nullptr;
+        }
+    }
+    
     if (!s_darkBrush)
     {
-        s_darkBrush = CreateSolidBrush(DARK_BACKGROUND);
+        s_darkBrush = CreateSolidBrush(ThemeHelper::GetColors(currentTheme).dialogBackground);
+        s_cachedThemeMode = currentTheme;
     }
     return s_darkBrush;
 }
@@ -28,7 +45,7 @@ HBRUSH DialogThemeHelper::HandleControlColor(HDC hdc, bool darkTheme)
 {
     if (darkTheme)
     {
-        SetTextColor(hdc, DARK_TEXT);
+        SetTextColor(hdc, ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme()).dialogText);
         SetBkMode(hdc, TRANSPARENT); // Use TRANSPARENT instead of SetBkColor for better UI
         return GetDarkBackgroundBrush();
     }
@@ -39,13 +56,17 @@ HBRUSH DialogThemeHelper::HandleEditControlColor(HDC hdc, bool darkTheme)
 {
     if (darkTheme)
     {
-        SetTextColor(hdc, DARK_TEXT);
-        SetBkColor(hdc, DARK_INPUT_BACKGROUND);
+        ThemeMode currentTheme = ThemeHelper::GetCurrentTheme();
+        const auto& colors = ThemeHelper::GetColors(currentTheme);
         
-        static HBRUSH s_inputBrush = nullptr;
+        SetTextColor(hdc, colors.dialogText);
+        SetBkColor(hdc, colors.inputBackground);
+        
+        // Invalidate s_inputBrush if theme changed (same logic as GetDarkBackgroundBrush)
+        // GetDarkBackgroundBrush handles the invalidation, but we need to recreate inputBrush if null
         if (!s_inputBrush)
         {
-            s_inputBrush = CreateSolidBrush(DARK_INPUT_BACKGROUND);
+            s_inputBrush = CreateSolidBrush(colors.inputBackground);
         }
         return s_inputBrush;
     }
@@ -121,13 +142,14 @@ void DialogThemeHelper::DrawButton(DRAWITEMSTRUCT* pDrawItem, bool darkTheme)
     bool isFocused = (pDrawItem->itemState & ODS_FOCUS) != 0;
 
     // Draw background
-    COLORREF bgColor = isPressed ? DARK_BUTTON_PRESSED : DARK_BUTTON_BACKGROUND;
+    COLORREF bgColor = isPressed ? ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme()).buttonPressed 
+                               : ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme()).buttonBackground;
     HBRUSH hBrush = CreateSolidBrush(bgColor);
     FillRect(hdc, &rc, hBrush);
     DeleteObject(hBrush);
 
     // Draw border
-    HBRUSH hBorder = CreateSolidBrush(DARK_BUTTON_BORDER);
+    HBRUSH hBorder = CreateSolidBrush(ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme()).buttonBorder);
     FrameRect(hdc, &rc, hBorder);
     DeleteObject(hBorder);
 
@@ -136,7 +158,8 @@ void DialogThemeHelper::DrawButton(DRAWITEMSTRUCT* pDrawItem, bool darkTheme)
     GetWindowTextW(pDrawItem->hwndItem, text, 256);
 
     SetBkMode(hdc, TRANSPARENT);
-    SetTextColor(hdc, isDisabled ? DARK_TEXT_DISABLED : DARK_TEXT);
+    SetTextColor(hdc, isDisabled ? ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme()).dialogTextDisabled 
+                               : ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme()).dialogText);
     
     // Adjust text rect if needed (e.g. slight offset when pressed?) 
     // SettingsDialog didn't do this, simply centered.
@@ -166,7 +189,8 @@ void DialogThemeHelper::DrawTabItem(DRAWITEMSTRUCT* pDrawItem, bool darkTheme)
     bool selected = (pDrawItem->itemState & ODS_SELECTED) != 0;
 
     // Draw background
-    COLORREF backColor = selected ? DARK_BACKGROUND_SELECTED : DARK_BACKGROUND;
+    COLORREF backColor = selected ? ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme()).tabSelectedBackground 
+                               : ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme()).tabBackground;
     HBRUSH hBrush = CreateSolidBrush(backColor);
     FillRect(hdc, &rc, hBrush);
     DeleteObject(hBrush);
@@ -174,7 +198,7 @@ void DialogThemeHelper::DrawTabItem(DRAWITEMSTRUCT* pDrawItem, bool darkTheme)
     // Draw border for selected tab
     if (selected)
     {
-        HPEN hPen = CreatePen(PS_SOLID, 1, DARK_BORDER);
+        HPEN hPen = CreatePen(PS_SOLID, 1, ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme()).dialogBorder);
         HPEN hOldPen = static_cast<HPEN>(SelectObject(hdc, hPen));
         MoveToEx(hdc, rc.left, rc.top, nullptr);
         LineTo(hdc, rc.right - 1, rc.top);
@@ -196,7 +220,8 @@ void DialogThemeHelper::DrawTabItem(DRAWITEMSTRUCT* pDrawItem, bool darkTheme)
 
     // Draw text
     SetBkMode(hdc, TRANSPARENT);
-    SetTextColor(hdc, DARK_TEXT);
+    SetTextColor(hdc, selected ? ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme()).tabSelectedText
+                               : ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme()).tabText);
     DrawTextW(hdc, text, -1, &rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 }
 
@@ -257,6 +282,11 @@ void DialogThemeHelper::Cleanup()
         DeleteObject(s_darkBrush);
         s_darkBrush = nullptr;
     }
+    if (s_inputBrush)
+    {
+        DeleteObject(s_inputBrush);
+        s_inputBrush = nullptr;
+    }
 }
 
 
@@ -274,11 +304,13 @@ static LRESULT CALLBACK HeaderSubclassProc(HWND hwnd, UINT msg, WPARAM wParam,
         RECT rc;
         GetClientRect(hwnd, &rc);
 
-        // Fill dark background
-        DialogThemeHelper::FillDarkBackground(hdc, rc);
+        // Fill background with list header color
+        HBRUSH hBrush = CreateSolidBrush(ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme()).listHeaderBackground);
+        FillRect(hdc, &rc, hBrush);
+        DeleteObject(hBrush);
 
         // Draw bottom border only (NO column separators!)
-        HPEN hPen = CreatePen(PS_SOLID, 1, RGB(60, 60, 60));
+        HPEN hPen = CreatePen(PS_SOLID, 1, ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme()).dialogBorder);
         HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
         MoveToEx(hdc, rc.left, rc.bottom - 1, nullptr);
         LineTo(hdc, rc.right, rc.bottom - 1);
@@ -286,7 +318,8 @@ static LRESULT CALLBACK HeaderSubclassProc(HWND hwnd, UINT msg, WPARAM wParam,
         DeleteObject(hPen);
 
         // Set text colors
-        SetTextColor(hdc, DialogThemeHelper::DARK_TEXT);
+        // Set text colors
+        SetTextColor(hdc, ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme()).listHeaderText);
         SetBkMode(hdc, TRANSPARENT);
 
         // Draw header items WITHOUT separators
@@ -298,7 +331,7 @@ static LRESULT CALLBACK HeaderSubclassProc(HWND hwnd, UINT msg, WPARAM wParam,
 
             // Get item text
             HDITEMW hdi = { 0 };
-            hdi.mask = HDI_TEXT | HDI_FORMAT; // Added HDI_FORMAT to get alignment
+            hdi.mask = HDI_TEXT | HDI_FORMAT;
             wchar_t text[256];
             hdi.pszText = text;
             hdi.cchTextMax = 256;
@@ -357,8 +390,7 @@ void DialogThemeHelper::DrawListViewBorder(HDC hdc, HWND hList, HWND hDlg)
     MapWindowPoints(NULL, hDlg, (LPPOINT)&rcList, 2);
     InflateRect(&rcList, 1, 1);
     
-    // Use lighter border for better visibility in dark mode (consistent with previous PerApp/ConnectionLog implementation)
-    HBRUSH borderBrush = CreateSolidBrush(RGB(100, 100, 100));
+    HBRUSH borderBrush = CreateSolidBrush(ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme()).dialogBorder);
     FrameRect(hdc, &rcList, borderBrush);
     DeleteObject(borderBrush);
 }
@@ -367,14 +399,15 @@ void DialogThemeHelper::ApplyDarkListView(HWND hList, bool darkTheme)
 {
     if (!hList) return;
 
+    // Always use current theme colors - this works for both dark and light presets
+    const auto& colors = ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme());
+    ListView_SetBkColor(hList, colors.listBackground);
+    ListView_SetTextBkColor(hList, colors.listBackground);
+    ListView_SetTextColor(hList, colors.listText);
+
     if (darkTheme)
     {
-        // Colors
-        ListView_SetBkColor(hList, DARK_PANEL);
-        ListView_SetTextBkColor(hList, DARK_PANEL);
-        ListView_SetTextColor(hList, DARK_TEXT);
-
-        // Scrollbars and Theme
+        // Dark-specific styling: dark scrollbars, dark window theme
         ThemeHelper::ApplyDarkThemeToControl(hList, true);
         SetWindowTheme(hList, L"DarkMode_Explorer", nullptr);
 
@@ -400,12 +433,7 @@ void DialogThemeHelper::ApplyDarkListView(HWND hList, bool darkTheme)
     }
     else
     {
-        // Colors
-        ListView_SetBkColor(hList, LIGHT_BACKGROUND);
-        ListView_SetTextBkColor(hList, LIGHT_BACKGROUND);
-        ListView_SetTextColor(hList, LIGHT_TEXT);
-
-        // Scrollbars and Theme
+        // Light-specific styling: light scrollbars, normal window theme
         ThemeHelper::ApplyDarkThemeToControl(hList, false);
         SetWindowTheme(hList, L"Explorer", nullptr);
 

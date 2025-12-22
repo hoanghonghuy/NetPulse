@@ -116,10 +116,10 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                 SetWindowTextW(hDlg, dashTitle.c_str());
             }
 
-            // Apply dark title bar if enabled
+            // Apply dark title bar for dark themes only
             if (m_pConfig)
             {
-                ThemeHelper::ApplyDarkTitleBar(hDlg, m_pConfig->darkTheme);
+                ThemeHelper::ApplyDarkTitleBar(hDlg, IsDarkThemeEnabled(*m_pConfig));
             }
 
             std::wstring todayLabel = LoadStringResource(IDS_DASHBOARD_LABEL_TODAY);
@@ -234,11 +234,14 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                 col.fmt = LVCFMT_RIGHT;
                 ListView_InsertColumn(hList, 3, &col);
 
-                // Apply consistent theme to ListView
-                DialogThemeHelper::ApplyDarkListView(hList, m_pConfig && m_pConfig->darkTheme);
+                // Apply theme to ListView only for custom themes (not SystemDefault)
+                if (m_pConfig && IsCustomThemeEnabled(*m_pConfig))
+                {
+                    DialogThemeHelper::ApplyDarkListView(hList, IsDarkThemeEnabled(*m_pConfig));
+                }
                 
-                // Apply dark theme to chart control
-                if (m_pConfig && m_pConfig->darkTheme)
+                // Apply theme styling to chart control
+                if (m_pConfig && IsCustomThemeEnabled(*m_pConfig))
                 {
                     HWND hChart = GetDlgItem(hDlg, IDC_DASHBOARD_CHART);
                     if (hChart)
@@ -257,10 +260,10 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
             }
 
 
-            // For dark theme, make bottom buttons owner-drawn so we can
-            // render dark backgrounds consistently.
+            // For custom theme, make bottom buttons owner-drawn so we can
+            // render theme backgrounds consistently.
             
-            if (m_pConfig && m_pConfig->darkTheme)
+            if (m_pConfig && IsCustomThemeEnabled(*m_pConfig))
             {
                 DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDC_DASHBOARD_BUTTON_EXPORT));
                 DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDC_DASHBOARD_EXPORT_CHART));
@@ -554,12 +557,13 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
         case WM_CTLCOLORSTATIC:
         case WM_CTLCOLORBTN:
         {
-            if (m_pConfig && m_pConfig->darkTheme)
+            if (m_pConfig && IsCustomThemeEnabled(*m_pConfig))
             {
                 HDC hdc = reinterpret_cast<HDC>(wParam);
                 HBRUSH darkBrush = DialogThemeHelper::GetDarkBackgroundBrush();
 
-                SetTextColor(hdc, DialogThemeHelper::DARK_TEXT);
+                const auto& colors = ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme());
+                SetTextColor(hdc, colors.dialogText);
                 SetBkMode(hdc, TRANSPARENT);
 
                 // Draw border around ListView (replaced system border)
@@ -573,7 +577,7 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                          MapWindowPoints(NULL, hDlg, (LPPOINT)&rcList, 2);
                          InflateRect(&rcList, 1, 1);
                          
-                         HBRUSH borderBrush = CreateSolidBrush(DialogThemeHelper::DARK_BORDER);
+                         HBRUSH borderBrush = CreateSolidBrush(colors.dialogBorder);
                          FrameRect(hdc, &rcList, borderBrush);
                          DeleteObject(borderBrush);
                     }
@@ -597,8 +601,8 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                 return TRUE;
             }
 
-            // Owner-draw bottom buttons in dark theme
-            if (m_pConfig && m_pConfig->darkTheme && pDrawItem->CtlType == ODT_BUTTON)
+            // Owner-draw bottom buttons in custom theme
+            if (m_pConfig && IsCustomThemeEnabled(*m_pConfig) && pDrawItem->CtlType == ODT_BUTTON)
             {
                 UINT id = pDrawItem->CtlID;
                 if (id == IDC_DASHBOARD_BUTTON_EXPORT || id == IDC_DASHBOARD_EXPORT_CHART || 
@@ -708,10 +712,11 @@ void DashboardDialog::DrawDashboardChart(HDC hdc, const RECT& rc)
         return;
     }
 
-    bool darkTheme = (m_pConfig && m_pConfig->darkTheme);
+    bool customTheme = (m_pConfig && IsCustomThemeEnabled(*m_pConfig));
 
+    const auto& colors = ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme());
     // Fill background first
-    COLORREF backColor = darkTheme ? RGB(30, 30, 30) : GetSysColor(COLOR_WINDOW);
+    COLORREF backColor = customTheme ? colors.chartBackground : GetSysColor(COLOR_WINDOW);
     HBRUSH backBrush = CreateSolidBrush(backColor);
     FillRect(hdc, &rc, backBrush);
     DeleteObject(backBrush);
@@ -726,7 +731,7 @@ void DashboardDialog::DrawDashboardChart(HDC hdc, const RECT& rc)
         
         if (!logger.GetDailyUsage(m_chartYear, m_chartMonth, dailyData))
         {
-            SetTextColor(hdc, darkTheme ? RGB(230, 230, 230) : RGB(30, 30, 30));
+            SetTextColor(hdc, customTheme ? colors.chartText : RGB(30, 30, 30));
             SetBkMode(hdc, TRANSPARENT);
             RECT msgRect = rc;
             DrawTextW(hdc, L"No chart data available", -1, &msgRect, 
@@ -776,7 +781,7 @@ void DashboardDialog::DrawDashboardChart(HDC hdc, const RECT& rc)
         
         if (!logger.GetMonthlyUsage(m_chartYear, monthlyData))
         {
-            SetTextColor(hdc, darkTheme ? RGB(230, 230, 230) : RGB(30, 30, 30));
+            SetTextColor(hdc, customTheme ? colors.chartText : RGB(30, 30, 30));
             SetBkMode(hdc, TRANSPARENT);
             RECT msgRect = rc;
             DrawTextW(hdc, L"No chart data available", -1, &msgRect, 
@@ -833,7 +838,7 @@ void DashboardDialog::DrawDashboardChart(HDC hdc, const RECT& rc)
 
     // Configure chart options
     ChartOptions options;
-    options.darkTheme = darkTheme;
+    options.darkTheme = (m_pConfig && m_pConfig->darkTheme);
     options.showGridLines = true;
     options.showLegend = true;
     options.barSpacing = 2;
@@ -1198,7 +1203,7 @@ LRESULT CALLBACK DashboardDialog::TooltipSubclassProc(HWND hwnd, UINT msg, WPARA
                 // Cached brush, do not delete
                 
                 // Draw border
-                HBRUSH hBorder = CreateSolidBrush(DialogThemeHelper::DARK_BORDER);
+                HBRUSH hBorder = CreateSolidBrush(ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme()).dialogBorder);
                 FrameRect(hdc, &rc, hBorder);
                 DeleteObject(hBorder);
                 
@@ -1208,7 +1213,7 @@ LRESULT CALLBACK DashboardDialog::TooltipSubclassProc(HWND hwnd, UINT msg, WPARA
                 
                 // Draw text
                 SetBkMode(hdc, TRANSPARENT);
-                SetTextColor(hdc, DialogThemeHelper::DARK_TEXT);
+                SetTextColor(hdc, ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme()).dialogText);
                 
                 // Padding
                 RECT rcText = rc;

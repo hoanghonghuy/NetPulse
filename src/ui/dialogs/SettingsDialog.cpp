@@ -34,8 +34,9 @@ static LRESULT CALLBACK DarkTabProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
         
         int tabCount = TabCtrl_GetItemCount(hwnd);
         int sel = TabCtrl_GetCurSel(hwnd);
-        
-        COLORREF borderColor = DialogThemeHelper::DARK_BORDER; // RGB(58, 60, 67)
+
+        const auto& colors = ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme());
+        COLORREF borderColor = colors.dialogBorder; 
         HBRUSH borderBrush = CreateSolidBrush(borderColor);
         
         // 3. Draw Page Border (Content Area) - STRICT 1px THIN
@@ -95,10 +96,10 @@ static LRESULT CALLBACK DarkTabProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
             TabCtrl_GetItemRect(hwnd, i, &rcItem);
             
             bool isSel = (i == sel);
-            // Match Unikey: Selected tab matches content background (DARK_BACKGROUND)
-            // Unselected tab is slightly lighter/different (DARK_PANEL) to stand out as "behind"
-            COLORREF itemBg = isSel ? DialogThemeHelper::DARK_BACKGROUND : DialogThemeHelper::DARK_PANEL; 
-            COLORREF textColor = DialogThemeHelper::DARK_TEXT;
+            // Match Unikey: Selected tab matches content background
+            // Unselected tab is slightly lighter/different to stand out as "behind"
+            COLORREF itemBg = isSel ? colors.dialogBackground : colors.dialogPanel; 
+            COLORREF textColor = colors.dialogText;
             
             // Draw Tab Background
             HBRUSH itemBrush = CreateSolidBrush(itemBg);
@@ -110,7 +111,7 @@ static LRESULT CALLBACK DarkTabProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
             {
                  HBRUSH tabBorderBrush = CreateSolidBrush(borderColor);
                  // Left
-                 RECT l = { rcItem.left, rcItem.top, rcItem.left + 1, rcItem.bottom + 1 }; // Extend to bottom to cover connection point partially? No, keep standard.
+                 RECT l = { rcItem.left, rcItem.top, rcItem.left + 1, rcItem.bottom + 1 }; 
                  FillRect(hdc, &l, tabBorderBrush);
                  // Top
                  RECT t = { rcItem.left, rcItem.top, rcItem.right, rcItem.top + 1 };
@@ -120,7 +121,6 @@ static LRESULT CALLBACK DarkTabProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
                  FillRect(hdc, &r, tabBorderBrush);
                  DeleteObject(tabBorderBrush);
                  
-                 // Remove blue highlight to match Unikey's flat style
             }
             else
             {
@@ -146,8 +146,6 @@ static LRESULT CALLBACK DarkTabProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
         return 0;
     }
 
-
-    
     // For other messages, use default
     return CallWindowProc(s_originalTabProc, hwnd, msg, wParam, lParam);
 }
@@ -163,7 +161,7 @@ static LRESULT CALLBACK DarkComboBoxProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
         // Let the default paint happen first
         LRESULT result = CallWindowProcW(oldProc, hwnd, msg, wParam, lParam);
 
-        // Now draw over the dropdown button with dark theme
+        // Now draw over with theme colors
         COMBOBOXINFO cbi = {0};
         cbi.cbSize = sizeof(COMBOBOXINFO);
         if (GetComboBoxInfo(hwnd, &cbi))
@@ -171,18 +169,42 @@ static LRESULT CALLBACK DarkComboBoxProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
             HDC hdc = GetDC(hwnd);
             if (hdc)
             {
+                const auto& colors = ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme());
+                
+                // Draw combobox text area background (cbi.rcItem is the text display area)
+                RECT itemRect = cbi.rcItem;
+                HBRUSH itemBrush = CreateSolidBrush(colors.inputBackground);
+                FillRect(hdc, &itemRect, itemBrush);
+                DeleteObject(itemBrush);
+                
+                // Get and draw the selected text
+                wchar_t text[256] = {0};
+                GetWindowTextW(hwnd, text, 256);
+                if (text[0])
+                {
+                    SetTextColor(hdc, colors.dialogText);
+                    SetBkMode(hdc, TRANSPARENT);
+                    HFONT hFont = (HFONT)SendMessageW(hwnd, WM_GETFONT, 0, 0);
+                    HFONT oldFont = (HFONT)SelectObject(hdc, hFont);
+                    
+                    // Add some padding
+                    itemRect.left += 4;
+                    DrawTextW(hdc, text, -1, &itemRect, DT_SINGLELINE | DT_VCENTER | DT_LEFT);
+                    
+                    SelectObject(hdc, oldFont);
+                }
+                
+                // Draw dropdown button background
                 RECT btnRect = cbi.rcButton;
-
-                // Draw dark button background
-                COLORREF btnBg = DialogThemeHelper::DARK_BUTTON_BACKGROUND;
-                COLORREF btnBorder = DialogThemeHelper::DARK_BUTTON_BORDER;
-                COLORREF arrowColor = DialogThemeHelper::DARK_TEXT;
+                COLORREF btnBg = colors.buttonBackground;
+                COLORREF btnBorder = colors.buttonBorder;
+                COLORREF arrowColor = colors.dialogText;
 
                 HBRUSH hBrush = CreateSolidBrush(btnBg);
                 FillRect(hdc, &btnRect, hBrush);
                 DeleteObject(hBrush);
 
-                // Draw border
+                // Draw border around dropdown button
                 HBRUSH hBorder = CreateSolidBrush(btnBorder);
                 FrameRect(hdc, &btnRect, hBorder);
                 DeleteObject(hBorder);
@@ -209,6 +231,13 @@ static LRESULT CALLBACK DarkComboBoxProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
                 SelectObject(hdc, oldPen);
                 DeleteObject(arrowBrush);
                 DeleteObject(arrowPen);
+
+                // Draw entire combobox border with theme color
+                RECT rcClient;
+                GetClientRect(hwnd, &rcClient);
+                HBRUSH comboBorder = CreateSolidBrush(colors.dialogBorder);
+                FrameRect(hdc, &rcClient, comboBorder);
+                DeleteObject(comboBorder);
 
                 ReleaseDC(hwnd, hdc);
             }
@@ -354,8 +383,8 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 SetWindowTextW(hDlg, title.c_str());
             }
 
-            // Apply dark title bar if enabled
-            ThemeHelper::ApplyDarkTitleBar(hDlg, m_configCopy.darkTheme);
+            // Apply dark title bar for dark themes only
+            ThemeHelper::ApplyDarkTitleBar(hDlg, IsDarkThemeEnabled(m_configCopy));
 
             std::wstring generalText = LoadStringResource(IDS_SETTINGS_GROUP_GENERAL);
             if (!generalText.empty())
@@ -623,8 +652,8 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 }
             }
 
-            // In dark theme, disable visual styles on tab control and apply dark buttons
-            if (m_configCopy.darkTheme)
+            // In custom theme (Dark OR Custom Light), disable visual styles and use owner-draw
+            if (IsCustomThemeEnabled(m_configCopy))
             {
                 HWND hTab = GetDlgItem(hDlg, IDC_SETTINGS_TAB);
                 if (hTab)
@@ -671,11 +700,13 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
             return TRUE;
         }
 
+
+
         // Handle Edit Control Colors for Dark Theme
     case WM_CTLCOLOREDIT:
     {
         HDC hdc = reinterpret_cast<HDC>(wParam);
-        HBRUSH hBrush = DialogThemeHelper::HandleEditControlColor(hdc, m_configCopy.darkTheme);
+        HBRUSH hBrush = DialogThemeHelper::HandleEditControlColor(hdc, IsCustomThemeEnabled(m_configCopy));
         if (hBrush)
         {
             return reinterpret_cast<INT_PTR>(hBrush);
@@ -724,7 +755,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                                     EnableWindow(hCheck, TRUE);
                                     Button_SetCheck(hCheck, BST_CHECKED);
                                     SetCheckboxState(IDC_PORTABLE_MODE_CHECK, true);
-                                    if (m_configCopy.darkTheme)
+                                    if (IsCustomThemeEnabled(m_configCopy))
                                     {
                                         InvalidateRect(hCheck, nullptr, FALSE);
                                         UpdateWindow(hCheck);
@@ -749,7 +780,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                         HWND hCheck = GetDlgItem(hDlg, IDC_PORTABLE_MODE_CHECK);
                         if (hCheck)
                         {
-                            if (m_configCopy.darkTheme)
+                            if (IsCustomThemeEnabled(m_configCopy))
                             {
                                 ToggleCheckboxState(IDC_PORTABLE_MODE_CHECK);
                                 InvalidateRect(hCheck, nullptr, FALSE);
@@ -785,6 +816,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 {
                     // Remember current theme before applying
                     bool oldDarkTheme = m_configCopy.darkTheme;
+                    ThemeMode oldThemeMode = m_configCopy.themeMode;
                     AppLanguage oldLanguage = m_configCopy.language;
 
                     // Apply settings without closing dialog
@@ -797,6 +829,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
 
                         // If theme or language changed, close and signal reopen
                         if (m_configCopy.darkTheme != oldDarkTheme || 
+                            m_configCopy.themeMode != oldThemeMode ||
                             m_configCopy.language != oldLanguage)
                         {
                             // Clear external handle storage before closing
@@ -841,7 +874,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                         UINT ctrlId = LOWORD(wParam);
                         HWND hCheck = GetDlgItem(hDlg, ctrlId);
                         
-                        if (hCheck && m_configCopy.darkTheme)
+                        if (hCheck && IsCustomThemeEnabled(m_configCopy))
                         {
                             // Toggle custom checkbox state (BS_OWNERDRAW doesn't store state)
                             ToggleCheckboxState(ctrlId);
@@ -854,7 +887,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                         // Special handling: Enable/disable Admin checkbox based on Autostart state
                         if (ctrlId == IDC_AUTOSTART_CHECK)
                         {
-                            bool autoStartChecked = m_configCopy.darkTheme 
+                            bool autoStartChecked = IsCustomThemeEnabled(m_configCopy) 
                                 ? GetCheckboxState(IDC_AUTOSTART_CHECK)
                                 : (Button_GetCheck(hCheck) == BST_CHECKED);
                             EnableWindow(GetDlgItem(hDlg, IDC_AUTOSTART_ADMIN_CHECK), autoStartChecked);
@@ -862,7 +895,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                             // If unchecking Autostart, also uncheck Admin
                             if (!autoStartChecked)
                             {
-                                if (m_configCopy.darkTheme)
+                                if (IsCustomThemeEnabled(m_configCopy))
                                 {
                                     SetCheckboxState(IDC_AUTOSTART_ADMIN_CHECK, false);
                                     HWND hAdminCheck = GetDlgItem(hDlg, IDC_AUTOSTART_ADMIN_CHECK);
@@ -876,7 +909,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                             }
                         }
                         
-                        if (m_configCopy.darkTheme)
+                        if (IsCustomThemeEnabled(m_configCopy))
                             return TRUE;
                     }
                 }
@@ -896,8 +929,8 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 SwitchTab(hDlg, tabIndex);
                 return TRUE;
             }
-            // Handle Tab Control custom draw for dark background
-            if (pnmh->idFrom == IDC_SETTINGS_TAB && pnmh->code == NM_CUSTOMDRAW && m_configCopy.darkTheme)
+            // Handle Tab Control custom draw for custom theme background
+            if (pnmh->idFrom == IDC_SETTINGS_TAB && pnmh->code == NM_CUSTOMDRAW && IsCustomThemeEnabled(m_configCopy))
             {
                 LPNMCUSTOMDRAW pNMCD = reinterpret_cast<LPNMCUSTOMDRAW>(lParam);
                 switch (pNMCD->dwDrawStage)
@@ -906,7 +939,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                         return CDRF_NOTIFYITEMDRAW;
                     case CDDS_PREERASE:
                     {
-                        // Fill entire tab control area with dark background
+                        // Fill entire tab control area with theme background
                         DialogThemeHelper::FillDarkBackground(pNMCD->hdc, pNMCD->rc);
                         return CDRF_SKIPDEFAULT;
                     }
@@ -917,7 +950,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
 
         case WM_ERASEBKGND:
         {
-            if (m_configCopy.darkTheme)
+            if (IsCustomThemeEnabled(m_configCopy))
             {
                 HDC hdc = reinterpret_cast<HDC>(wParam);
                 RECT rc;
@@ -934,7 +967,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
         case WM_CTLCOLORLISTBOX:
 
         {
-            if (m_configCopy.darkTheme)
+            if (IsCustomThemeEnabled(m_configCopy))
             {
                 HDC hdc = reinterpret_cast<HDC>(wParam);
                 HBRUSH darkBrush = DialogThemeHelper::GetDarkBackgroundBrush();
@@ -958,9 +991,10 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
 
                 if (message == WM_CTLCOLORLISTBOX || message == WM_CTLCOLOREDIT || isComboArea)
                 {
-                    // For combobox edit/dropdown areas: fill opaque dark background
-                    SetTextColor(hdc, DialogThemeHelper::DARK_TEXT);
-                    SetBkColor(hdc, DialogThemeHelper::DARK_BACKGROUND);
+                    // For combobox edit/dropdown areas: fill opaque theme background
+                    const auto& colors = ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme());
+                    SetTextColor(hdc, colors.dialogText);
+                    SetBkColor(hdc, colors.dialogBackground);
                     SetBkMode(hdc, OPAQUE);
                 }
                 else
@@ -976,7 +1010,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
         }
         case WM_DRAWITEM:
         {
-            if (m_configCopy.darkTheme)
+            if (IsCustomThemeEnabled(m_configCopy))
             {
                 DRAWITEMSTRUCT* pDrawItem = reinterpret_cast<DRAWITEMSTRUCT*>(lParam);
                 if (pDrawItem->CtlType == ODT_BUTTON)
@@ -1014,6 +1048,9 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                     // Get check state from our custom map (BS_OWNERDRAW doesn't store state)
                     bool checked = GetCheckboxState(ctlId);
 
+                    // Get theme colors for checkbox drawing
+                    const auto& colors = ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme());
+
                     // Fill background using cached brush
                     FillRect(hdc, &rc, DialogThemeHelper::GetDarkBackgroundBrush());
 
@@ -1022,16 +1059,16 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                     int boxY = rc.top + (rc.bottom - rc.top - boxSize) / 2;
                     RECT boxRect = {rc.left, boxY, rc.left + boxSize, boxY + boxSize};
 
-                    // Box background and border
-                    SetDCBrushColor(hdc, RGB(45, 45, 45));
+                    // Box background and border - using theme colors
+                    SetDCBrushColor(hdc, colors.inputBackground);
                     FillRect(hdc, &boxRect, (HBRUSH)GetStockObject(DC_BRUSH));
-                    SetDCBrushColor(hdc, RGB(100, 100, 100));
+                    SetDCBrushColor(hdc, colors.dialogBorder);
                     FrameRect(hdc, &boxRect, (HBRUSH)GetStockObject(DC_BRUSH));
 
-                    // Draw checkmark if checked - use simple solid fill for speed
+                    // Draw checkmark if checked - use accent color from theme
                     if (checked)
                     {
-                        SetDCPenColor(hdc, disabled ? RGB(120, 120, 120) : RGB(0, 200, 255));
+                        SetDCPenColor(hdc, disabled ? RGB(120, 120, 120) : colors.download);
                         SelectObject(hdc, GetStockObject(DC_PEN));
                         int cx = boxRect.left + 6, cy = boxRect.top + 6;
                         MoveToEx(hdc, cx - 3, cy, NULL); LineTo(hdc, cx - 1, cy + 3); LineTo(hdc, cx + 4, cy - 3);
@@ -1042,7 +1079,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                     wchar_t text[64] = {0};
                     int textLen = GetWindowTextW(pDrawItem->hwndItem, text, 64);
                     SetBkMode(hdc, TRANSPARENT);
-                    SetTextColor(hdc, disabled ? RGB(120, 120, 120) : DialogThemeHelper::DARK_TEXT);
+                    SetTextColor(hdc, disabled ? RGB(120, 120, 120) : colors.dialogText);
                     int textX = boxRect.right + 6;
                     int textY = rc.top + (rc.bottom - rc.top - 16) / 2;  // Assume 16px font height
                     ExtTextOutW(hdc, textX, textY, 0, nullptr, text, textLen, nullptr);
@@ -1241,6 +1278,18 @@ void SettingsDialog::PopulateDialog(HWND hDlg)
             {ThemeMode::SystemDefault, IDS_SETTINGS_THEME_SYSTEM},
             {ThemeMode::Light,         IDS_SETTINGS_THEME_LIGHT},
             {ThemeMode::Dark,          IDS_SETTINGS_THEME_DARK},
+            {ThemeMode::Dracula,       0},
+            {ThemeMode::Cyberpunk,     0},
+            {ThemeMode::Nord,          0},
+            {ThemeMode::Forest,        0},
+            {ThemeMode::OLED,          0},
+            // New Light Presets
+            {ThemeMode::SolarizedLight,0},
+            {ThemeMode::MorningMist,   0},
+            {ThemeMode::SoftPaper,     0},
+            {ThemeMode::MintFresh,     0},
+            {ThemeMode::Lavender,      0},
+            {ThemeMode::RosePink,      0},
         };
 
         int selectedIndex = -1;
@@ -1259,6 +1308,39 @@ void SettingsDialog::PopulateDialog(HWND hDlg)
                     break;
                 case ThemeMode::Dark:
                     label = L"Dark";
+                    break;
+                case ThemeMode::Dracula:
+                    label = L"Dracula";
+                    break;
+                case ThemeMode::Cyberpunk:
+                    label = L"Cyberpunk / Neon";
+                    break;
+                case ThemeMode::Nord:
+                    label = L"Nord";
+                    break;
+                case ThemeMode::Forest:
+                    label = L"Forest / Matcha";
+                    break;
+                case ThemeMode::OLED:
+                    label = L"OLED Black";
+                    break;
+                case ThemeMode::SolarizedLight:
+                    label = L"Solarized Light";
+                    break;
+                case ThemeMode::MorningMist:
+                    label = L"Morning Mist (Blue)";
+                    break;
+                case ThemeMode::SoftPaper:
+                    label = L"Soft Paper (Warm)";
+                    break;
+                case ThemeMode::MintFresh:
+                    label = L"Mint Fresh (Green)";
+                    break;
+                case ThemeMode::Lavender:
+                    label = L"Lavender (Purple)";
+                    break;
+                case ThemeMode::RosePink:
+                    label = L"Rose Pink";
                     break;
                 default:
                     label = L"Unknown";
@@ -1470,9 +1552,11 @@ void SettingsDialog::PopulateDialog(HWND hDlg)
         SendMessageW(hOverlayColor, CB_SETCURSEL, selectedIndex, 0);
     }
 
-    // Apply dark theme with dark dropdown lists to all comboboxes
-    if (m_configCopy.darkTheme)
+    // Apply theme styling to all comboboxes (for both dark and light custom themes)
+    if (IsCustomThemeEnabled(m_configCopy))
     {
+        bool useDarkScrollbar = IsDarkThemeEnabled(m_configCopy);
+        
         HWND hLangTheme   = GetDlgItem(hDlg, IDC_LANGUAGE_COMBO);
         HWND hIntTheme    = GetDlgItem(hDlg, IDC_UPDATE_INTERVAL_COMBO);
         HWND hUnitTheme   = GetDlgItem(hDlg, IDC_DISPLAY_UNIT_COMBO);
@@ -1486,18 +1570,18 @@ void SettingsDialog::PopulateDialog(HWND hDlg)
         HWND hTrayThresholdTheme = GetDlgItem(hDlg, IDC_TRAY_ANIMATION_THRESHOLD);
         HWND hSparklineTimeTheme = GetDlgItem(hDlg, IDC_SPARKLINE_TIME_RANGE_COMBO);
 
-        if (hLangTheme)    ThemeHelper::ApplyDarkThemeToControl(hLangTheme, true);
-        if (hIntTheme)     ThemeHelper::ApplyDarkThemeToControl(hIntTheme, true);
-        if (hUnitTheme)    ThemeHelper::ApplyDarkThemeToControl(hUnitTheme, true);
-        if (hIfaceTheme)   ThemeHelper::ApplyDarkThemeToControl(hIfaceTheme, true);
-        if (hTrimTheme)    ThemeHelper::ApplyDarkThemeToControl(hTrimTheme, true);
-        if (hThemeModeCB)  ThemeHelper::ApplyDarkThemeToControl(hThemeModeCB, true);
-        if (hPingIntTheme) ThemeHelper::ApplyDarkThemeToControl(hPingIntTheme, true);
-        if (hHotkeyTheme)  ThemeHelper::ApplyDarkThemeToControl(hHotkeyTheme, true);
-        if (hFontSizeTheme) ThemeHelper::ApplyDarkThemeToControl(hFontSizeTheme, true);
-        if (hOverlayColorTheme) ThemeHelper::ApplyDarkThemeToControl(hOverlayColorTheme, true);
-        if (hTrayThresholdTheme) ThemeHelper::ApplyDarkThemeToControl(hTrayThresholdTheme, true);
-        if (hSparklineTimeTheme) ThemeHelper::ApplyDarkThemeToControl(hSparklineTimeTheme, true);
+        if (hLangTheme)    ThemeHelper::ApplyDarkThemeToControl(hLangTheme, useDarkScrollbar);
+        if (hIntTheme)     ThemeHelper::ApplyDarkThemeToControl(hIntTheme, useDarkScrollbar);
+        if (hUnitTheme)    ThemeHelper::ApplyDarkThemeToControl(hUnitTheme, useDarkScrollbar);
+        if (hIfaceTheme)   ThemeHelper::ApplyDarkThemeToControl(hIfaceTheme, useDarkScrollbar);
+        if (hTrimTheme)    ThemeHelper::ApplyDarkThemeToControl(hTrimTheme, useDarkScrollbar);
+        if (hThemeModeCB)  ThemeHelper::ApplyDarkThemeToControl(hThemeModeCB, useDarkScrollbar);
+        if (hPingIntTheme) ThemeHelper::ApplyDarkThemeToControl(hPingIntTheme, useDarkScrollbar);
+        if (hHotkeyTheme)  ThemeHelper::ApplyDarkThemeToControl(hHotkeyTheme, useDarkScrollbar);
+        if (hFontSizeTheme) ThemeHelper::ApplyDarkThemeToControl(hFontSizeTheme, useDarkScrollbar);
+        if (hOverlayColorTheme) ThemeHelper::ApplyDarkThemeToControl(hOverlayColorTheme, useDarkScrollbar);
+        if (hTrayThresholdTheme) ThemeHelper::ApplyDarkThemeToControl(hTrayThresholdTheme, useDarkScrollbar);
+        if (hSparklineTimeTheme) ThemeHelper::ApplyDarkThemeToControl(hSparklineTimeTheme, useDarkScrollbar);
 
         // Apply dark theme style to Edit controls (remove thick client edge)
         const int editControls[] = {
@@ -1633,7 +1717,7 @@ void SettingsDialog::PopulateDialog(HWND hDlg)
     }
 
     // Force repaint of all comboboxes after population to apply dark theme arrow
-    if (m_configCopy.darkTheme)
+    if (IsCustomThemeEnabled(m_configCopy))
     {
         const UINT comboIds[] = {
             IDC_LANGUAGE_COMBO, IDC_UPDATE_INTERVAL_COMBO, IDC_DISPLAY_UNIT_COMBO,
@@ -1681,8 +1765,8 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
     }
 
     // Get checkbox states - use custom state map for dark theme (owner-draw doesn't store state)
-    // Note: We use m_configCopy.darkTheme (current state) to determine how to read
-    if (m_configCopy.darkTheme)
+    // Note: We use IsCustomThemeEnabled (current state) to determine how to read
+    if (IsCustomThemeEnabled(m_configCopy))
     {
         tempConfig.autoStart = GetCheckboxState(IDC_AUTOSTART_CHECK);
         tempConfig.autoStartAsAdmin = GetCheckboxState(IDC_AUTOSTART_ADMIN_CHECK);
@@ -1839,7 +1923,7 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
     }
 
     // === Data Usage Alerts ===
-    if (m_configCopy.darkTheme)
+    if (IsCustomThemeEnabled(m_configCopy))
     {
         tempConfig.enableDataUsageAlerts = GetCheckboxState(IDC_DATA_USAGE_ENABLE_CHECK);
     }
@@ -1849,7 +1933,7 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
     }
     
     // === Floating Window Settings ===
-    if (m_configCopy.darkTheme)
+    if (IsCustomThemeEnabled(m_configCopy))
     {
         tempConfig.floatingShowNetwork = GetCheckboxState(IDC_FLOATING_SHOW_NETWORK_CHECK);
         tempConfig.floatingShowCPU = GetCheckboxState(IDC_FLOATING_SHOW_CPU_CHECK);
@@ -1928,7 +2012,7 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
         HWND hCheck = GetDlgItem(hDlg, IDC_PORTABLE_MODE_CHECK);
         if (hCheck)
         {
-            if (m_configCopy.darkTheme)
+            if (IsCustomThemeEnabled(m_configCopy))
             {
                 newPortableMode = GetCheckboxState(IDC_PORTABLE_MODE_CHECK);
             }
@@ -1985,6 +2069,12 @@ bool SettingsDialog::ApplySettingsFromDialog(HWND hDlg)
 
     // Apply changes
     m_configCopy = tempConfig;
+    
+    // Update global theme state immediately so UI refresh uses new palette
+    ThemeHelper::SetCurrentTheme(m_configCopy.themeMode);
+    
+    // Clear cached brushes in DialogThemeHelper to ensure new colors are used
+    DialogThemeHelper::Cleanup();
 
     // Save to registry via config provider (ignore errors for now)
     if (m_pConfigProvider)

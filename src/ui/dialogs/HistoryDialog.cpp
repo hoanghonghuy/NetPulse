@@ -81,10 +81,10 @@ INT_PTR CALLBACK HistoryDialog::InstanceDialogProc(HWND hDlg, UINT message, WPAR
                 SetWindowTextW(hDlg, title.c_str());
             }
 
-            // Apply dark title bar if enabled
+            // Apply dark title bar for dark themes only
             if (m_pConfig)
             {
-                ThemeHelper::ApplyDarkTitleBar(hDlg, m_pConfig->darkTheme);
+                ThemeHelper::ApplyDarkTitleBar(hDlg, IsDarkThemeEnabled(*m_pConfig));
             }
 
             std::wstring opsLabel = LoadStringResource(IDS_HISTORY_LABEL_OPERATIONS);
@@ -118,9 +118,9 @@ INT_PTR CALLBACK HistoryDialog::InstanceDialogProc(HWND hDlg, UINT message, WPAR
                 SetDlgItemTextW(hDlg, IDCANCEL, closeText.c_str());
             }
 
-            // In dark theme, make buttons owner-drawn so we can paint dark
+            // In custom theme, make buttons owner-drawn so we can paint theme
             // backgrounds.
-            if (m_pConfig && m_pConfig->darkTheme)
+            if (m_pConfig && IsCustomThemeEnabled(*m_pConfig))
             {
                 DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDC_HISTORY_DELETE_ALL));
                 DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDC_HISTORY_KEEP_30));
@@ -157,7 +157,7 @@ INT_PTR CALLBACK HistoryDialog::InstanceDialogProc(HWND hDlg, UINT message, WPAR
         case WM_CTLCOLORSTATIC:
         case WM_CTLCOLORBTN:
         {
-            if (m_pConfig && m_pConfig->darkTheme)
+            if (m_pConfig && IsCustomThemeEnabled(*m_pConfig))
             {
                 HDC hdc = reinterpret_cast<HDC>(wParam);
                 HBRUSH hBrush = DialogThemeHelper::HandleControlColor(hdc, true);
@@ -167,7 +167,7 @@ INT_PTR CALLBACK HistoryDialog::InstanceDialogProc(HWND hDlg, UINT message, WPAR
         }
         case WM_DRAWITEM:
         {
-            if (m_pConfig && m_pConfig->darkTheme)
+            if (m_pConfig && IsCustomThemeEnabled(*m_pConfig))
             {
                 DRAWITEMSTRUCT* pDrawItem = reinterpret_cast<DRAWITEMSTRUCT*>(lParam);
                 if (pDrawItem->CtlType == ODT_BUTTON)
@@ -234,7 +234,7 @@ INT_PTR CALLBACK HistoryDialog::InstanceDialogProc(HWND hDlg, UINT message, WPAR
                         title = L"Manage History";
                     }
 
-                    bool dark = (m_pConfig && m_pConfig->darkTheme);
+                    bool dark = (m_pConfig && IsCustomThemeEnabled(*m_pConfig));
                     int res = ShowDarkMessageBox(hDlg, confirmText, title, MB_YESNO | MB_ICONQUESTION, dark);
                     if (res != IDYES)
                     {

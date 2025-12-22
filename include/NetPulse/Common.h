@@ -116,7 +116,20 @@ enum class ThemeMode
 {
     SystemDefault = 0,
     Light = 1,
-    Dark = 2
+    Dark = 2,
+    Dracula = 3,
+    Cyberpunk = 4,
+    Nord = 5,
+    Forest = 6,
+    OLED = 7,
+    
+    // Light Presets
+    SolarizedLight = 8,
+    MorningMist = 9,    // Cool Blue
+    SoftPaper = 10,     // Warm/Sepia
+    MintFresh = 11,     // Light Green
+    Lavender = 12,      // Light Purple
+    RosePink = 13       // Light Pink/Rose
 };
 
 // Network statistics for a single interface

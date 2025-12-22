@@ -1,7 +1,7 @@
 ﻿#ifndef NETWORK_MONITOR_DIALOG_THEME_HELPER_H
 #define NETWORK_MONITOR_DIALOG_THEME_HELPER_H
 
-#include <windows.h>
+#include "NetPulse/Common.h"
 
 namespace NetPulse
 {
@@ -13,26 +13,8 @@ namespace NetPulse
 class DialogThemeHelper
 {
 public:
-    // Dark theme colors
-    // Dark theme colors (EVKey-inspired "Professional Dark")
-    static constexpr COLORREF DARK_BACKGROUND = RGB(32, 34, 37);      // #202225
-    static constexpr COLORREF DARK_PANEL = RGB(43, 45, 49);           // #2b2d31
-    static constexpr COLORREF DARK_TEXT = RGB(242, 243, 245);         // #f2f3f5
-    static constexpr COLORREF DARK_BORDER = RGB(58, 60, 67);          // #3a3c43
-    static constexpr COLORREF DARK_BACKGROUND_SELECTED = RGB(43, 45, 49); // Same as Panel
-
-    // Button specific colors (Matches SettingsDialog legacy style)
-    static constexpr COLORREF DARK_BUTTON_BACKGROUND = RGB(40, 40, 40);
-    static constexpr COLORREF DARK_BUTTON_PRESSED = RGB(50, 50, 50);
-    static constexpr COLORREF DARK_BUTTON_BORDER = RGB(90, 90, 90);
-    static constexpr COLORREF DARK_TEXT_DISABLED = RGB(160, 160, 160);
-    
-    // Input/Edit control colors
-    static constexpr COLORREF DARK_INPUT_BACKGROUND = RGB(25, 25, 25); // Darker than background for input fields
-
-    // Light theme colors
-    static constexpr COLORREF LIGHT_BACKGROUND = RGB(255, 255, 255);
-    static constexpr COLORREF LIGHT_TEXT = RGB(0, 0, 0);
+    /**
+     * Get or create the dark theme background brush (cached)
 
     /**
      * Get or create the dark theme background brush (cached)
@@ -135,6 +117,7 @@ public:
 
 private:
     static HBRUSH s_darkBrush;
+    static HBRUSH s_inputBrush;
 };
 
 } // namespace NetPulse

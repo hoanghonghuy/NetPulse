@@ -75,6 +75,7 @@ void CenterWindowOnScreen(HWND hWnd);
 void OpenLogFileInExplorer();
 
 bool IsDarkThemeEnabled(const AppConfig& config);
+bool IsCustomThemeEnabled(const AppConfig& config);
 
 } // namespace NetPulse
 

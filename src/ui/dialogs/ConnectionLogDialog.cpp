@@ -99,7 +99,7 @@ INT_PTR ConnectionLogDialog::InstanceDialogProc(HWND hDlg, UINT message, WPARAM 
         return TRUE;
 
     case WM_DRAWITEM:
-        if (m_pConfig && m_pConfig->darkTheme)
+        if (m_pConfig && IsCustomThemeEnabled(*m_pConfig))
         {
             DRAWITEMSTRUCT* pDrawItem = reinterpret_cast<DRAWITEMSTRUCT*>(lParam);
             if (pDrawItem->CtlType == ODT_BUTTON)
@@ -115,7 +115,7 @@ INT_PTR ConnectionLogDialog::InstanceDialogProc(HWND hDlg, UINT message, WPARAM 
         break;
 
     case WM_CTLCOLORDLG:
-        if (m_pConfig && m_pConfig->darkTheme)
+        if (m_pConfig && IsCustomThemeEnabled(*m_pConfig))
         {
             HDC hdc = reinterpret_cast<HDC>(wParam);
             HBRUSH hBrush = DialogThemeHelper::HandleControlColor(hdc, true);
@@ -131,7 +131,7 @@ INT_PTR ConnectionLogDialog::InstanceDialogProc(HWND hDlg, UINT message, WPARAM 
     case WM_CTLCOLORBTN:
     case WM_CTLCOLOREDIT:
     case WM_CTLCOLORLISTBOX:
-        if (m_pConfig && m_pConfig->darkTheme)
+        if (m_pConfig && IsCustomThemeEnabled(*m_pConfig))
         {
             HDC hdc = reinterpret_cast<HDC>(wParam);
             return reinterpret_cast<INT_PTR>(DialogThemeHelper::HandleControlColor(hdc, true));
@@ -143,7 +143,7 @@ INT_PTR ConnectionLogDialog::InstanceDialogProc(HWND hDlg, UINT message, WPARAM 
         NMHDR* pnmh = reinterpret_cast<NMHDR*>(lParam);
         if (pnmh && pnmh->hwndFrom == m_hList && pnmh->code == NM_CUSTOMDRAW)
         {
-            if (m_pConfig && m_pConfig->darkTheme)
+            if (m_pConfig && IsCustomThemeEnabled(*m_pConfig))
             {
                 NMLVCUSTOMDRAW* pLVCD = reinterpret_cast<NMLVCUSTOMDRAW*>(lParam);
                 switch (pLVCD->nmcd.dwDrawStage)
@@ -160,8 +160,9 @@ INT_PTR ConnectionLogDialog::InstanceDialogProc(HWND hDlg, UINT message, WPARAM 
                     RECT rcItem;
                     ListView_GetItemRect(m_hList, static_cast<int>(pLVCD->nmcd.dwItemSpec), &rcItem, LVIR_BOUNDS);
                     
+                    const auto& colors = ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme());
                     HDC hdc = pLVCD->nmcd.hdc;
-                    HPEN hPen = CreatePen(PS_SOLID, 1, RGB(60, 60, 60)); // Subtle dark grid
+                    HPEN hPen = CreatePen(PS_SOLID, 1, colors.chartGrid); // Subtle dark grid
                     HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
                     
                     // Draw horizontal line at bottom of item
@@ -216,7 +217,8 @@ void ConnectionLogDialog::InitializeDialog(HWND hDlg)
     SetWindowTextW(hDlg, title.c_str());
 
     // Determine theme from config (not system theme!)
-    bool darkTheme = (m_pConfig && m_pConfig->darkTheme);
+    bool customTheme = (m_pConfig && IsCustomThemeEnabled(*m_pConfig));
+    bool darkTheme = (m_pConfig && IsDarkThemeEnabled(*m_pConfig));
     
     // Enable dark mode for the window FIRST
     if (darkTheme)
@@ -227,8 +229,8 @@ void ConnectionLogDialog::InitializeDialog(HWND hDlg)
     // Apply dark title bar
     ThemeHelper::ApplyDarkTitleBar(hDlg, darkTheme);
     
-    // Apply thin window border in dark mode
-    if (darkTheme)
+    // Apply thin window border in custom theme
+    if (customTheme)
     {
         DialogThemeHelper::SetThinWindowBorder(hDlg);
     }
@@ -404,37 +406,25 @@ void ConnectionLogDialog::RefreshData()
 
 void ConnectionLogDialog::ApplyTheme(HWND hDlg) const
 {
-    bool darkTheme = (m_pConfig && m_pConfig->darkTheme);
+    bool customTheme = (m_pConfig && IsCustomThemeEnabled(*m_pConfig));
+    bool useDarkScrollbar = (m_pConfig && IsDarkThemeEnabled(*m_pConfig));
     
-    if (darkTheme)
+    if (customTheme)
     {
         // Apply thin window border
         DialogThemeHelper::SetThinWindowBorder(hDlg);
         
-        // Apply dark theme to list view
+        // Apply theme to list view (scrollbar dark/light based on IsDarkThemeEnabled)
         if (m_hList)
         {
-            DialogThemeHelper::ApplyDarkListView(m_hList, true);
+            DialogThemeHelper::ApplyDarkListView(m_hList, useDarkScrollbar);
         }
-    }
-    else
-    {
-        // Apply light theme to dialog
-        DialogThemeHelper::ApplyToDialog(hDlg, false);
         
-        // Light theme colors
-        if (m_hList)
-        {
-            DialogThemeHelper::ApplyDarkListView(m_hList, false);
-        }
-    }
-
-    // Toggle BS_OWNERDRAW on buttons based on theme
-    if (darkTheme)
-    {
+        // Toggle BS_OWNERDRAW on buttons for custom theme
         DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDC_CONNLOG_REFRESH));
         DialogThemeHelper::ApplyDarkButton(GetDlgItem(hDlg, IDCANCEL));
     }
+    // For SystemDefault/Light theme: use default Windows controls - no custom styling needed
 }
 
 } // namespace NetPulse

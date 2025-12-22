@@ -251,6 +251,7 @@
     <ClInclude Include="include\NetPulse\TrayIcon.h" />
     <ClInclude Include="include\NetPulse\TaskbarOverlay.h" />
     <ClInclude Include="include\NetPulse\ThemeHelper.h" />
+    <ClInclude Include="include\NetPulse\ThemeColors.h" />
     <ClInclude Include="include\NetPulse\HistoryLogger.h" />
     <ClInclude Include="include\NetPulse\PingMonitor.h" />
     <ClInclude Include="include\NetPulse\HotkeyManager.h" />

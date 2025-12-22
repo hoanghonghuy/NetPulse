@@ -83,6 +83,12 @@
     <ClInclude Include="include\NetworkMonitor\TrayIcon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\NetPulse\ThemeColors.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\NetPulse\ThemeHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="resources\resource.h">
       <Filter>Resource Files</Filter>
     </ClInclude>

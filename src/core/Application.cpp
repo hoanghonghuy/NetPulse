@@ -79,6 +79,10 @@ bool Application::Initialize(HINSTANCE hInstance)
     m_pLanguageManager = std::make_unique<LanguageManager>();
     ApplyLanguageFromConfig();
 
+    // Set the global current theme mode so ThemeHelper knows which palette to use
+    // when asked for "dark" colors (since we now have multiple dark presets)
+    ThemeHelper::SetCurrentTheme(m_config.themeMode);
+
     SetDebugLoggingEnabled(m_config.debugLogging);
 
     // Initialize dark mode support for process-level elements (context

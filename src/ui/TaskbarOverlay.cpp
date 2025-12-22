@@ -1,6 +1,7 @@
 ﻿// NOTE: This class manages its own GDI resources (Fonts, Brushes, Bitmaps) for performance and stability.
 // Refactoring to shared helpers is discouraged to avoid object lifetime issues.
 #include "NetPulse/TaskbarOverlay.h"
+#include "NetPulse/ThemeHelper.h"
 #include "NetPulse/Utils.h"
 #include "../../resources/resource.h"
 #include <dwmapi.h>
@@ -24,8 +25,8 @@ TaskbarOverlay::TaskbarOverlay()
     , m_pingLatency(-1)
     , m_wasHiddenByFullscreen(false)
     , m_fontSize(13)
-    , m_downloadColor(RGB(0, 255, 255))  // Cyan
-    , m_uploadColor(RGB(0, 255, 0))      // Green
+    , m_downloadColor(0) // Will be set in OnPaint or Update
+    , m_uploadColor(0)
     , m_memDC(nullptr)
     , m_memBitmap(nullptr)
     , m_oldBitmap(nullptr)
@@ -473,21 +474,25 @@ void TaskbarOverlay::OnPaint()
     RECT line1Rect = {5, startY, rect.right - 5, startY + lineHeight};
     RECT line2Rect = {5, startY + lineHeight, rect.right - 5, startY + lineHeight * 2};
 
+    // Draw Download line
+    // Use colors from SetOverlayStyle (set from config.overlayDownloadColor/overlayUploadColor)
+    // NOT from theme presets - overlay colors are configured separately in Settings
     COLORREF downColor = m_downloadColor;
-    COLORREF upColor   = m_uploadColor;
+    COLORREF upColor = m_uploadColor;
 
-    // Draw Download line - GREEN color
     SetTextColor(hdcMem, downColor);
     DrawTextW(hdcMem, line1.c_str(), -1, &line1Rect,
               DT_SINGLELINE | DT_LEFT | DT_VCENTER);
 
-    // Draw Upload line - ORANGE color
+    // Draw Upload line
     SetTextColor(hdcMem, upColor);
     DrawTextW(hdcMem, line2.c_str(), -1, &line2Rect,
               DT_SINGLELINE | DT_LEFT | DT_VCENTER);
 
     // Draw Ping latency on the right side
+    // Ping colors still use theme (no separate config setting for ping colors)
     {
+        const auto& colors = ThemeHelper::GetColors(m_darkTheme);
         wchar_t pingBuffer[32];
         COLORREF pingColor;
 
@@ -495,25 +500,25 @@ void TaskbarOverlay::OnPaint()
         {
             // Timeout or unavailable - show "---" in gray
             wcscpy_s(pingBuffer, L"---");
-            pingColor = m_darkTheme ? RGB(128, 128, 128) : RGB(150, 150, 150);
+            pingColor = colors.pingNone;
         }
         else if (m_pingLatency < 50)
         {
             // Good latency - green
             swprintf_s(pingBuffer, L"%dms", m_pingLatency);
-            pingColor = m_darkTheme ? RGB(0, 220, 100) : RGB(0, 150, 60);
+            pingColor = colors.pingLow;
         }
         else if (m_pingLatency < 100)
         {
             // Medium latency - yellow/orange
             swprintf_s(pingBuffer, L"%dms", m_pingLatency);
-            pingColor = m_darkTheme ? RGB(255, 200, 50) : RGB(200, 140, 0);
+            pingColor = colors.pingMed;
         }
         else
         {
             // High latency - red
             swprintf_s(pingBuffer, L"%dms", m_pingLatency);
-            pingColor = m_darkTheme ? RGB(255, 80, 80) : RGB(200, 40, 40);
+            pingColor = colors.pingHigh;
         }
 
         SetTextColor(hdcMem, pingColor);
