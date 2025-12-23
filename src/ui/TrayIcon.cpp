@@ -133,11 +133,24 @@ bool TrayIcon::Initialize(HWND hwnd)
     m_notifyIconData.hIcon = useDark ? m_iconIdleDark : m_iconIdle;
     wcscpy_s(m_notifyIconData.szTip, APP_NAME);
 
-    // Add tray icon
-    if (!Shell_NotifyIconW(NIM_ADD, &m_notifyIconData))
+    // Add tray icon with retry logic (shell might not be ready)
+    bool iconAdded = false;
+    for (int i = 0; i < 5; ++i)
     {
-        ShowErrorMessage(LoadStringResource(IDS_ERR_CREATE_TRAY_ICON));
-        return false;
+        if (Shell_NotifyIconW(NIM_ADD, &m_notifyIconData))
+        {
+            iconAdded = true;
+            break;
+        }
+        Sleep(200); // Wait 200ms before retry
+    }
+
+    if (!iconAdded)
+    {
+        // Don't fail the entire app startup if tray icon fails (race condition with Explorer)
+        // The Application class handles TaskbarCreated message and will restore it later.
+        LogError(L"TrayIcon::Initialize: Failed to create tray icon (explorer probably not ready), will retry on TaskbarCreated");
+        // We still return TRUE to allow the app to start
     }
 
     // Set version for modern behavior (Windows Vista+)
