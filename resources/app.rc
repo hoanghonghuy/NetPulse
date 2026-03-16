@@ -1021,7 +1021,7 @@ END
 // ============================================================================
 
 // Embed the application manifest
-// 1 RT_MANIFEST "app.manifest"
+1 RT_MANIFEST "app.manifest"
 
 // ============================================================================
 // DIALOG RESOURCES (Optional - for future use)
