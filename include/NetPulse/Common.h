@@ -295,8 +295,7 @@ struct AppConfig
                overlayDownloadColor == other.overlayDownloadColor &&
                overlayUploadColor == other.overlayUploadColor &&
                enableDataUsageAlerts == other.enableDataUsageAlerts &&
-               // Use epsilon for float comparison if needed, but direct match is fine for settings
-               dataQuotaGB == other.dataQuotaGB && 
+               std::abs(dataQuotaGB - other.dataQuotaGB) < 1e-9 && 
                dataAlertThreshold1 == other.dataAlertThreshold1 &&
                dataAlertThreshold2 == other.dataAlertThreshold2 &&
                showFloatingWindow == other.showFloatingWindow &&

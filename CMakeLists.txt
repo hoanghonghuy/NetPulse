@@ -1,7 +1,7 @@
 # ============================================================================
 # File: CMakeLists.txt
-# Description: CMake build configuration for NetworkMonitor
-# Author: NetworkMonitor Project
+# Description: CMake build configuration for NetPulse
+# Author: NetPulse Project
 # ============================================================================
 
 cmake_minimum_required(VERSION 3.15)
@@ -254,12 +254,6 @@ if(BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
-# ============================================================================
-# IMGUI STANDALONE APP (Optional - for testing modern UI)
-# ============================================================================
-
-# option(BUILD_IMGUI_APP "Build standalone ImGui application for testing" OFF)
-# Legacy ImGui integration temporarily disabled in build system
 
 
 # ============================================================================
@@ -267,7 +261,7 @@ endif()
 # ============================================================================
 
 message(STATUS "")
-message(STATUS "=== NetworkMonitor Build Configuration ===")
+message(STATUS "=== NetPulse Build Configuration ===")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "C++ standard: ${CMAKE_CXX_STANDARD}")
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")

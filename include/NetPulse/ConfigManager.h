@@ -1,4 +1,4 @@
-﻿#ifndef NETWORK_MONITOR_CONFIGMANAGER_H
+#ifndef NETWORK_MONITOR_CONFIGMANAGER_H
 #define NETWORK_MONITOR_CONFIGMANAGER_H
 
 #include "NetPulse/Common.h"
@@ -143,6 +143,7 @@ private:
   bool WriteIniString(const wchar_t* section, const wchar_t* key, const std::wstring& value);
 
 private:
+  // NOTE: Uses legacy name "NetworkMonitor" for backward compatibility with existing user settings.
   static constexpr const wchar_t *REGISTRY_PATH = L"Software\\NetworkMonitor";
   static constexpr const wchar_t *AUTOSTART_PATH =
       L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";

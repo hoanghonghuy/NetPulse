@@ -446,7 +446,7 @@ bool ConfigManager::IsAutoStartEnabled()
         }
     }
 
-    OutputDebugStringW(L"[DEBUG] IsAutoStartEnabled: FALSE (not found)\n");
+    LogDebug(L"IsAutoStartEnabled: FALSE (not found)");
     return false;
 }
 

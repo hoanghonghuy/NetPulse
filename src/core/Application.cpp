@@ -465,7 +465,10 @@ void Application::Cleanup()
             m_pFloatingWindow->GetPosition(x, y);
             m_config.floatingWindowX = x;
             m_config.floatingWindowY = y;
-            SaveConfig();
+            if (!SaveConfig())
+            {
+                LogError(L"Failed to save floating window position during cleanup");
+            }
         }
         m_pFloatingWindow->Destroy();
         m_pFloatingWindow.reset();
