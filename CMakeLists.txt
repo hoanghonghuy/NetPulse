@@ -42,6 +42,10 @@ if(MSVC)
     add_compile_options(/wd4100) # unreferenced formal parameter
 else()
     add_compile_options(-Wall -Wextra -Wpedantic)
+    # Ensure MinGW standard libraries are statically linked so the .exe is portable
+    if(MINGW)
+        add_link_options(-static -static-libgcc -static-libstdc++)
+    endif()
 endif()
 
 # Unicode support
