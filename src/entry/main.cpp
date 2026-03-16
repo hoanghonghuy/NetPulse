@@ -1,8 +1,15 @@
-﻿#include "NetPulse/Common.h"
+#include "NetPulse/Common.h"
 #include "NetPulse/Utils.h"
 #include "NetPulse/Application.h"
 #include "../../resources/resource.h"
 #include <windows.h>
+
+// For MSVC (Visual Studio), embed the manifest dependency via pragma to avoid
+// collisions with auto-generated manifests. MinGW uses app.rc instead.
+#if defined(_MSC_VER)
+#pragma comment(linker, "\"/manifestdependency:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#endif
+
 // ============================================================================
 // WINMAIN - APPLICATION ENTRY POINT
 // ============================================================================

@@ -1020,8 +1020,10 @@ END
 // MANIFEST RESOURCE
 // ============================================================================
 
-// Embed the application manifest
+// Embed the application manifest (MinGW only, MSVC uses pragma in main.cpp)
+#ifndef _MSC_VER
 1 RT_MANIFEST "app.manifest"
+#endif
 
 // ============================================================================
 // DIALOG RESOURCES (Optional - for future use)
