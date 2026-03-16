@@ -1,4 +1,4 @@
-﻿#ifndef NETWORK_MONITOR_VPN_PROXY_DETECTOR_H
+#ifndef NETWORK_MONITOR_VPN_PROXY_DETECTOR_H
 #define NETWORK_MONITOR_VPN_PROXY_DETECTOR_H
 
 #include "NetPulse/Common.h"
@@ -117,7 +117,7 @@ private:
     mutable std::mutex m_mutex;
     
     // Rate limiting for public IP fetch
-    DWORD m_lastIPUpdateTime;
+    ULONGLONG m_lastIPUpdateTime;
     UINT m_ipUpdateIntervalMs;
     
     // VPN adapter keywords for detection

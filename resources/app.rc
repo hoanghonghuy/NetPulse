@@ -7,6 +7,20 @@
 #include <windows.h>
 #include "resource.h"
 
+// MinGW windres compatibility for sub-languages
+#ifndef SUBLANG_VIETNAMESE_VIETNAM
+#define SUBLANG_VIETNAMESE_VIETNAM 0x01
+#endif
+#ifndef SUBLANG_JAPANESE_JAPAN
+#define SUBLANG_JAPANESE_JAPAN 0x01
+#endif
+#ifndef SUBLANG_KOREAN
+#define SUBLANG_KOREAN 0x01
+#endif
+#ifndef SUBLANG_CHINESE_SIMPLIFIED
+#define SUBLANG_CHINESE_SIMPLIFIED 0x02
+#endif
+
 // ============================================================================
 // LANGUAGE AND CODE PAGE SETTINGS
 // ============================================================================

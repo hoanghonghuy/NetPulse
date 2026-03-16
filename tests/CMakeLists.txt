@@ -64,18 +64,21 @@ target_include_directories(${PROJECT_NAME}
 )
 
 # Link against the same Windows system libraries as the main app
-if(MSVC)
+if(WIN32)
     target_link_libraries(${PROJECT_NAME}
         PRIVATE
             Iphlpapi.lib
             shell32.lib
             advapi32.lib
             comctl32.lib
-            comctl32.lib
             Dwmapi.lib
             winhttp.lib
+            uxtheme.lib
+            ws2_32.lib
     )
+endif()
 
+if(MSVC)
     # Suppress deprecated GetVersionEx warnings in third-party SQLite only
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/sqlite/sqlite3.c PROPERTIES
         COMPILE_FLAGS "/wd4996"

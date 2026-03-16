@@ -1,4 +1,4 @@
-﻿#ifndef NETPULSE_COMMON_H
+#ifndef NETPULSE_COMMON_H
 #define NETPULSE_COMMON_H
 
 // ============================================================================
@@ -76,6 +76,7 @@ constexpr int MAX_HISTORY_AUTO_TRIM_DAYS = 365;
 #define TIMER_UPDATE_NETWORK 3001
 #define TIMER_PING 3002
 #define TIMER_VPN_UPDATE 3003  // Phase 3: VPN/Proxy detection
+#define TIMER_TRAY_ANIMATION 9001  // Tray icon pulse animation
 
 // Hotkey IDs
 #define HOTKEY_TOGGLE_OVERLAY 4001

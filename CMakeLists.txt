@@ -1,4 +1,4 @@
-﻿# ============================================================================
+# ============================================================================
 # File: CMakeLists.txt
 # Description: CMake build configuration for NetworkMonitor
 # Author: NetworkMonitor Project
@@ -11,7 +11,7 @@ cmake_minimum_required(VERSION 3.15)
 # ============================================================================
 
 project(NetPulse
-    VERSION 2.2.0
+    VERSION 2.3.0
     DESCRIPTION "Network Traffic Monitor for Windows System Tray"
     LANGUAGES C CXX
 )
@@ -38,18 +38,17 @@ if(MSVC)
     # Enable multiprocessor compilation
     add_compile_options(/MP)
     
-    # Unicode support
-    add_definitions(-DUNICODE -D_UNICODE)
-    
-    # Windows version targeting (Windows 7+)
-    add_definitions(-D_WIN32_WINNT=0x0601)
-    
     # Disable specific warnings
     add_compile_options(/wd4100) # unreferenced formal parameter
-    
 else()
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
+
+# Unicode support
+add_definitions(-DUNICODE -D_UNICODE)
+
+# Windows version targeting (Windows 7+)
+add_definitions(-D_WIN32_WINNT=0x0601)
 
 # ============================================================================
 # SOURCE FILES
@@ -184,6 +183,8 @@ target_link_libraries(${PROJECT_NAME}
         d3d11.lib       # Direct3D 11
         dxgi.lib        # DirectX Graphics Infrastructure
         winhttp.lib     # HTTP API (for public IP fetching)
+        uxtheme.lib     # Windows Theme API
+        ws2_32.lib      # Windows Sockets API
 )
 
 # ============================================================================

@@ -1,10 +1,11 @@
-﻿#include "NetPulse/Utils.h"
+#include "NetPulse/Utils.h"
 #include "NetPulse/DialogThemeHelper.h"
 #include "NetPulse/ThemeHelper.h"
 #include "../../resources/resource.h"
 #include <sstream>
 #include <iomanip>
 #include <fstream>
+#include <filesystem>
 #include <shellapi.h>
 
 namespace NetPulse
@@ -398,7 +399,7 @@ namespace
 
         try
         {
-            std::wofstream file(filePath, std::ios::app);
+            std::wofstream file(std::filesystem::path(filePath), std::ios::app);
             if (!file.is_open())
             {
                 return;

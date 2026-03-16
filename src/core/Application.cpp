@@ -1,4 +1,4 @@
-﻿#include "NetPulse/Application.h"
+#include "NetPulse/Application.h"
 #include "NetPulse/Utils.h"
 #include "NetPulse/HistoryLogger.h"
 #include "NetPulse/SettingsDialog.h"
@@ -711,7 +711,7 @@ LRESULT CALLBACK Application::InstanceWindowProc(HWND hwnd, UINT message, WPARAM
                     }
                 }
             }
-            else if (wParam == 9001) // TrayIcon ANIMATION_TIMER_ID
+            else if (wParam == TIMER_TRAY_ANIMATION)
             {
                 if (m_pTrayIcon)
                 {

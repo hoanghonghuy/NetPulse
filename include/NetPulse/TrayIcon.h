@@ -1,4 +1,4 @@
-﻿#ifndef NETWORK_MONITOR_TRAYICON_H
+#ifndef NETWORK_MONITOR_TRAYICON_H
 #define NETWORK_MONITOR_TRAYICON_H
 
 #include "NetPulse/Common.h"
@@ -140,7 +140,7 @@ private:
     std::function<void()> m_doubleClickCallback;    // Double-click callback
     
     // Animation members
-    static const UINT_PTR ANIMATION_TIMER_ID = 9001;
+    static const UINT_PTR ANIMATION_TIMER_ID = TIMER_TRAY_ANIMATION;
     bool m_animating;                               // Is animation running
     int m_animationPhase;                           // Current animation frame (0 or 1)
     

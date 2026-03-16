@@ -1,7 +1,8 @@
-﻿#include "NetPulse/SpeedTestHistory.h"
+#include "NetPulse/SpeedTestHistory.h"
 #include <Windows.h>
 #include <ShlObj.h>
 #include <fstream>
+#include <filesystem>
 #include <sstream>
 #include <algorithm>
 #include <string>
@@ -71,7 +72,7 @@ void SpeedTestHistory::LoadFromFile()
 {
     if (m_filePath.empty()) return;
     
-    std::ifstream file(m_filePath);
+    std::ifstream file{std::filesystem::path(m_filePath)};
     if (!file.is_open()) return;
     
     std::stringstream buffer;
@@ -152,7 +153,7 @@ void SpeedTestHistory::SaveToFile() const
 {
     if (m_filePath.empty()) return;
     
-    std::ofstream file(m_filePath);
+    std::ofstream file{std::filesystem::path(m_filePath)};
     if (!file.is_open()) return;
     
     file << "[\n";

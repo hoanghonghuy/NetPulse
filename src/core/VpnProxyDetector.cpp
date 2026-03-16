@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // File: VpnProxyDetector.cpp
 // Description: VPN and Proxy detection implementation
 // Author: NetworkMonitor Project
@@ -99,7 +99,7 @@ void VpnProxyDetector::Update()
     CheckAsyncIPResult();
     
     // Start async IP fetch if time has elapsed (rate limited)
-    DWORD currentTime = GetTickCount();
+    ULONGLONG currentTime = GetTickCount64();
     if (m_lastIPUpdateTime == 0 || 
         (currentTime - m_lastIPUpdateTime) >= m_ipUpdateIntervalMs)
     {
@@ -124,7 +124,7 @@ void VpnProxyDetector::RefreshPublicIP()
 {
     // Non-blocking: start async fetch
     StartAsyncIPFetch();
-    m_lastIPUpdateTime = GetTickCount();
+    m_lastIPUpdateTime = GetTickCount64();
 }
 
 void VpnProxyDetector::StartAsyncIPFetch()

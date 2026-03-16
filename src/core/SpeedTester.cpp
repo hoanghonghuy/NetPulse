@@ -1,4 +1,4 @@
-﻿#include "NetPulse/SpeedTester.h"
+#include "NetPulse/SpeedTester.h"
 
 // NOMINMAX to prevent Windows min/max macro conflicts with std::min/max
 #ifndef NOMINMAX
@@ -11,7 +11,6 @@
 #include <winhttp.h>
 #include <chrono>
 #include <vector>
-#include <vector>
 #include <random>
 #include <string>
 #include <algorithm>
@@ -23,6 +22,27 @@
 
 namespace NetPulse
 {
+
+// Helper: Convert UTF-8 std::string to std::wstring using Windows API
+static std::wstring Utf8ToWide(const std::string& utf8)
+{
+    if (utf8.empty())
+    {
+        return std::wstring();
+    }
+
+    int wideLen = MultiByteToWideChar(CP_UTF8, 0, utf8.data(),
+                                       static_cast<int>(utf8.size()), nullptr, 0);
+    if (wideLen <= 0)
+    {
+        return std::wstring();
+    }
+
+    std::wstring result(static_cast<size_t>(wideLen), L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, utf8.data(),
+                        static_cast<int>(utf8.size()), &result[0], wideLen);
+    return result;
+}
 
 SpeedTester::SpeedTester()
 {
@@ -87,61 +107,64 @@ void SpeedTester::RunTest(std::function<void(int progress, const std::wstring& s
     
     try
     {
-        // Phase 1: Ping (0-10%)
-        if (progressCallback) progressCallback(0, L"Measuring latency...");
-        
-        if (m_cancelled.load())
+        // Use do-while(false) for structured cancellation flow
+        do
         {
-            result.success = false;
-            result.errorMessage = L"Test cancelled";
-            goto done;
-        }
-        
-        result.pingMs = MeasurePing(L"speed.cloudflare.com");
-        if (progressCallback) progressCallback(10, L"Latency: " + std::to_wstring(result.pingMs) + L" ms");
-        
-        // Phase 2: Download (10-60%)
-        if (m_cancelled.load())
-        {
-            result.success = false;
-            result.errorMessage = L"Test cancelled";
-            goto done;
-        }
-        
-        std::wstring downloadStatus = LoadStringResource(IDS_SPEED_TEST_DOWNLOAD);
-        if (downloadStatus.empty()) downloadStatus = L"Testing download speed...";
-        if (progressCallback) progressCallback(10, downloadStatus);
-        
-        result.downloadMbps = MeasureDownloadSpeed([&progressCallback, downloadStatus](int p, const std::wstring& s) {
-            if (progressCallback) progressCallback(10 + (p * 50 / 100), s);
-        });
-        
-        // Phase 3: Upload (60-100%)
-        if (m_cancelled.load())
-        {
-            result.success = false;
-            result.errorMessage = L"Test cancelled";
-            goto done;
-        }
-        
-        std::wstring uploadStatus = LoadStringResource(IDS_SPEED_TEST_UPLOAD);
-        if (uploadStatus.empty()) uploadStatus = L"Testing upload speed...";
-        if (progressCallback) progressCallback(60, uploadStatus);
-        
-        result.uploadMbps = MeasureUploadSpeed([&progressCallback, uploadStatus](int p, const std::wstring& s) {
-            if (progressCallback) progressCallback(60 + (p * 40 / 100), s);
-        });
-        
-        result.success = true;
-        std::wstring completeStatus = LoadStringResource(IDS_SPEED_TEST_COMPLETE);
-        if (completeStatus.empty()) completeStatus = L"Test complete";
-        if (progressCallback) progressCallback(100, completeStatus);
+            // Phase 1: Ping (0-10%)
+            if (progressCallback) progressCallback(0, L"Measuring latency...");
+            
+            if (m_cancelled.load())
+            {
+                result.success = false;
+                result.errorMessage = L"Test cancelled";
+                break;
+            }
+            
+            result.pingMs = MeasurePing(L"speed.cloudflare.com");
+            if (progressCallback) progressCallback(10, L"Latency: " + std::to_wstring(result.pingMs) + L" ms");
+            
+            // Phase 2: Download (10-60%)
+            if (m_cancelled.load())
+            {
+                result.success = false;
+                result.errorMessage = L"Test cancelled";
+                break;
+            }
+            
+            std::wstring downloadStatus = LoadStringResource(IDS_SPEED_TEST_DOWNLOAD);
+            if (downloadStatus.empty()) downloadStatus = L"Testing download speed...";
+            if (progressCallback) progressCallback(10, downloadStatus);
+            
+            result.downloadMbps = MeasureDownloadSpeed([&progressCallback, downloadStatus](int p, const std::wstring& s) {
+                if (progressCallback) progressCallback(10 + (p * 50 / 100), s);
+            });
+            
+            // Phase 3: Upload (60-100%)
+            if (m_cancelled.load())
+            {
+                result.success = false;
+                result.errorMessage = L"Test cancelled";
+                break;
+            }
+            
+            std::wstring uploadStatus = LoadStringResource(IDS_SPEED_TEST_UPLOAD);
+            if (uploadStatus.empty()) uploadStatus = L"Testing upload speed...";
+            if (progressCallback) progressCallback(60, uploadStatus);
+            
+            result.uploadMbps = MeasureUploadSpeed([&progressCallback, uploadStatus](int p, const std::wstring& s) {
+                if (progressCallback) progressCallback(60 + (p * 40 / 100), s);
+            });
+            
+            result.success = true;
+            std::wstring completeStatus = LoadStringResource(IDS_SPEED_TEST_COMPLETE);
+            if (completeStatus.empty()) completeStatus = L"Test complete";
+            if (progressCallback) progressCallback(100, completeStatus);
+        } while (false);
     }
     catch (const std::exception& e)
     {
         result.success = false;
-        std::string msg = e.what();
-        result.errorMessage = std::wstring(msg.begin(), msg.end());
+        result.errorMessage = Utf8ToWide(e.what());
     }
     catch (...)
     {
@@ -149,7 +172,6 @@ void SpeedTester::RunTest(std::function<void(int progress, const std::wstring& s
         result.errorMessage = L"Unknown error occurred";
     }
     
-done:
     {
         std::lock_guard<std::mutex> lock(m_resultMutex);
         m_lastResult = result;

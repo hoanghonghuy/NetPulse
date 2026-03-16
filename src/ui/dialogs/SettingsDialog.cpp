@@ -1,10 +1,11 @@
-﻿#include "NetPulse/SettingsDialog.h"
+#include "NetPulse/SettingsDialog.h"
 #include "NetPulse/Interfaces/IConfigProvider.h"
 #include "NetPulse/Interfaces/INetworkStatsProvider.h"
 #include "NetPulse/DialogThemeHelper.h"
 #include "NetPulse/Utils.h"
 #include "NetPulse/ThemeHelper.h"
 #include "../../../resources/resource.h"
+#include <cmath>
 #include <windowsx.h>
 #include <commctrl.h>
 #include <uxtheme.h>

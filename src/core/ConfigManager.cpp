@@ -1,4 +1,4 @@
-﻿#include "NetPulse/ConfigManager.h"
+#include "NetPulse/ConfigManager.h"
 #include "NetPulse/Utils.h"
 #include "NetPulse/ThemeHelper.h"
 #include <shellapi.h>
@@ -572,7 +572,7 @@ bool ConfigManager::LoadConfigFromFile(AppConfig& config)
     config.darkTheme = ReadIniDWORD(INI_SECTION, L"DarkTheme", defaultDark ? 1 : 0) != 0;
 
     DWORD rawThemeMode = ReadIniDWORD(INI_SECTION, L"ThemeMode", static_cast<DWORD>(ThemeMode::SystemDefault));
-    if (rawThemeMode > static_cast<DWORD>(ThemeMode::Dark))
+    if (rawThemeMode > static_cast<DWORD>(ThemeMode::RosePink))
     {
         bool systemDark = ThemeHelper::IsSystemInDarkMode();
         if (config.darkTheme == systemDark)
