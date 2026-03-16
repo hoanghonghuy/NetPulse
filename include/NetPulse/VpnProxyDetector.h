@@ -12,8 +12,10 @@
 #include <thread>
 #include <future>
 
+#ifdef _MSC_VER
 #pragma comment(lib, "iphlpapi.lib")
 #pragma comment(lib, "winhttp.lib")
+#endif
 
 namespace NetPulse
 {

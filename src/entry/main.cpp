@@ -37,7 +37,7 @@ int WINAPI WinMain(
         const DPI_AWARENESS_CONTEXT CTX_UNAWARE_GDISCALED = (DPI_AWARENESS_CONTEXT)-5;
 
         SetProcessDpiAwarenessContextFunc pSetDpi = 
-            (SetProcessDpiAwarenessContextFunc)GetProcAddress(hUser32, "SetProcessDpiAwarenessContext");
+            reinterpret_cast<SetProcessDpiAwarenessContextFunc>(reinterpret_cast<void*>(GetProcAddress(hUser32, "SetProcessDpiAwarenessContext")));
             
         if (pSetDpi)
         {

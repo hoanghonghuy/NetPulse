@@ -6,7 +6,9 @@
 #include <shellapi.h>
 #include <functional>
 
+#ifdef _MSC_VER
 #pragma comment(lib, "shell32.lib")
+#endif
 
 namespace NetPulse
 {

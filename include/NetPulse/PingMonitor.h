@@ -1,4 +1,4 @@
-﻿#ifndef NETWORK_MONITOR_PING_MONITOR_H
+#ifndef NETWORK_MONITOR_PING_MONITOR_H
 #define NETWORK_MONITOR_PING_MONITOR_H
 
 #include "NetPulse/Common.h"
@@ -8,7 +8,9 @@
 #include <icmpapi.h>
 #include <string>
 
+#ifdef _MSC_VER
 #pragma comment(lib, "iphlpapi.lib")
+#endif
 
 namespace NetPulse
 {

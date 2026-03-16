@@ -1,4 +1,4 @@
-﻿#ifndef NETWORK_MONITOR_NETWORKMONITOR_H
+#ifndef NETWORK_MONITOR_NETWORKMONITOR_H
 #define NETWORK_MONITOR_NETWORKMONITOR_H
 
 #include "NetPulse/Common.h"
@@ -11,7 +11,9 @@
 #include <map>
 #include <mutex>
 
+#ifdef _MSC_VER
 #pragma comment(lib, "Iphlpapi.lib")
+#endif
 
 namespace NetPulse
 {

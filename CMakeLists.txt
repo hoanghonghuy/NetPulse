@@ -51,8 +51,8 @@ endif()
 # Unicode support
 add_definitions(-DUNICODE -D_UNICODE)
 
-# Windows version targeting (Windows 7+)
-add_definitions(-D_WIN32_WINNT=0x0601)
+# Windows version targeting (Windows 7+) and prevent winsock.h inclusion
+add_definitions(-D_WIN32_WINNT=0x0601 -DWIN32_LEAN_AND_MEAN)
 
 # ============================================================================
 # SOURCE FILES

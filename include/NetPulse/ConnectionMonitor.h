@@ -13,7 +13,9 @@
 #include <atomic>
 #include <functional>
 
+#ifdef _MSC_VER
 #pragma comment(lib, "Iphlpapi.lib")
+#endif
 
 namespace NetPulse
 {

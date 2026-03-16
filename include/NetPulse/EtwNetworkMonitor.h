@@ -1,4 +1,4 @@
-﻿#ifndef NETWORK_MONITOR_ETW_NETWORK_MONITOR_H
+#ifndef NETWORK_MONITOR_ETW_NETWORK_MONITOR_H
 #define NETWORK_MONITOR_ETW_NETWORK_MONITOR_H
 
 #include "NetPulse/Common.h"
@@ -12,7 +12,9 @@
 #include <thread>
 #include <atomic>
 
+#ifdef _MSC_VER
 #pragma comment(lib, "advapi32.lib")
+#endif
 
 namespace NetPulse
 {
