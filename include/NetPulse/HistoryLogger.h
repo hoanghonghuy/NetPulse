@@ -1,10 +1,11 @@
-﻿#ifndef NETWORK_MONITOR_HISTORYLOGGER_H
+#ifndef NETWORK_MONITOR_HISTORYLOGGER_H
 #define NETWORK_MONITOR_HISTORYLOGGER_H
 
 #include "NetPulse/Common.h"
 #include <string>
 #include <vector>
 #include <ctime>
+#include <mutex>
 
 struct sqlite3;
 
@@ -119,7 +120,7 @@ private:
                                const std::wstring* interfaceFilter,
                                const std::vector<HistorySample>& outSamples);
 
-    bool m_initialized;
+    std::once_flag m_initFlag;
     bool m_sqliteAvailable;
 
     sqlite3* m_db;

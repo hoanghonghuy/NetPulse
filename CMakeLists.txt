@@ -90,6 +90,13 @@ set(HEADER_FILES
     include/NetPulse/SpeedTestHistory.h
     include/NetPulse/Interfaces/IVpnProxyProvider.h
     include/NetPulse/Interfaces/ISpeedTestProvider.h
+    include/NetPulse/Interfaces/IConfigProvider.h
+    include/NetPulse/Interfaces/INetworkStatsProvider.h
+    include/NetPulse/Interfaces/IPingProvider.h
+    include/NetPulse/ConnectionMonitor.h
+    include/NetPulse/ConnectionLogDialog.h
+    include/NetPulse/SpeedTestDialog.h
+    include/NetPulse/ThemeColors.h
 )
 
 # Source files

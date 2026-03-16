@@ -1,4 +1,5 @@
-﻿#pragma once
+#ifndef NETPULSE_SPEED_TEST_HISTORY_H
+#define NETPULSE_SPEED_TEST_HISTORY_H
 
 #include "NetPulse/Interfaces/ISpeedTestProvider.h"
 #include <vector>
@@ -52,3 +53,5 @@ private:
 };
 
 } // namespace NetPulse
+
+#endif // NETPULSE_SPEED_TEST_HISTORY_H

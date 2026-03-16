@@ -173,6 +173,7 @@ struct AppConfig
     bool autoStartAsAdmin;           // Auto-start as Administrator (via Task Scheduler)
     bool enableLogging;              // Enable history logging
     bool debugLogging;               // Enable debug logging to file
+    /// @deprecated Use themeMode instead. Kept for backward compatibility with registry/INI.
     bool darkTheme;
     ThemeMode themeMode;             // Theme selection mode
     int historyAutoTrimDays;

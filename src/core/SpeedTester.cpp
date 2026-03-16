@@ -105,6 +105,10 @@ void SpeedTester::RunTest(std::function<void(int progress, const std::wstring& s
     result.timestamp = std::time(nullptr);
     result.serverName = L"Cloudflare";
     
+    // Initialize Winsock once for the entire test
+    WSADATA wsaData;
+    bool wsaInit = (WSAStartup(MAKEWORD(2, 2), &wsaData) == 0);
+    
     try
     {
         // Use do-while(false) for structured cancellation flow
@@ -172,6 +176,12 @@ void SpeedTester::RunTest(std::function<void(int progress, const std::wstring& s
         result.errorMessage = L"Unknown error occurred";
     }
     
+    // Cleanup Winsock
+    if (wsaInit)
+    {
+        WSACleanup();
+    }
+    
     {
         std::lock_guard<std::mutex> lock(m_resultMutex);
         m_lastResult = result;
@@ -188,11 +198,7 @@ void SpeedTester::RunTest(std::function<void(int progress, const std::wstring& s
 int SpeedTester::MeasurePing(const std::wstring& host)
 {
     // Use TCP connection timing instead of ICMP (avoids complex IcmpSendEcho API)
-    WSADATA wsaData;
-    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
-    {
-        return -1;
-    }
+    // Note: WSAStartup/WSACleanup is managed by RunTest()
     
     ADDRINFOW hints = {};
     hints.ai_family = AF_INET;
@@ -234,7 +240,6 @@ int SpeedTester::MeasurePing(const std::wstring& host)
     }
     
     FreeAddrInfoW(result);
-    WSACleanup();
     
     return successCount > 0 ? (totalMs / successCount) : -1;
 }
@@ -281,9 +286,9 @@ double SpeedTester::MeasureUploadSpeed(std::function<void(int progress, const st
 {
     double speedMbps = 0.0;
     
-    // Use httpbin.org for upload test (accepts POST data)
-    std::wstring host = L"httpbin.org";
-    std::wstring path = L"/post";
+    // Use Cloudflare speed test endpoint for upload
+    std::wstring host = L"speed.cloudflare.com";
+    std::wstring path = L"/__up";
     
     auto lastUpdate = std::chrono::steady_clock::now();
     size_t lastBytes = 0;

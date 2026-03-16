@@ -1,4 +1,5 @@
-﻿#pragma once
+#ifndef NETPULSE_SPEED_TESTER_H
+#define NETPULSE_SPEED_TESTER_H
 
 #include "NetPulse/Interfaces/ISpeedTestProvider.h"
 #include <atomic>
@@ -11,7 +12,7 @@ namespace NetPulse
 /**
  * @brief Measures network bandwidth using HTTP download/upload tests
  * 
- * Uses Cloudflare CDN for download tests and httpbin.org for upload tests.
+ * Uses Cloudflare CDN for download and upload tests.
  */
 class SpeedTester : public ISpeedTestProvider
 {
@@ -60,3 +61,5 @@ private:
 };
 
 } // namespace NetPulse
+
+#endif // NETPULSE_SPEED_TESTER_H

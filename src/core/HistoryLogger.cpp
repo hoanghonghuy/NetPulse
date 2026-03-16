@@ -1,9 +1,10 @@
-﻿#include "NetPulse/HistoryLogger.h"
+#include "NetPulse/HistoryLogger.h"
 #include "NetPulse/Utils.h"
 
 #include <cwchar>   // wcsrchr
 #include <ctime>
 #include <string>
+#include <ShlObj.h>
 #include "sqlite3.h"
 
 namespace NetPulse
@@ -16,8 +17,7 @@ HistoryLogger& HistoryLogger::Instance()
 }
 
 HistoryLogger::HistoryLogger()
-    : m_initialized(false)
-    , m_sqliteAvailable(false)
+    : m_sqliteAvailable(false)
     , m_db(nullptr)
 {
 }
@@ -29,36 +29,28 @@ HistoryLogger::~HistoryLogger()
 
 void HistoryLogger::EnsureInitialized()
 {
-    if (m_initialized)
-    {
-        return;
-    }
-
-    m_initialized = true;
-    InitializeSQLite();
+    std::call_once(m_initFlag, [this] { InitializeSQLite(); });
 }
 
 void HistoryLogger::InitializeSQLite()
 {
     m_sqliteAvailable = false;
 
-    // Build database path next to the executable
-    wchar_t exePath[MAX_PATH] = {0};
-    if (!GetModuleFileNameW(nullptr, exePath, MAX_PATH))
+    // Build database path in %LOCALAPPDATA%/NetPulse
+    wchar_t appDataPath[MAX_PATH] = {0};
+    if (FAILED(SHGetFolderPathW(nullptr, CSIDL_LOCAL_APPDATA, nullptr, 0, appDataPath)))
     {
-        LogError(L"HistoryLogger::InitializeSQLite: GetModuleFileNameW failed: " + GetLastErrorString());
+        LogError(L"HistoryLogger::InitializeSQLite: SHGetFolderPathW failed: " + GetLastErrorString());
         ShutdownSQLite();
         return;
     }
 
-    wchar_t* lastSlash = wcsrchr(exePath, L'\\');
-    if (lastSlash)
-    {
-        *lastSlash = L'\0';
-    }
+    wchar_t dirPath[MAX_PATH] = {0};
+    swprintf_s(dirPath, L"%s\\NetPulse", appDataPath);
+    CreateDirectoryW(dirPath, nullptr);
 
     wchar_t dbPath[MAX_PATH] = {0};
-    swprintf_s(dbPath, L"%s\\network_usage.db", exePath);
+    swprintf_s(dbPath, L"%s\\network_usage.db", dirPath);
 
     int openRc = sqlite3_open16(dbPath, &m_db);
     if (openRc != SQLITE_OK || !m_db)

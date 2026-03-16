@@ -97,6 +97,9 @@ private:
     // Convert IP address to string
     static std::wstring IpToString(DWORD ip);
     
+    // Convert IPv6 address to string
+    static std::wstring Ip6ToString(const UCHAR addr[16]);
+    
     // Convert TCP state to string
     static std::wstring TcpStateToString(DWORD state);
 
@@ -117,6 +120,7 @@ private:
     // Process name cache
     std::map<DWORD, std::wstring> m_processNameCache;
     mutable std::mutex m_cacheMutex;
+    static const size_t MAX_CACHE_SIZE = 500;
     
     // Callback for new connections
     ConnectionCallback m_callback;
