@@ -37,6 +37,7 @@ function(netpulse_apply_compile_defaults target)
     target_compile_definitions(${target} PRIVATE ${NETPULSE_COMPILE_DEFINITIONS})
 
     if(MSVC)
+        target_compile_definitions(${target} PRIVATE NETPULSE_SKIP_RC_MANIFEST)
         target_compile_options(${target} PRIVATE
             /W4
             /MP

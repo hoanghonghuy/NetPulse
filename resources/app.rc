@@ -1023,7 +1023,9 @@ END
 // MANIFEST RESOURCE
 // ============================================================================
 
+#ifndef NETPULSE_SKIP_RC_MANIFEST
 1 RT_MANIFEST "app.manifest"
+#endif
 
 // ============================================================================
 // DIALOG RESOURCES (Optional - for future use)
