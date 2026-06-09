@@ -218,7 +218,7 @@ Muc tieu: lap checklist day du truoc khi trien khai test coverage cho NetPulse. 
 - [x] Co it nhat 1 test file rieng cho `UpdateCoordinator`.
 - [x] Co it nhat 1 test file rieng cho `MenuHandler`.
 - [x] IT dung fake, khong can network that tru cac smoke co label rieng.
-- [~] Test van pass tren MinGW local va MSVC CI (MinGW local pass; MSVC CI chua xac minh sau commit moi).
+- [~] Test van pass tren MinGW local va MSVC CI (MinGW pass; MSVC CI dang sua build + gate 40%).
 
 ## Phase 3 - Network, HTTP, ETW Controlled Tests
 
@@ -319,7 +319,7 @@ Muc tieu: lap checklist day du truoc khi trien khai test coverage cho NetPulse. 
 ## Coverage Gate De Xuat
 
 - [ ] Phase 0: khong gate, chi report.
-- [ ] Phase 1: gate core changed-files neu co tool phu hop, nguong thap 40%.
+- [x] Phase 1: gate core changed-files neu co tool phu hop, nguong thap 40% (CI coverage job enforce 40% line-rate).
 - [ ] Phase 2: gate project coverage 45% neu on dinh.
 - [ ] Phase 3: tang len 50-55% neu network test da tach flaky.
 - [ ] Phase 4: E2E la required smoke rieng, khong tinh vao line coverage gate chinh.

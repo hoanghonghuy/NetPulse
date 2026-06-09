@@ -194,7 +194,8 @@ void PerAppDialog::InitializeDialog(HWND hDlg)
 
 
     // Add columns
-    LVCOLUMNW lvc = {0};
+    LVCOLUMNW lvc = {};
+    lvc.fmt = LVCFMT_LEFT;
     lvc.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM | LVCF_FMT; // Added LVCF_FMT
 
     lvc.iSubItem = 0;
@@ -280,7 +281,7 @@ void PerAppDialog::PopulateList(HWND hDlg)
         }
 
         // Insert item
-        LVITEMW lvi = {0};
+        LVITEMW lvi = {};
         lvi.mask = LVIF_TEXT | LVIF_IMAGE;
         lvi.iItem = static_cast<int>(i);
         lvi.iSubItem = 0;

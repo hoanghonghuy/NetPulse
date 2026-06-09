@@ -39,8 +39,8 @@ function(netpulse_apply_compile_defaults target)
     if(MSVC)
         target_compile_options(${target} PRIVATE
             /W4
-            /WX
             /MP
+            /utf-8
             /wd4100
         )
     elseif(MINGW)
@@ -66,8 +66,19 @@ function(netpulse_apply_sqlite_warning_defaults target)
     endif()
 endfunction()
 
+function(netpulse_apply_strict_warnings target)
+    if(MSVC)
+        target_compile_options(${target} PRIVATE /WX)
+    endif()
+endfunction()
+
 function(netpulse_apply_common_defaults target)
     netpulse_apply_compile_defaults(${target})
     netpulse_apply_link_defaults(${target})
     netpulse_apply_sqlite_warning_defaults(${target})
+endfunction()
+
+function(netpulse_apply_production_defaults target)
+    netpulse_apply_common_defaults(${target})
+    netpulse_apply_strict_warnings(${target})
 endfunction()

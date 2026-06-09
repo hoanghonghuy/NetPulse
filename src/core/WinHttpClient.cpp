@@ -1,17 +1,15 @@
 #include "NetPulse/WinHttpClient.h"
+#include "NetPulse/Common.h"
 
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-
-#include <Windows.h>
 #include <winhttp.h>
 #include <chrono>
 #include <random>
 #include <vector>
 #include <algorithm>
 
+#ifdef _MSC_VER
 #pragma comment(lib, "winhttp.lib")
+#endif
 
 namespace NetPulse
 {

@@ -30,9 +30,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build
-          key: v2-${{ runner.os }}-cmake-${{ matrix.build_type }}-${{ hashFiles('CMakeLists.txt', 'cmake/**', 'tests/CMakeLists.txt', 'src/**', 'include/**') }}
+          key: v3-${{ runner.os }}-cmake-${{ matrix.build_type }}-${{ hashFiles('CMakeLists.txt', 'cmake/**', 'tests/CMakeLists.txt', 'src/**', 'include/**') }}
           restore-keys: |
-            v2-${{ runner.os }}-cmake-${{ matrix.build_type }}-
+            v3-${{ runner.os }}-cmake-${{ matrix.build_type }}-
 
       - name: Configure CMake
         run: cmake -S . -B build -DBUILD_TESTS=ON
@@ -91,6 +91,22 @@ jobs:
           & $e2eExe
           if ($LASTEXITCODE -ne 0) {
             throw "NetPulseE2ETests failed with exit code $LASTEXITCODE"
+          }
+
+      - name: Enforce coverage gate (40% line rate)
+        shell: pwsh
+        run: |
+          $coverageXml = "build-coverage/coverage.xml"
+          if (-not (Test-Path $coverageXml)) {
+            throw "Coverage report not found: $coverageXml"
+          }
+          [xml]$report = Get-Content $coverageXml
+          $lineRate = [double]$report.coverage.'line-rate'
+          $threshold = 0.40
+          $percent = [math]::Round($lineRate * 100, 2)
+          Write-Host "Line coverage: $percent% (gate: $($threshold * 100)%)"
+          if ($lineRate -lt $threshold) {
+            throw "Coverage gate failed: $percent% < $($threshold * 100)%"
           }
 
       - name: Upload coverage artifact
