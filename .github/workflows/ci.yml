@@ -88,7 +88,25 @@ jobs:
           if (-not (Test-Path $unitExe)) {
             throw "Test binary not found: $unitExe"
           }
-          OpenCppCoverage `
+
+          $coverageToolCandidates = @(
+            "C:\ProgramData\chocolatey\bin\OpenCppCoverage.exe",
+            "C:\Program Files\OpenCppCoverage\OpenCppCoverage.exe",
+            "C:\Program Files (x86)\OpenCppCoverage\OpenCppCoverage.exe"
+          )
+          $coverageTool = $coverageToolCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $coverageTool) {
+            $coverageCommand = Get-Command OpenCppCoverage -ErrorAction SilentlyContinue
+            if ($coverageCommand) {
+              $coverageTool = $coverageCommand.Source
+            }
+          }
+          if (-not $coverageTool) {
+            throw "OpenCppCoverage executable not found after Chocolatey install"
+          }
+          Write-Host "Using OpenCppCoverage: $coverageTool"
+
+          & $coverageTool `
             --sources "${{ github.workspace }}/src" `
             --sources "${{ github.workspace }}/include" `
             --excluded_sources "${{ github.workspace }}/third_party" `
