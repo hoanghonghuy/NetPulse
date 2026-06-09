@@ -31,6 +31,7 @@ enc_temp_folder/
 # Temporary files
 *.log
 *.tmp
+build*.txt
 UpgradeLog*.htm
 
 # Local docs (not tracked)

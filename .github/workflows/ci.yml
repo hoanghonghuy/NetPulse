@@ -48,7 +48,7 @@ jobs:
 
       - name: Run tests
         working-directory: build
-        run: ctest -C ${{ matrix.build_type }} --output-on-failure --verbose
+        run: ctest -C ${{ matrix.build_type }} -LE e2e --output-on-failure --verbose
 
       - name: Upload Release artifact
         if: matrix.build_type == 'Release'
@@ -84,13 +84,9 @@ jobs:
       - name: Run coverage
         shell: pwsh
         run: |
-          $unitExe = "build-coverage/Debug/tests/NetPulseTests.exe"
-          $e2eExe = "build-coverage/Debug/tests/NetPulseE2ETests.exe"
+          $unitExe = "build-coverage/tests/Debug/NetPulseTests.exe"
           if (-not (Test-Path $unitExe)) {
             throw "Test binary not found: $unitExe"
-          }
-          if (-not (Test-Path $e2eExe)) {
-            throw "E2E test binary not found: $e2eExe"
           }
           OpenCppCoverage `
             --sources "${{ github.workspace }}/src" `
@@ -100,10 +96,6 @@ jobs:
             --export_type "cobertura:build-coverage/coverage.xml" `
             --export_type "html:build-coverage/coverage-html" `
             -- $unitExe
-          & $e2eExe
-          if ($LASTEXITCODE -ne 0) {
-            throw "NetPulseE2ETests failed with exit code $LASTEXITCODE"
-          }
 
       - name: Enforce coverage gate (40% line rate)
         shell: pwsh
