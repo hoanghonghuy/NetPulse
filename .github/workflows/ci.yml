@@ -106,14 +106,25 @@ jobs:
           }
           Write-Host "Using OpenCppCoverage: $coverageTool"
 
+          $workspace = $env:GITHUB_WORKSPACE
+          $srcDir = Join-Path $workspace 'src'
+          $includeDir = Join-Path $workspace 'include'
+          $thirdPartyDir = Join-Path $workspace 'third_party'
+          $testsDir = Join-Path $workspace 'tests'
+          $coberturaOut = Join-Path $workspace 'build-coverage\coverage.xml'
+          $htmlOut = Join-Path $workspace 'build-coverage\coverage-html'
+
           & $coverageTool `
-            --sources "${{ github.workspace }}/src" `
-            --sources "${{ github.workspace }}/include" `
-            --excluded_sources "${{ github.workspace }}/third_party" `
-            --excluded_sources "${{ github.workspace }}/tests" `
-            --export_type "cobertura:build-coverage/coverage.xml" `
-            --export_type "html:build-coverage/coverage-html" `
+            --sources $srcDir `
+            --sources $includeDir `
+            --excluded_sources $thirdPartyDir `
+            --excluded_sources $testsDir `
+            --export_type "cobertura:$coberturaOut" `
+            --export_type "html:$htmlOut" `
             -- $unitExe
+          if ($LASTEXITCODE -ne 0) {
+            throw "OpenCppCoverage failed with exit code $LASTEXITCODE"
+          }
 
       - name: Enforce coverage gate (40% line rate)
         shell: pwsh
