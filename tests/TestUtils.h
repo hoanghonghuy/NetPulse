@@ -1,5 +1,6 @@
-﻿#pragma once
+#pragma once
 
+#include "NetPulse/Common.h"
 #include <string>
 
 struct HWND__;
@@ -17,5 +18,10 @@ void LogTestMessage(const wchar_t* message);
 void AssertTrue(bool condition, const wchar_t* testName);
 int GetFailureCount();
 void ResetFailureCount();
+
+NetPulse::NetworkStats MakeNetworkStats(const std::wstring& name,
+                                       unsigned long long bytesDown,
+                                       unsigned long long bytesUp,
+                                       bool isActive = true);
 
 } // namespace NetPulseTests

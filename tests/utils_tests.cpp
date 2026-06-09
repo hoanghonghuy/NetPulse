@@ -1,4 +1,4 @@
-﻿#include "NetPulse/Common.h"
+#include "NetPulse/Common.h"
 #include "NetPulse/Utils.h"
 #include "TestUtils.h"
 #include "../../resources/resource.h"
@@ -41,6 +41,14 @@ void RunUtilsTests()
 
     std::wstring missing = LoadStringResource(999999);
     AssertTrue(missing.empty(), L"LoadStringResource missing id returns empty");
+
+    // Test SetDebugLoggingEnabled, LogDebug, LogError không crash
+    SetDebugLoggingEnabled(true);
+    LogDebug(L"test debug message enabled");
+    LogError(L"test error message");
+    SetDebugLoggingEnabled(false);
+    LogDebug(L"test debug message disabled");
+    AssertTrue(true, L"SetDebugLoggingEnabled and log functions do not crash");
 }
 
 } // namespace NetPulseTests

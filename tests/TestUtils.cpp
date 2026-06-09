@@ -1,4 +1,4 @@
-﻿#include "TestUtils.h"
+#include "TestUtils.h"
 
 #include <cstdio>
 #include <chrono>
@@ -213,4 +213,18 @@ void ResetFailureCount()
     g_failures = 0;
 }
 
+NetPulse::NetworkStats MakeNetworkStats(const std::wstring& name,
+                                       unsigned long long bytesDown,
+                                       unsigned long long bytesUp,
+                                       bool isActive)
+{
+    NetPulse::NetworkStats stats;
+    stats.interfaceName = name;
+    stats.bytesReceived = bytesDown;
+    stats.bytesSent = bytesUp;
+    stats.isActive = isActive;
+    return stats;
+}
+
 } // namespace NetPulseTests
+
