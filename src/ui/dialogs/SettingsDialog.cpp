@@ -56,7 +56,7 @@ static LRESULT CALLBACK DarkTabProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
         FillRect(hdc, &bottomBorder, borderBrush);
         
         // Top - segments skipping active tab
-        RECT selRect = {0};
+        RECT selRect = {};
         if (sel >= 0 && sel < tabCount)
         {
             TabCtrl_GetItemRect(hwnd, sel, &selRect);
@@ -163,7 +163,7 @@ static LRESULT CALLBACK DarkComboBoxProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
         LRESULT result = CallWindowProcW(oldProc, hwnd, msg, wParam, lParam);
 
         // Now draw over with theme colors
-        COMBOBOXINFO cbi = {0};
+        COMBOBOXINFO cbi = {};
         cbi.cbSize = sizeof(COMBOBOXINFO);
         if (GetComboBoxInfo(hwnd, &cbi))
         {
@@ -587,7 +587,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
             {
                 // Position them below Connection Notify checkbox in General tab
                 HWND hConnNotify = GetDlgItem(hDlg, IDC_CONNECTION_NOTIFY_CHECK);
-                RECT rcConnNotify = {0};
+                RECT rcConnNotify = {};
                 if (hConnNotify)
                 {
                     GetWindowRect(hConnNotify, &rcConnNotify);

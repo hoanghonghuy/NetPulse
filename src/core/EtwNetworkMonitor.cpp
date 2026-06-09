@@ -147,7 +147,7 @@ void EtwNetworkMonitor::Stop()
 
 void EtwNetworkMonitor::ProcessThreadProc()
 {
-    EVENT_TRACE_LOGFILEW traceLogfile = {0};
+    EVENT_TRACE_LOGFILEW traceLogfile = {};
     traceLogfile.LoggerName = const_cast<LPWSTR>(SESSION_NAME);
     traceLogfile.ProcessTraceMode = PROCESS_TRACE_MODE_REAL_TIME | PROCESS_TRACE_MODE_EVENT_RECORD;
     traceLogfile.EventRecordCallback = EventRecordCallback;

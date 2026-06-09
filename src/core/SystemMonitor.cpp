@@ -97,7 +97,7 @@ void SystemMonitor::Update()
     }
 
     // === Update RAM usage ===
-    MEMORYSTATUSEX memInfo = {0};
+    MEMORYSTATUSEX memInfo = {};
     memInfo.dwLength = sizeof(MEMORYSTATUSEX);
     if (GlobalMemoryStatusEx(&memInfo))
     {

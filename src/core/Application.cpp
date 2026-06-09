@@ -784,7 +784,7 @@ LRESULT CALLBACK Application::InstanceWindowProc(HWND hwnd, UINT message, WPARAM
 
 bool Application::RegisterWindowClass()
 {
-    WNDCLASSEXW wc = {0};
+    WNDCLASSEXW wc = {};
     wc.cbSize = sizeof(WNDCLASSEXW);
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = m_hInstance;

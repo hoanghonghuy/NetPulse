@@ -211,7 +211,7 @@ void DialogThemeHelper::DrawTabItem(DRAWITEMSTRUCT* pDrawItem, bool darkTheme)
 
     // Get tab text
     HWND hTab = pDrawItem->hwndItem;
-    TCITEMW tci = {0};
+    TCITEMW tci = {};
     wchar_t text[64] = {0};
     tci.mask = TCIF_TEXT;
     tci.pszText = text;

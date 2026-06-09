@@ -149,7 +149,7 @@ void TaskbarOverlay::SetRightClickCallback(std::function<void()> callback)
 
 bool TaskbarOverlay::RegisterWindowClass(HINSTANCE hInstance)
 {
-    WNDCLASSEXW wc = { 0 };
+    WNDCLASSEXW wc = {};
     wc.cbSize = sizeof(WNDCLASSEXW);
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;

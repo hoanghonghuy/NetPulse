@@ -323,12 +323,14 @@ void SpeedTestDialog::InitializeHistoryList(HWND /*hDlg*/)
     if (upHeader.empty()) upHeader = L"Upload";
     col.pszText = const_cast<LPWSTR>(upHeader.c_str());
     col.cx = 80;
+    col.fmt = LVCFMT_RIGHT;
     ListView_InsertColumn(m_hHistoryList, 2, &col);
     
     std::wstring pingHeader = LoadStringResource(IDS_FLOATING_SHOW_PING);
     if (pingHeader.empty()) pingHeader = L"Ping";
     col.pszText = const_cast<LPWSTR>(pingHeader.c_str());
     col.cx = 60;
+    col.fmt = LVCFMT_RIGHT;
     ListView_InsertColumn(m_hHistoryList, 3, &col);
 }
 

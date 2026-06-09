@@ -467,7 +467,7 @@ void CenterWindowOnScreen(HWND hWnd)
         return;
     }
 
-    RECT rc = {0};
+    RECT rc = {};
     if (!GetWindowRect(hWnd, &rc))
     {
         return;

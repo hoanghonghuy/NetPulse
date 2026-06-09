@@ -139,7 +139,7 @@ add_executable(${PROJECT_NAME} WIN32
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${NETPULSE_INCLUDE_DIRECTORIES})
-netpulse_apply_production_defaults(${PROJECT_NAME})
+netpulse_apply_common_defaults(${PROJECT_NAME})
 netpulse_add_resource_dependencies(${PROJECT_NAME})
 
 if(MSVC)

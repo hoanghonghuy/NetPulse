@@ -42,6 +42,7 @@ function(netpulse_apply_compile_defaults target)
             /MP
             /utf-8
             /wd4100
+            /wd5267
         )
     elseif(MINGW)
         target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)

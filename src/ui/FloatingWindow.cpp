@@ -263,7 +263,7 @@ void FloatingWindow::RegisterWindowClass(HINSTANCE hInstance)
         return;
     }
 
-    WNDCLASSEXW wc = {0};
+    WNDCLASSEXW wc = {};
     wc.cbSize = sizeof(WNDCLASSEXW);
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc = WindowProc;

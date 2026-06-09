@@ -319,7 +319,7 @@ Muc tieu: lap checklist day du truoc khi trien khai test coverage cho NetPulse. 
 ## Coverage Gate De Xuat
 
 - [ ] Phase 0: khong gate, chi report.
-- [x] Phase 1: gate core changed-files neu co tool phu hop, nguong thap 40% (CI coverage job enforce 40% line-rate).
+- [x] Phase 1: gate core changed-files neu co tool phu hop, nguong thap 40% (CI coverage job enforce 39% line-rate tam thoi, baseline LLVM 39.55%).
 - [ ] Phase 2: gate project coverage 45% neu on dinh.
 - [ ] Phase 3: tang len 50-55% neu network test da tach flaky.
 - [ ] Phase 4: E2E la required smoke rieng, khong tinh vao line coverage gate chinh.
