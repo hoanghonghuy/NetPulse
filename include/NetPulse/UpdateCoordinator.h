@@ -85,6 +85,11 @@ public:
      */
     NetworkStats GetCurrentStats() const;
 
+    /**
+     * Test seam: simulate a prior billing month without changing the system clock.
+     */
+    void SetBillingMonthKeyForTest(int monthKey) { m_currentBillingMonthKey = monthKey; }
+
 private:
     std::wstring GetStatsLoggingInterface() const;
 

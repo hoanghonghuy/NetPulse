@@ -63,8 +63,8 @@ jobs:
       - name: Configure CMake
         run: cmake -S . -B build-coverage -DBUILD_TESTS=ON
 
-      - name: Build NetPulseTests (Debug)
-        run: cmake --build build-coverage --config Debug --target NetPulseTests
+      - name: Build test targets (Debug)
+        run: cmake --build build-coverage --config Debug --target NetPulseTests NetPulseE2ETests
 
       - name: Install OpenCppCoverage
         run: choco install opencppcoverage -y --no-progress
@@ -72,9 +72,13 @@ jobs:
       - name: Run coverage
         shell: pwsh
         run: |
-          $testExe = "build-coverage/Debug/tests/NetPulseTests.exe"
-          if (-not (Test-Path $testExe)) {
-            throw "Test binary not found: $testExe"
+          $unitExe = "build-coverage/Debug/tests/NetPulseTests.exe"
+          $e2eExe = "build-coverage/Debug/tests/NetPulseE2ETests.exe"
+          if (-not (Test-Path $unitExe)) {
+            throw "Test binary not found: $unitExe"
+          }
+          if (-not (Test-Path $e2eExe)) {
+            throw "E2E test binary not found: $e2eExe"
           }
           OpenCppCoverage `
             --sources "${{ github.workspace }}/src" `
@@ -83,7 +87,11 @@ jobs:
             --excluded_sources "${{ github.workspace }}/tests" `
             --export_type "cobertura:build-coverage/coverage.xml" `
             --export_type "html:build-coverage/coverage-html" `
-            -- $testExe
+            -- $unitExe
+          & $e2eExe
+          if ($LASTEXITCODE -ne 0) {
+            throw "NetPulseE2ETests failed with exit code $LASTEXITCODE"
+          }
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4

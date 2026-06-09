@@ -178,7 +178,7 @@ Muc tieu: lap checklist day du truoc khi trien khai test coverage cho NetPulse. 
 - [x] Test reconnect notification sau disconnect.
 - [x] Test data quota alert threshold 80%.
 - [x] Test data quota alert threshold 100%.
-- [ ] Test reset alert khi sang thang moi.
+- [x] Test reset alert khi sang thang moi.
 - [x] Test quota alert theo selected interface.
 - [x] Test overlay update dung display unit.
 
@@ -218,7 +218,7 @@ Muc tieu: lap checklist day du truoc khi trien khai test coverage cho NetPulse. 
 - [x] Co it nhat 1 test file rieng cho `UpdateCoordinator`.
 - [x] Co it nhat 1 test file rieng cho `MenuHandler`.
 - [x] IT dung fake, khong can network that tru cac smoke co label rieng.
-- [ ] Test van pass tren MinGW local va MSVC CI.
+- [~] Test van pass tren MinGW local va MSVC CI (MinGW local pass; MSVC CI chua xac minh sau commit moi).
 
 ## Phase 3 - Network, HTTP, ETW Controlled Tests
 
@@ -297,7 +297,7 @@ Muc tieu: lap checklist day du truoc khi trien khai test coverage cho NetPulse. 
 
 - [x] E2E khong flaky qua 5 lan chay lien tiep local (target `NetPulseE2ETests` ~19s).
 - [x] E2E khong ghi vao user profile that (sandbox registry/data dir).
-- [~] Neu chay CI, co retry/timeout va artifact log (co `TIMEOUT` + script; chua them CI job rieng).
+- [x] Neu chay CI, co retry/timeout va artifact log (`TIMEOUT` + `run-e2e.ps1`; CI coverage job chay `NetPulseE2ETests` sau unit coverage).
 - [x] Khong bat E2E visual/pixel strict trong PR neu flaky (label `e2e`, tach target rieng).
 
 ## Phase 5 - Refactor Tuy Chon De Tang Testability
@@ -328,17 +328,17 @@ Muc tieu: lap checklist day du truoc khi trien khai test coverage cho NetPulse. 
 
 ## Danh Sach File Test Nen Them
 
-- [ ] `tests/data_usage_monitor_tests.cpp`
-- [ ] `tests/update_coordinator_tests.cpp`
-- [ ] `tests/menu_handler_tests.cpp`
-- [ ] `tests/language_manager_tests.cpp`
-- [ ] `tests/resource_tests.cpp`
-- [ ] `tests/history_logger_extended_tests.cpp`
-- [ ] `tests/speed_test_history_persistence_tests.cpp`
-- [ ] `tests/update_checker_tests.cpp`
-- [ ] `tests/connection_monitor_tests.cpp`
-- [ ] `tests/per_app_monitor_tests.cpp`
-- [ ] `tests/test_fakes/` cho fake providers.
+- [x] `tests/data_usage_monitor_tests.cpp`
+- [x] `tests/update_coordinator_tests.cpp`
+- [x] `tests/menu_handler_tests.cpp`
+- [x] `tests/language_manager_tests.cpp`
+- [ ] `tests/resource_tests.cpp` (i18n coverage trong `language_manager_tests.cpp`)
+- [~] `tests/history_logger_extended_tests.cpp` (logic mo rong trong `history_logger_tests.cpp`)
+- [x] `tests/speed_test_history_persistence_tests.cpp`
+- [x] `tests/update_checker_tests.cpp`
+- [x] `tests/connection_monitor_tests.cpp`
+- [~] `tests/per_app_monitor_tests.cpp` (smoke trong `connection_monitor_tests.cpp`)
+- [x] `tests/test_fakes/` cho fake providers.
 
 ## Rủi Ro Neu Co Gan Dat 100%
 
@@ -354,7 +354,7 @@ Muc tieu: lap checklist day du truoc khi trien khai test coverage cho NetPulse. 
 1. [x] Phase 0: setup coverage baseline.
 2. [x] Phase 1A: `DataUsageMonitor`, `LanguageManager`, `Utils`.
 3. [x] Phase 1B: `SpeedTestHistory` persist, `HistoryLogger` extended.
-4. [~] Phase 2A: fake providers + `UpdateCoordinator` (con thieu reset alert theo thang).
+4. [x] Phase 2A: fake providers + `UpdateCoordinator`.
 5. [x] Phase 2B: `MenuHandler`.
 6. [x] Phase 2C: ConfigManager extended + LanguageManager/i18n tests.
 7. [x] Phase 2D: `DialogManager` headless callback/handle tests.

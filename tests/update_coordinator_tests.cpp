@@ -5,6 +5,7 @@
 #include "TestUtils.h"
 
 #include <windows.h>
+#include <ctime>
 
 using namespace NetPulse;
 
@@ -173,6 +174,49 @@ void RunUpdateCoordinatorTests()
     usageCoordinator.OnNetworkUpdateTick();
     AssertTrue(alertCallbacks == 2 && lastAlertThreshold == 100,
                L"UpdateCoordinator data usage alert at 100%");
+
+    HistoryLogger::Instance().DeleteAll();
+    HistoryLogger::Instance().AppendSample(L"All Interfaces", 800ULL, 0ULL);
+
+    UpdateCoordinator monthResetCoordinator;
+    monthResetCoordinator.Initialize(&usageConfig, &usageProvider, nullptr, nullptr, nullptr);
+
+    int monthResetAlertCallbacks = 0;
+    int monthResetAlertThreshold = 0;
+    monthResetCoordinator.SetDataUsageAlertCallback(
+        [&](int thresholdPercent, int /*currentPercent*/)
+        {
+            ++monthResetAlertCallbacks;
+            monthResetAlertThreshold = thresholdPercent;
+        });
+
+    monthResetCoordinator.OnNetworkUpdateTick();
+    AssertTrue(monthResetAlertCallbacks == 1 && monthResetAlertThreshold == 80,
+               L"UpdateCoordinator month reset test establishes 80% alert");
+
+    monthResetCoordinator.OnNetworkUpdateTick();
+    AssertTrue(monthResetAlertCallbacks == 1,
+               L"UpdateCoordinator month reset test does not repeat 80% alert");
+
+    std::time_t now = std::time(nullptr);
+    std::tm localTime = {};
+    AssertTrue(localtime_s(&localTime, &now) == 0,
+               L"UpdateCoordinator billing month test reads local time");
+    int currentMonthKey = (localTime.tm_year + 1900) * 100 + (localTime.tm_mon + 1);
+    int previousMonthKey = currentMonthKey - 1;
+    if (localTime.tm_mon == 0)
+    {
+        previousMonthKey = (localTime.tm_year + 1900 - 1) * 100 + 12;
+    }
+
+    monthResetCoordinator.SetBillingMonthKeyForTest(previousMonthKey);
+    monthResetCoordinator.OnNetworkUpdateTick();
+    AssertTrue(monthResetAlertCallbacks == 2 && monthResetAlertThreshold == 80,
+               L"UpdateCoordinator resets data usage alerts when billing month changes");
+
+    monthResetCoordinator.OnNetworkUpdateTick();
+    AssertTrue(monthResetAlertCallbacks == 2,
+               L"UpdateCoordinator does not repeat alert again within same billing month");
 
     HistoryLogger::Instance().DeleteAll();
     HistoryLogger::Instance().AppendSample(L"Wi-Fi", 800ULL, 0ULL);
