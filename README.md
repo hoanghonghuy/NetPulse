@@ -96,9 +96,9 @@ Subprocess harness for `NetPulse.exe` (timeout + log capture):
 
 CLI flags: `--test-mode`, `--sandbox-dir=...`, `--test-scenario=launch-exit|config-default`.
 
-### Code coverage (Phase 0 baseline)
+### Code coverage
 
-Coverage is measured from `NetPulseTests` and is **not gated** in PRs yet. CI uploads HTML + Cobertura XML on every run (job `Coverage (Debug)`).
+Coverage is measured from `NetPulseTests` (E2E target `NetPulseE2ETests` is excluded). CI job `Coverage (Debug)` runs OpenCppCoverage, uploads HTML + Cobertura XML, and enforces a **39% line-rate** gate (baseline LLVM local: ~39.55%).
 
 **MSVC / OpenCppCoverage (recommended on Windows):**
 
