@@ -52,6 +52,48 @@ jobs:
           path: build/Release/NetPulse.exe
           retention-days: 30
 
+  coverage:
+    runs-on: windows-latest
+    name: Coverage (Debug)
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: cmake -S . -B build-coverage -DBUILD_TESTS=ON
+
+      - name: Build NetPulseTests (Debug)
+        run: cmake --build build-coverage --config Debug --target NetPulseTests
+
+      - name: Install OpenCppCoverage
+        run: choco install opencppcoverage -y --no-progress
+
+      - name: Run coverage
+        shell: pwsh
+        run: |
+          $testExe = "build-coverage/Debug/tests/NetPulseTests.exe"
+          if (-not (Test-Path $testExe)) {
+            throw "Test binary not found: $testExe"
+          }
+          OpenCppCoverage `
+            --sources "${{ github.workspace }}/src" `
+            --sources "${{ github.workspace }}/include" `
+            --excluded_sources "${{ github.workspace }}/third_party" `
+            --excluded_sources "${{ github.workspace }}/tests" `
+            --export_type "cobertura:build-coverage/coverage.xml" `
+            --export_type "html:build-coverage/coverage-html" `
+            -- $testExe
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-${{ github.sha }}
+          path: |
+            build-coverage/coverage.xml
+            build-coverage/coverage-html/
+          retention-days: 14
+
   # Automatic release when tag pushed
   release:
     needs: build-and-test

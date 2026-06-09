@@ -301,6 +301,10 @@ void UpdateCoordinator::CheckConnectionStatus(bool hasActiveInterface)
             m_pTrayIcon->ShowBalloonNotification(title, msg);
         }
         LogDebug(L"UpdateCoordinator::CheckConnectionStatus: Network disconnected");
+        if (m_connectionStatusCallback)
+        {
+            m_connectionStatusCallback(false);
+        }
     }
     else if (!m_wasConnected && hasActiveInterface)
     {
@@ -314,6 +318,10 @@ void UpdateCoordinator::CheckConnectionStatus(bool hasActiveInterface)
             m_pTrayIcon->ShowBalloonNotification(title, msg);
         }
         LogDebug(L"UpdateCoordinator::CheckConnectionStatus: Network connected");
+        if (m_connectionStatusCallback)
+        {
+            m_connectionStatusCallback(true);
+        }
     }
 
     m_wasConnected = hasActiveInterface;

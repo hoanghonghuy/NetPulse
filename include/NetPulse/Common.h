@@ -41,6 +41,7 @@
 #define APP_VERSION L"2.3.0"
 #define APP_WINDOW_CLASS L"NetPulseWindowClass"
 #define APP_MUTEX_NAME L"NetPulse_SingleInstance"
+#define APP_MUTEX_NAME_TEST L"NetPulse_SingleInstance_Test"
 #define APP_AUTHOR L"NetPulse Project"
 #define APP_GITHUB_LINK L"https://github.com/hoanghonghuy/NetPulse"
 #define APP_GITHUB_REPO L"hoanghonghuy/NetPulse"

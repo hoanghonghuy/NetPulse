@@ -19,6 +19,11 @@
 #include <windows.h>
 #include <memory>
 
+namespace NetPulseTests
+{
+struct ApplicationTestFriend;
+}
+
 namespace NetPulse
 {
 
@@ -66,7 +71,11 @@ public:
     // Hotkey handling
     void OnHotkey(int hotkeyId);
 
+    FloatingWindow* GetFloatingWindow() { return m_pFloatingWindow.get(); }
+    DialogManager* GetDialogManager() { return m_pDialogManager.get(); }
+
 private:
+    friend struct NetPulseTests::ApplicationTestFriend;
     // Window procedure (static for Windows API)
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
     LRESULT CALLBACK InstanceWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);

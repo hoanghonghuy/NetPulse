@@ -1,12 +1,12 @@
-// ============================================================================
-// File: VpnProxyDetector.cpp
-// Description: VPN and Proxy detection implementation
-// Author: NetworkMonitor Project
-// ============================================================================
-
 #include "NetPulse/VpnProxyDetector.h"
+#include "NetPulse/Interfaces/IHttpClient.h"
+#include "NetPulse/WinHttpClient.h"
+#include <winhttp.h>
+
+#ifdef _MSC_VER
+#pragma comment(lib, "winhttp.lib")
+#endif
 #include <algorithm>
-#include <cctype>
 #include <cwctype>
 #include <vector>
 #include <string>
@@ -14,7 +14,6 @@
 namespace NetPulse
 {
 
-// VPN adapter keywords for detection (case-insensitive)
 const wchar_t* VpnProxyDetector::VPN_KEYWORDS[] = {
     L"VPN",
     L"TAP-Windows",
@@ -39,8 +38,9 @@ const wchar_t* VpnProxyDetector::VPN_KEYWORDS[] = {
 };
 const size_t VpnProxyDetector::VPN_KEYWORDS_COUNT = sizeof(VPN_KEYWORDS) / sizeof(VPN_KEYWORDS[0]);
 
-VpnProxyDetector::VpnProxyDetector()
-    : m_initialized(false)
+VpnProxyDetector::VpnProxyDetector(std::shared_ptr<IHttpClient> httpClient)
+    : m_httpClient(std::move(httpClient))
+    , m_initialized(false)
     , m_isVpnActive(false)
     , m_isProxyActive(false)
     , m_lastIPUpdateTime(0)
@@ -54,28 +54,47 @@ VpnProxyDetector::~VpnProxyDetector()
     Cleanup();
 }
 
+IHttpClient& VpnProxyDetector::GetHttpClient()
+{
+    if (m_httpClient)
+    {
+        return *m_httpClient;
+    }
+
+    if (!m_defaultHttpClient)
+    {
+        m_defaultHttpClient = std::make_unique<WinHttpClient>(L"NetPulse/1.0");
+    }
+
+    return *m_defaultHttpClient;
+}
+
 bool VpnProxyDetector::Initialize()
 {
     if (m_initialized)
+    {
         return true;
+    }
 
     m_initialized = true;
-    
-    // Perform initial detection
-    Update();
-    
+
+    const wchar_t* testMode = _wgetenv(L"NETPULSE_TEST_MODE");
+    if (!testMode || testMode[0] != L'1')
+    {
+        Update();
+    }
+
     return true;
 }
 
 void VpnProxyDetector::Cleanup()
 {
-    // Wait for any in-progress async IP fetch to complete
     if (m_ipFetchFuture.valid())
     {
         m_ipFetchFuture.wait();
     }
     m_ipFetchInProgress = false;
-    
+
     std::lock_guard<std::mutex> lock(m_mutex);
     m_initialized = false;
     m_isVpnActive = false;
@@ -87,20 +106,16 @@ void VpnProxyDetector::Cleanup()
 void VpnProxyDetector::Update()
 {
     if (!m_initialized)
+    {
         return;
+    }
 
-    // Detect VPN (fast, can be called frequently)
     DetectVpnAdapters();
-    
-    // Detect proxy settings (fast)
     DetectProxySettings();
-    
-    // Check for completed async IP fetch result (non-blocking)
     CheckAsyncIPResult();
-    
-    // Start async IP fetch if time has elapsed (rate limited)
+
     ULONGLONG currentTime = GetTickCount64();
-    if (m_lastIPUpdateTime == 0 || 
+    if (m_lastIPUpdateTime == 0 ||
         (currentTime - m_lastIPUpdateTime) >= m_ipUpdateIntervalMs)
     {
         StartAsyncIPFetch();
@@ -122,17 +137,17 @@ std::wstring VpnProxyDetector::GetVpnAdapterName() const
 
 void VpnProxyDetector::RefreshPublicIP()
 {
-    // Non-blocking: start async fetch
     StartAsyncIPFetch();
     m_lastIPUpdateTime = GetTickCount64();
 }
 
 void VpnProxyDetector::StartAsyncIPFetch()
 {
-    // Don't start if already in progress
     if (m_ipFetchInProgress)
+    {
         return;
-    
+    }
+
     m_ipFetchInProgress = true;
     m_ipFetchFuture = std::async(std::launch::async, [this]() {
         return FetchPublicIP();
@@ -142,10 +157,11 @@ void VpnProxyDetector::StartAsyncIPFetch()
 void VpnProxyDetector::CheckAsyncIPResult()
 {
     if (!m_ipFetchInProgress)
+    {
         return;
-    
-    // Check if future is ready (non-blocking)
-    if (m_ipFetchFuture.valid() && 
+    }
+
+    if (m_ipFetchFuture.valid() &&
         m_ipFetchFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
     {
         std::wstring newIP = m_ipFetchFuture.get();
@@ -158,24 +174,46 @@ void VpnProxyDetector::CheckAsyncIPResult()
     }
 }
 
+bool VpnProxyDetector::IsVpnInterfaceType(DWORD adapterType)
+{
+    switch (adapterType)
+    {
+        case IF_TYPE_PPP:
+        case IF_TYPE_TUNNEL:
+        case IF_TYPE_PROP_VIRTUAL:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool VpnProxyDetector::ClassifyAdapterAsVpn(const VpnAdapterCandidate& candidate)
+{
+    if (!candidate.isUp)
+    {
+        return false;
+    }
+
+    return IsVpnAdapter(candidate.ifType, candidate.description) ||
+           IsVpnAdapter(candidate.ifType, candidate.friendlyName) ||
+           IsVpnInterfaceType(candidate.ifType);
+}
+
 bool VpnProxyDetector::DetectVpnAdapters()
 {
-    // Get required buffer size
     ULONG bufferSize = 0;
-    ULONG flags = GAA_FLAG_INCLUDE_PREFIX | GAA_FLAG_SKIP_ANYCAST | 
+    ULONG flags = GAA_FLAG_INCLUDE_PREFIX | GAA_FLAG_SKIP_ANYCAST |
                   GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_DNS_SERVER;
-    
+
     if (GetAdaptersAddresses(AF_UNSPEC, flags, nullptr, nullptr, &bufferSize) != ERROR_BUFFER_OVERFLOW)
     {
         m_isVpnActive = false;
         return false;
     }
 
-    // Allocate buffer
     std::vector<BYTE> buffer(bufferSize);
     PIP_ADAPTER_ADDRESSES addresses = reinterpret_cast<PIP_ADAPTER_ADDRESSES>(buffer.data());
 
-    // Get adapter addresses
     ULONG result = GetAdaptersAddresses(AF_UNSPEC, flags, nullptr, addresses, &bufferSize);
     if (result != NO_ERROR)
     {
@@ -183,39 +221,21 @@ bool VpnProxyDetector::DetectVpnAdapters()
         return false;
     }
 
-    // Scan adapters for VPN
     bool vpnFound = false;
     std::wstring vpnName;
 
     for (PIP_ADAPTER_ADDRESSES adapter = addresses; adapter != nullptr; adapter = adapter->Next)
     {
-        // Skip disabled adapters
-        if (adapter->OperStatus != IfOperStatusUp)
-            continue;
+        VpnAdapterCandidate candidate;
+        candidate.ifType = adapter->IfType;
+        candidate.description = adapter->Description ? adapter->Description : L"";
+        candidate.friendlyName = adapter->FriendlyName ? adapter->FriendlyName : L"";
+        candidate.isUp = adapter->OperStatus == IfOperStatusUp;
 
-        std::wstring description = adapter->Description ? adapter->Description : L"";
-        std::wstring friendlyName = adapter->FriendlyName ? adapter->FriendlyName : L"";
-
-        // Check adapter type
-        bool isVpnType = false;
-        switch (adapter->IfType)
-        {
-            case IF_TYPE_PPP:           // Point-to-point protocol
-            case IF_TYPE_TUNNEL:        // Tunnel interface
-            case IF_TYPE_PROP_VIRTUAL:  // Proprietary virtual interface
-                isVpnType = true;
-                break;
-            default:
-                break;
-        }
-
-        // Check description/name for VPN keywords
-        if (IsVpnAdapter(adapter->IfType, description) || 
-            IsVpnAdapter(adapter->IfType, friendlyName) ||
-            isVpnType)
+        if (ClassifyAdapterAsVpn(candidate))
         {
             vpnFound = true;
-            vpnName = friendlyName.empty() ? description : friendlyName;
+            vpnName = candidate.friendlyName.empty() ? candidate.description : candidate.friendlyName;
             break;
         }
     }
@@ -231,14 +251,14 @@ bool VpnProxyDetector::DetectVpnAdapters()
 bool VpnProxyDetector::IsVpnAdapter(DWORD /*adapterType*/, const std::wstring& description)
 {
     if (description.empty())
+    {
         return false;
+    }
 
-    // Convert to lowercase for case-insensitive comparison
     std::wstring descLower = description;
     std::transform(descLower.begin(), descLower.end(), descLower.begin(),
         [](wchar_t c) { return static_cast<wchar_t>(std::towlower(c)); });
 
-    // Check for VPN keywords
     for (size_t i = 0; i < VPN_KEYWORDS_COUNT; ++i)
     {
         std::wstring keyword = VPN_KEYWORDS[i];
@@ -254,163 +274,82 @@ bool VpnProxyDetector::IsVpnAdapter(DWORD /*adapterType*/, const std::wstring& d
     return false;
 }
 
+bool VpnProxyDetector::EvaluateProxyConfig(bool hasManualProxy,
+                                           bool hasAutoConfigUrl,
+                                           bool autoDetect)
+{
+    return hasManualProxy || hasAutoConfigUrl || autoDetect;
+}
+
 bool VpnProxyDetector::DetectProxySettings()
 {
     WINHTTP_CURRENT_USER_IE_PROXY_CONFIG proxyConfig = {};
-    
+
     if (!WinHttpGetIEProxyConfigForCurrentUser(&proxyConfig))
     {
         m_isProxyActive = false;
         return false;
     }
 
-    bool proxyEnabled = false;
+    bool hasManualProxy = proxyConfig.lpszProxy != nullptr && proxyConfig.lpszProxy[0] != L'\0';
+    bool hasAutoConfigUrl = proxyConfig.lpszAutoConfigUrl != nullptr && proxyConfig.lpszAutoConfigUrl[0] != L'\0';
+    bool autoDetect = proxyConfig.fAutoDetect != FALSE;
 
-    // Check if manual proxy is configured
-    if (proxyConfig.lpszProxy != nullptr && proxyConfig.lpszProxy[0] != L'\0')
-    {
-        proxyEnabled = true;
-    }
+    bool proxyEnabled = EvaluateProxyConfig(hasManualProxy, hasAutoConfigUrl, autoDetect);
 
-    // Check if auto-config URL is set
-    if (proxyConfig.lpszAutoConfigUrl != nullptr && proxyConfig.lpszAutoConfigUrl[0] != L'\0')
-    {
-        proxyEnabled = true;
-    }
-
-    // Check if auto-detect is enabled (WPAD)
-    if (proxyConfig.fAutoDetect)
-    {
-        proxyEnabled = true;
-    }
-
-    // Cleanup allocated strings
     if (proxyConfig.lpszAutoConfigUrl)
+    {
         GlobalFree(proxyConfig.lpszAutoConfigUrl);
+    }
     if (proxyConfig.lpszProxy)
+    {
         GlobalFree(proxyConfig.lpszProxy);
+    }
     if (proxyConfig.lpszProxyBypass)
+    {
         GlobalFree(proxyConfig.lpszProxyBypass);
+    }
 
     m_isProxyActive = proxyEnabled;
     return proxyEnabled;
 }
 
+std::wstring VpnProxyDetector::GetPublicIPApiHost()
+{
+    return L"api.ipify.org";
+}
+
+std::wstring VpnProxyDetector::GetPublicIPApiPath()
+{
+    return L"/";
+}
+
+std::wstring VpnProxyDetector::ParsePublicIPResponse(const std::string& response)
+{
+    std::string trimmed = response;
+    while (!trimmed.empty() &&
+           (trimmed.back() == '\n' || trimmed.back() == '\r' || trimmed.back() == ' '))
+    {
+        trimmed.pop_back();
+    }
+
+    if (trimmed.empty() || trimmed.size() > 45)
+    {
+        return std::wstring();
+    }
+
+    return std::wstring(trimmed.begin(), trimmed.end());
+}
+
 std::wstring VpnProxyDetector::FetchPublicIP()
 {
-    std::wstring ip;
-    
-    // Open WinHTTP session
-    HINTERNET hSession = WinHttpOpen(
-        L"NetPulse/1.0",
-        WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-        WINHTTP_NO_PROXY_NAME,
-        WINHTTP_NO_PROXY_BYPASS,
-        0
-    );
-
-    if (!hSession)
-        return ip;
-
-    // Set timeouts
-    WinHttpSetTimeouts(hSession, HTTP_TIMEOUT_MS, HTTP_TIMEOUT_MS, HTTP_TIMEOUT_MS, HTTP_TIMEOUT_MS);
-
-    // Connect to api.ipify.org
-    HINTERNET hConnect = WinHttpConnect(
-        hSession,
-        L"api.ipify.org",
-        INTERNET_DEFAULT_HTTPS_PORT,
-        0
-    );
-
-    if (!hConnect)
+    std::string response;
+    if (!GetHttpClient().HttpGet(GetPublicIPApiHost(), GetPublicIPApiPath(), response))
     {
-        WinHttpCloseHandle(hSession);
-        return ip;
+        return std::wstring();
     }
 
-    // Create request
-    HINTERNET hRequest = WinHttpOpenRequest(
-        hConnect,
-        L"GET",
-        L"/",
-        nullptr,
-        WINHTTP_NO_REFERER,
-        WINHTTP_DEFAULT_ACCEPT_TYPES,
-        WINHTTP_FLAG_SECURE
-    );
-
-    if (!hRequest)
-    {
-        WinHttpCloseHandle(hConnect);
-        WinHttpCloseHandle(hSession);
-        return ip;
-    }
-
-    // Send request
-    BOOL result = WinHttpSendRequest(
-        hRequest,
-        WINHTTP_NO_ADDITIONAL_HEADERS,
-        0,
-        WINHTTP_NO_REQUEST_DATA,
-        0,
-        0,
-        0
-    );
-
-    if (result)
-    {
-        result = WinHttpReceiveResponse(hRequest, nullptr);
-    }
-
-    if (result)
-    {
-        // Read response
-        DWORD bytesAvailable = 0;
-        DWORD bytesRead = 0;
-        std::string response;
-
-        do
-        {
-            bytesAvailable = 0;
-            if (!WinHttpQueryDataAvailable(hRequest, &bytesAvailable))
-                break;
-
-            if (bytesAvailable == 0)
-                break;
-
-            std::vector<char> buffer(bytesAvailable + 1, 0);
-            if (!WinHttpReadData(hRequest, buffer.data(), bytesAvailable, &bytesRead))
-                break;
-
-            response.append(buffer.data(), bytesRead);
-            
-            // Sanity check: IP should be short
-            if (response.size() > 45)  // Max IPv6 length
-                break;
-
-        } while (bytesAvailable > 0);
-
-        // Convert to wide string
-        if (!response.empty())
-        {
-            // Trim whitespace
-            while (!response.empty() && (response.back() == '\n' || 
-                   response.back() == '\r' || response.back() == ' '))
-            {
-                response.pop_back();
-            }
-            
-            ip = std::wstring(response.begin(), response.end());
-        }
-    }
-
-    // Cleanup
-    WinHttpCloseHandle(hRequest);
-    WinHttpCloseHandle(hConnect);
-    WinHttpCloseHandle(hSession);
-
-    return ip;
+    return ParsePublicIPResponse(response);
 }
 
 } // namespace NetPulse

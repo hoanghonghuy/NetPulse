@@ -21,6 +21,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(${CMAKE_SOURCE_DIR}/cmake/NetPulseDefaults.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/NetPulseResources.cmake)
+netpulse_setup_resource_script()
 
 # ============================================================================
 # BUILD OPTIONS
@@ -54,6 +56,7 @@ set(HEADER_FILES
     include/NetPulse/FloatingWindow.h
     include/NetPulse/SystemMonitor.h
     include/NetPulse/Application.h
+    include/NetPulse/ApplicationRuntime.h
     include/NetPulse/SettingsDialog.h
     include/NetPulse/DashboardDialog.h
     include/NetPulse/HistoryDialog.h
@@ -70,6 +73,8 @@ set(HEADER_FILES
     include/NetPulse/Interfaces/IConfigProvider.h
     include/NetPulse/Interfaces/INetworkStatsProvider.h
     include/NetPulse/Interfaces/IPingProvider.h
+    include/NetPulse/Interfaces/IHttpClient.h
+    include/NetPulse/WinHttpClient.h
     include/NetPulse/ConnectionMonitor.h
     include/NetPulse/ConnectionLogDialog.h
     include/NetPulse/SpeedTestDialog.h
@@ -79,6 +84,7 @@ set(HEADER_FILES
 set(SOURCE_FILES
     src/entry/main.cpp
     src/core/Application.cpp
+    src/core/ApplicationRuntime.cpp
     src/ui/dialogs/SettingsDialog.cpp
     src/ui/dialogs/DashboardDialog.cpp
     src/ui/dialogs/HistoryDialog.cpp
@@ -93,6 +99,7 @@ set(SOURCE_FILES
     src/core/MenuHandler.cpp
     src/core/UpdateCoordinator.cpp
     src/core/UpdateChecker.cpp
+    src/core/WinHttpClient.cpp
     src/core/LanguageManager.cpp
     src/core/DataUsageMonitor.cpp
     src/core/SystemMonitor.cpp
@@ -116,7 +123,7 @@ set(SOURCE_FILES
 )
 
 set(RESOURCE_FILES
-    resources/app.rc
+    ${NETPULSE_APP_RC}
     resources/resource.h
     resources/app.manifest
 )
@@ -133,6 +140,7 @@ add_executable(${PROJECT_NAME} WIN32
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${NETPULSE_INCLUDE_DIRECTORIES})
 netpulse_apply_common_defaults(${PROJECT_NAME})
+netpulse_add_resource_dependencies(${PROJECT_NAME})
 
 if(MSVC)
     set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -193,6 +201,9 @@ message(STATUS "C++ standard: ${CMAKE_CXX_STANDARD}")
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "Build tests: ${BUILD_TESTS}")
+if(BUILD_TESTS)
+    message(STATUS "Test coverage instrumentation: ${ENABLE_COVERAGE}")
+endif()
 message(STATUS "Defaults: cmake/NetPulseDefaults.cmake")
 message(STATUS "==========================================")
 message(STATUS "")

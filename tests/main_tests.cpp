@@ -18,6 +18,16 @@ void RunTaskbarOverlayTests();
 void RunFloatingWindowTests();
 void RunVpnProxyDetectorTests();
 void RunSpeedTestTests();
+void RunDataUsageMonitorTests();
+void RunUpdateCoordinatorTests();
+void RunMenuHandlerTests();
+void RunLanguageManagerTests();
+void RunSpeedTestHistoryPersistenceTests();
+void RunDialogManagerTests();
+void RunConnectionMonitorTests();
+void RunUpdateCheckerTests();
+void RunEtwNetworkMonitorTests();
+void RunComponentRendererTests();
 }
 
 using namespace NetPulseTests;
@@ -31,12 +41,22 @@ int main()
     RunNetworkMonitorTests();
     RunUtilsTests();
     RunNetworkCalculatorTests();
+    RunDataUsageMonitorTests();
+    RunUpdateCoordinatorTests();
+    RunMenuHandlerTests();
+    RunLanguageManagerTests();
+    RunSpeedTestHistoryPersistenceTests();
     RunConfigManagerTests();
+    RunDialogManagerTests();
+    RunConnectionMonitorTests();
+    RunUpdateCheckerTests();
     RunTrayIconTests();
     RunTaskbarOverlayTests();
     RunFloatingWindowTests();
     RunVpnProxyDetectorTests();
+    RunEtwNetworkMonitorTests();
     RunSpeedTestTests();
+    RunComponentRendererTests();
 
     int failures = GetFailureCount();
     if (failures == 0)

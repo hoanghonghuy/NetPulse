@@ -97,11 +97,13 @@ void RunTaskbarOverlayTests()
     AssertTrue(!overlay.IsVisible(), L"TaskbarOverlay not visible after Initialize");
 
     overlay.Show(true);
+    AssertTrue(overlay.IsUserWantsVisible(), L"TaskbarOverlay user preference enabled after Show(true)");
     AssertTrue(overlay.IsVisible(), L"TaskbarOverlay visible after Show(true)");
 
     overlay.UpdateSpeed(2048.0, 1024.0, SpeedUnit::KiloBytesPerSecond);
 
     overlay.Show(false);
+    AssertTrue(!overlay.IsUserWantsVisible(), L"TaskbarOverlay user preference disabled after Show(false)");
     AssertTrue(!overlay.IsVisible(), L"TaskbarOverlay not visible after Show(false)");
 
     overlay.Cleanup();

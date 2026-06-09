@@ -76,6 +76,44 @@ The test target is `NetPulseTests` and uses the same defaults as the main app (i
 
 Tests use a temporary sandbox directory and a separate registry key (`Software\NetworkMonitor\Test`) so they do not modify your normal history or settings.
 
+Run only tests with a specific CTest label (same binary, grouped for CI filtering):
+
+```bash
+ctest -C Debug -L unit --output-on-failure
+```
+
+E2E smoke tests run in a separate target (sandbox registry/data, no user profile):
+
+```bash
+ctest -C Debug -L e2e --output-on-failure
+```
+
+Subprocess harness for `NetPulse.exe` (timeout + log capture):
+
+```powershell
+.\scripts\run-e2e.ps1 -Scenario launch-exit -TimeoutSec 30
+```
+
+CLI flags: `--test-mode`, `--sandbox-dir=...`, `--test-scenario=launch-exit|config-default`.
+
+### Code coverage (Phase 0 baseline)
+
+Coverage is measured from `NetPulseTests` and is **not gated** in PRs yet. CI uploads HTML + Cobertura XML on every run (job `Coverage (Debug)`).
+
+**MSVC / OpenCppCoverage (recommended on Windows):**
+
+```powershell
+.\scripts\run-coverage.ps1 -Backend opencpp -Config Debug
+```
+
+**LLVM MinGW (local dev):**
+
+```powershell
+.\scripts\run-coverage.ps1 -Backend llvm
+```
+
+Reports exclude `third_party/**` (including `sqlite3.c`) and `tests/**`. Baseline notes live in `.roo-local/design/COVERAGE-BASELINE.md`.
+
 ## Usage
 
 - **Tray Menu**: Right-click the system tray icon to access:

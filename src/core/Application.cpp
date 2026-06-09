@@ -1,4 +1,5 @@
 #include "NetPulse/Application.h"
+#include "NetPulse/ApplicationRuntime.h"
 #include "NetPulse/Utils.h"
 #include "NetPulse/HistoryLogger.h"
 #include "NetPulse/SettingsDialog.h"
@@ -113,22 +114,31 @@ bool Application::Initialize(HINSTANCE hInstance)
     m_pTrayIcon->SetConfigSource(&m_config);
     if (!m_pTrayIcon->Initialize(m_hwnd))
     {
-        ShowErrorMessage(LoadStringResource(IDS_ERR_INIT_TRAY_ICON));
-        return false;
+        if (ApplicationRuntime::IsTestMode())
+        {
+            LogDebug(L"Application::Initialize: TrayIcon init failed in test mode, continuing without tray");
+            m_pTrayIcon.reset();
+        }
+        else
+        {
+            ShowErrorMessage(LoadStringResource(IDS_ERR_INIT_TRAY_ICON));
+            return false;
+        }
     }
 
-    // Set tray icon callbacks
-    m_pTrayIcon->SetMenuCallback([this](UINT menuId) { OnMenuCommand(menuId); });
-    m_pTrayIcon->SetOverlayVisibilityProvider([this]() -> bool {
-        return m_pTaskbarOverlay != nullptr && m_pTaskbarOverlay->IsUserWantsVisible();
-    });
-    m_pTrayIcon->SetFloatingWindowVisibilityProvider([this]() -> bool {
-        return m_pFloatingWindow != nullptr && m_pFloatingWindow->IsVisible();
-    });
-    m_pTrayIcon->SetDoubleClickCallback([this]() {
-        // Double-click opens Dashboard
-        OnMenuCommand(IDM_DASHBOARD);
-    });
+    if (m_pTrayIcon)
+    {
+        m_pTrayIcon->SetMenuCallback([this](UINT menuId) { OnMenuCommand(menuId); });
+        m_pTrayIcon->SetOverlayVisibilityProvider([this]() -> bool {
+            return m_pTaskbarOverlay != nullptr && m_pTaskbarOverlay->IsUserWantsVisible();
+        });
+        m_pTrayIcon->SetFloatingWindowVisibilityProvider([this]() -> bool {
+            return m_pFloatingWindow != nullptr && m_pFloatingWindow->IsVisible();
+        });
+        m_pTrayIcon->SetDoubleClickCallback([this]() {
+            OnMenuCommand(IDM_DASHBOARD);
+        });
+    }
 
     // Create and initialize taskbar overlay (enabled, same behavior as legacy main.cpp)
     m_pTaskbarOverlay = std::make_unique<TaskbarOverlay>();
@@ -785,8 +795,12 @@ bool Application::RegisterWindowClass()
 
     if (!RegisterClassExW(&wc))
     {
-        ShowErrorMessage(LoadStringResource(IDS_ERR_REGISTER_WINDOW_CLASS));
-        return false;
+        const DWORD error = GetLastError();
+        if (error != ERROR_CLASS_ALREADY_EXISTS)
+        {
+            ShowErrorMessage(LoadStringResource(IDS_ERR_REGISTER_WINDOW_CLASS));
+            return false;
+        }
     }
 
     return true;

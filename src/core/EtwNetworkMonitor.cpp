@@ -17,12 +17,6 @@ EtwNetworkMonitor* EtwNetworkMonitor::s_instance = nullptr;
 static const GUID KernelNetworkProviderGuid = 
     { 0x7dd42a49, 0x5329, 0x4832, { 0x8d, 0xfd, 0x43, 0xd9, 0x79, 0x15, 0x3a, 0x88 } };
 
-// Event IDs for TCP/IP events
-static const USHORT EVENT_ID_TCP_SEND = 10;
-static const USHORT EVENT_ID_TCP_RECV = 11;
-static const USHORT EVENT_ID_UDP_SEND = 12;
-static const USHORT EVENT_ID_UDP_RECV = 13;
-
 EtwNetworkMonitor::EtwNetworkMonitor()
     : m_sessionHandle(0)
     , m_traceHandle(INVALID_PROCESSTRACE_HANDLE)
@@ -181,42 +175,23 @@ void WINAPI EtwNetworkMonitor::EventRecordCallback(PEVENT_RECORD pEventRecord)
     }
 }
 
-void EtwNetworkMonitor::ProcessEvent(PEVENT_RECORD pEventRecord)
+void EtwNetworkMonitor::ApplyTrafficEventForTest(USHORT eventId, DWORD pid, ULONG byteCount)
 {
-    if (!pEventRecord)
-    {
-        return;
-    }
+    RecordTrafficEvent(eventId, pid, byteCount);
+}
 
-    // Check if this is from the kernel network provider
-    if (!IsEqualGUID(pEventRecord->EventHeader.ProviderId, KernelNetworkProviderGuid))
-    {
-        return;
-    }
-    
-    USHORT eventId = pEventRecord->EventHeader.EventDescriptor.Id;
-    DWORD pid = pEventRecord->EventHeader.ProcessId;
-    
-    // Get the size from the event data
-    // The structure varies by event type, but typically the size is at offset 0
-    if (pEventRecord->UserDataLength < sizeof(ULONG))
-    {
-        return;
-    }
-    
-    ULONG size = *reinterpret_cast<PULONG>(pEventRecord->UserData);
-    
+void EtwNetworkMonitor::RecordTrafficEvent(USHORT eventId, DWORD pid, ULONG byteCount)
+{
     bool isSend = (eventId == EVENT_ID_TCP_SEND || eventId == EVENT_ID_UDP_SEND);
     bool isRecv = (eventId == EVENT_ID_TCP_RECV || eventId == EVENT_ID_UDP_RECV);
-    
+
     if (!isSend && !isRecv)
     {
         return;
     }
-    
-    // Update statistics
+
     std::lock_guard<std::mutex> lock(m_statsMutex);
-    
+
     auto it = m_processStats.find(pid);
     if (it == m_processStats.end())
     {
@@ -226,15 +201,38 @@ void EtwNetworkMonitor::ProcessEvent(PEVENT_RECORD pEventRecord)
         m_processStats[pid] = stats;
         it = m_processStats.find(pid);
     }
-    
+
     if (isSend)
     {
-        it->second.bytesSent += size;
+        it->second.bytesSent += byteCount;
     }
     else if (isRecv)
     {
-        it->second.bytesReceived += size;
+        it->second.bytesReceived += byteCount;
     }
+}
+
+void EtwNetworkMonitor::ProcessEvent(PEVENT_RECORD pEventRecord)
+{
+    if (!pEventRecord)
+    {
+        return;
+    }
+
+    if (!IsEqualGUID(pEventRecord->EventHeader.ProviderId, KernelNetworkProviderGuid))
+    {
+        return;
+    }
+
+    if (pEventRecord->UserDataLength < sizeof(ULONG))
+    {
+        return;
+    }
+
+    ULONG size = *reinterpret_cast<PULONG>(pEventRecord->UserData);
+    RecordTrafficEvent(pEventRecord->EventHeader.EventDescriptor.Id,
+                       pEventRecord->EventHeader.ProcessId,
+                       size);
 }
 
 ProcessTrafficStats EtwNetworkMonitor::GetProcessStats(DWORD pid) const

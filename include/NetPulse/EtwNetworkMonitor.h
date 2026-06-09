@@ -16,6 +16,11 @@
 #pragma comment(lib, "advapi32.lib")
 #endif
 
+namespace NetPulseTests
+{
+struct EtwNetworkMonitorTestFriend;
+}
+
 namespace NetPulse
 {
 
@@ -103,7 +108,17 @@ public:
      */
     std::wstring GetProcessName(DWORD pid) const;
 
+    static constexpr USHORT EVENT_ID_TCP_SEND = 10;
+    static constexpr USHORT EVENT_ID_TCP_RECV = 11;
+    static constexpr USHORT EVENT_ID_UDP_SEND = 12;
+    static constexpr USHORT EVENT_ID_UDP_RECV = 13;
+
+    void ApplyTrafficEventForTest(USHORT eventId, DWORD pid, ULONG byteCount);
+
 private:
+    friend struct NetPulseTests::EtwNetworkMonitorTestFriend;
+
+    void RecordTrafficEvent(USHORT eventId, DWORD pid, ULONG byteCount);
     static void WINAPI EventRecordCallback(PEVENT_RECORD pEventRecord);
     void ProcessEvent(PEVENT_RECORD pEventRecord);
     void ProcessThreadProc();
