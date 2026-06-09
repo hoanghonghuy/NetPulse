@@ -43,7 +43,6 @@ bool EtwNetworkMonitor::Start()
         return true;
     }
 
-    s_instance = this;
     m_stopRequested = false;
 
     // Calculate buffer size for session properties
@@ -75,6 +74,7 @@ bool EtwNetworkMonitor::Start()
     if (status != ERROR_SUCCESS)
     {
         LogError(L"EtwNetworkMonitor::Start: StartTraceW failed with error " + std::to_wstring(status));
+        s_instance = nullptr;
         return false;
     }
     
@@ -95,13 +95,16 @@ bool EtwNetworkMonitor::Start()
         LogError(L"EtwNetworkMonitor::Start: EnableTraceEx2 failed with error " + std::to_wstring(status));
         ControlTraceW(m_sessionHandle, nullptr, pSessionProps, EVENT_TRACE_CONTROL_STOP);
         m_sessionHandle = 0;
+        s_instance = nullptr;
         return false;
     }
     
+    s_instance = this;
+
     // Start processing thread
     m_running = true;
     m_processThread = std::thread(&EtwNetworkMonitor::ProcessThreadProc, this);
-    
+
     LogDebug(L"EtwNetworkMonitor::Start: ETW session started successfully");
     return true;
 }

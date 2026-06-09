@@ -147,15 +147,10 @@ public:
     int GetSparklineTimeRange() const { return m_sparklineTimeRange; }
     
     /**
-     * Export sparkline chart as PNG image
+     * Export sparkline chart as BMP image
      * @return true if export successful
      */
-    bool ExportChartAsPNG(const std::wstring& filePath);
-    
-    /**
-     * Set callback for config changes (to save updated time range)
-     */
-    void SetConfigChangeCallback(std::function<void(int timeRange)> callback);
+    bool ExportChartAsBMP(const std::wstring& filePath);
 
     // ========== PHASE 3 FEATURES ==========
     
@@ -226,7 +221,6 @@ private:
     int m_sparklineTimeRange; // 0=30s, 1=1m, 2=5m
     std::unique_ptr<SparklineRenderer> m_downloadSparkline;
     std::unique_ptr<SparklineRenderer> m_uploadSparkline;
-    std::function<void(int)> m_configChangeCallback;
 
     // Phase 3 Features - VPN/Proxy Detection
     bool m_showVpnStatus;     // Show VPN indicator

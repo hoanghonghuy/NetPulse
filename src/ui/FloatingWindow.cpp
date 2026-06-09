@@ -785,12 +785,7 @@ void FloatingWindow::SetSparklineTimeRange(int range)
     Invalidate();
 }
 
-void FloatingWindow::SetConfigChangeCallback(std::function<void(int)> callback)
-{
-    m_configChangeCallback = callback;
-}
-
-bool FloatingWindow::ExportChartAsPNG(const std::wstring& filePath)
+bool FloatingWindow::ExportChartAsBMP(const std::wstring& filePath)
 {
     if (!m_downloadSparkline || !m_uploadSparkline) return false;
     
@@ -848,8 +843,6 @@ bool FloatingWindow::ExportChartAsPNG(const std::wstring& filePath)
     SelectObject(hdcMem, hOldFont);
     DeleteObject(hFont);
     
-    // Save as PNG using GDI+ (simplified - save as BMP for now)
-    // TODO: Add proper PNG export with GDI+ or other library
     BITMAPINFOHEADER bi = {};
     bi.biSize = sizeof(BITMAPINFOHEADER);
     bi.biWidth = width;
@@ -862,36 +855,36 @@ bool FloatingWindow::ExportChartAsPNG(const std::wstring& filePath)
     std::vector<BYTE> pixels(dwBmpSize);
     GetDIBits(hdcMem, hBitmap, 0, height, pixels.data(), reinterpret_cast<BITMAPINFO*>(&bi), DIB_RGB_COLORS);
     
-    // Write BMP file (PNG would require additional library)
     std::wstring bmpPath = filePath;
     if (bmpPath.size() > 4 && bmpPath.substr(bmpPath.size() - 4) == L".png")
     {
         bmpPath.replace(bmpPath.size() - 4, 4, L".bmp");
     }
-    
+
+    bool saved = false;
     HANDLE hFile = CreateFileW(bmpPath.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (hFile != INVALID_HANDLE_VALUE)
     {
         BITMAPFILEHEADER bmfHeader = {};
-        bmfHeader.bfType = 0x4D42; // "BM"
+        bmfHeader.bfType = 0x4D42;
         bmfHeader.bfSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + dwBmpSize;
         bmfHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
-        
-        DWORD written;
-        WriteFile(hFile, &bmfHeader, sizeof(bmfHeader), &written, nullptr);
-        bi.biHeight = height; // Positive for file
-        WriteFile(hFile, &bi, sizeof(bi), &written, nullptr);
-        WriteFile(hFile, pixels.data(), dwBmpSize, &written, nullptr);
+
+        DWORD written = 0;
+        bool ok = WriteFile(hFile, &bmfHeader, sizeof(bmfHeader), &written, nullptr) != FALSE;
+        bi.biHeight = height;
+        ok = ok && WriteFile(hFile, &bi, sizeof(bi), &written, nullptr) != FALSE;
+        ok = ok && WriteFile(hFile, pixels.data(), dwBmpSize, &written, nullptr) != FALSE;
         CloseHandle(hFile);
+        saved = ok;
     }
-    
-    // Cleanup
+
     SelectObject(hdcMem, hOldBitmap);
     DeleteObject(hBitmap);
     DeleteDC(hdcMem);
     ReleaseDC(nullptr, hdcScreen);
-    
-    return true;
+
+    return saved;
 }
 
 // ========== PHASE 3: VPN/PROXY DETECTION ==========

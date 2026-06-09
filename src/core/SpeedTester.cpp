@@ -51,9 +51,10 @@ SpeedTester::SpeedTester()
 SpeedTester::~SpeedTester()
 {
     CancelTest();
+    m_resultCallback = nullptr;
     if (m_testThread.joinable())
     {
-        m_testThread.join();
+        m_testThread.detach();
     }
 }
 
@@ -207,7 +208,6 @@ int SpeedTester::MeasurePing(const std::wstring& host)
     PADDRINFOW result = nullptr;
     if (GetAddrInfoW(host.c_str(), L"443", &hints, &result) != 0)
     {
-        WSACleanup();
         return -1;
     }
     

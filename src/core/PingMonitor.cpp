@@ -108,9 +108,8 @@ bool PingMonitor::ResolveTarget()
         return true;
     }
 
-    // Fallback to 8.8.8.8
-    m_targetIP = 0x08080808;  // 8.8.8.8 in network byte order
-    return true;
+    m_targetIP = 0;
+    return false;
 }
 
 void PingMonitor::Update()

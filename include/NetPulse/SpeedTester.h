@@ -26,6 +26,7 @@ public:
     bool IsRunning() const override;
     SpeedTestResult GetLastResult() const override;
     void SetResultCallback(std::function<void(const SpeedTestResult&)> callback) override;
+    void ClearResultCallback() { m_resultCallback = nullptr; }
     
 public: // Exposed for unit tests
     // Test execution

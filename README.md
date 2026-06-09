@@ -46,7 +46,9 @@ NetPulse is a lightweight C++ Win32 application for monitoring network traffic o
 4. Build solution (`Ctrl+Shift+B`).
 5. Run `NetPulse.exe` from the output directory.
 
-### CMake
+### CMake (recommended)
+
+Build settings (definitions, warnings, link libraries) are centralized in `cmake/NetPulseDefaults.cmake`. When changing compiler or linker options, update that file and keep `NetPulse.vcxproj` in sync for Visual Studio users.
 
 1. Clone and prepare build directory:
    ```bash
@@ -59,6 +61,20 @@ NetPulse is a lightweight C++ Win32 application for monitoring network traffic o
    cmake .. -G "Visual Studio 17 2022" -A x64
    cmake --build . --config Release
    ```
+
+## Running Tests
+
+Build and run the unit test suite with CMake:
+
+```bash
+cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DBUILD_TESTS=ON
+cmake --build build --config Debug
+ctest -C Debug --output-on-failure --verbose
+```
+
+The test target is `NetPulseTests` and uses the same defaults as the main app (including embedded `app.rc` resources).
+
+Tests use a temporary sandbox directory and a separate registry key (`Software\NetworkMonitor\Test`) so they do not modify your normal history or settings.
 
 ## Usage
 

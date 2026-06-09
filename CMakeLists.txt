@@ -16,10 +16,11 @@ project(NetPulse
     LANGUAGES C CXX
 )
 
-# Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+include(${CMAKE_SOURCE_DIR}/cmake/NetPulseDefaults.cmake)
 
 # ============================================================================
 # BUILD OPTIONS
@@ -28,37 +29,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 option(BUILD_TESTS "Build unit tests" OFF)
 
 # ============================================================================
-# COMPILER FLAGS
-# ============================================================================
-
-if(MSVC)
-    # Warning level 4 and treat warnings as errors
-    add_compile_options(/W4 /WX)
-    
-    # Enable multiprocessor compilation
-    add_compile_options(/MP)
-    
-    # Disable specific warnings
-    add_compile_options(/wd4100) # unreferenced formal parameter
-else()
-    add_compile_options(-Wall -Wextra -Wpedantic)
-    # Ensure MinGW standard libraries are statically linked so the .exe is portable
-    if(MINGW)
-        add_link_options(-static -static-libgcc -static-libstdc++)
-    endif()
-endif()
-
-# Unicode support
-add_definitions(-DUNICODE -D_UNICODE)
-
-# Windows version targeting (Windows 7+) and prevent winsock.h inclusion
-add_definitions(-D_WIN32_WINNT=0x0601 -DWIN32_LEAN_AND_MEAN)
-
-# ============================================================================
 # SOURCE FILES
 # ============================================================================
 
-# Header files
 set(HEADER_FILES
     include/NetPulse/Common.h
     include/NetPulse/Utils.h
@@ -103,7 +76,6 @@ set(HEADER_FILES
     include/NetPulse/ThemeColors.h
 )
 
-# Source files
 set(SOURCE_FILES
     src/entry/main.cpp
     src/core/Application.cpp
@@ -143,14 +115,6 @@ set(SOURCE_FILES
     third_party/sqlite/sqlite3.c
 )
 
-if(MSVC)
-    # Suppress deprecated GetVersionEx warnings in third-party SQLite only
-    set_source_files_properties(third_party/sqlite/sqlite3.c PROPERTIES
-        COMPILE_FLAGS "/wd4996"
-    )
-endif()
-
-# Resource files
 set(RESOURCE_FILES
     resources/app.rc
     resources/resource.h
@@ -161,42 +125,22 @@ set(RESOURCE_FILES
 # EXECUTABLE TARGET
 # ============================================================================
 
-# Create WIN32 executable (no console window)
 add_executable(${PROJECT_NAME} WIN32
     ${HEADER_FILES}
     ${SOURCE_FILES}
     ${RESOURCE_FILES}
 )
 
-# ============================================================================
-# INCLUDE DIRECTORIES
-# ============================================================================
+target_include_directories(${PROJECT_NAME} PRIVATE ${NETPULSE_INCLUDE_DIRECTORIES})
+netpulse_apply_common_defaults(${PROJECT_NAME})
 
-target_include_directories(${PROJECT_NAME}
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/resources
-        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sqlite
-)
-
-# ============================================================================
-# LINK LIBRARIES
-# ============================================================================
-
-# Windows system libraries
-target_link_libraries(${PROJECT_NAME}
-    PRIVATE
-        Iphlpapi.lib    # Network interface API
-        shell32.lib     # System tray API
-        advapi32.lib    # Registry API
-        comctl32.lib    # Common Controls
-        Dwmapi.lib      # Desktop Window Manager API (for taskbar overlay)
-        d3d11.lib       # Direct3D 11
-        dxgi.lib        # DirectX Graphics Infrastructure
-        winhttp.lib     # HTTP API (for public IP fetching)
-        uxtheme.lib     # Windows Theme API
-        ws2_32.lib      # Windows Sockets API
-)
+if(MSVC)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        LINK_FLAGS "/SUBSYSTEM:WINDOWS"
+        RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/Debug"
+        RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/Release"
+    )
+endif()
 
 # ============================================================================
 # SOURCE GROUPS (for IDE organization)
@@ -207,28 +151,9 @@ source_group("Source Files" FILES ${SOURCE_FILES})
 source_group("Resource Files" FILES ${RESOURCE_FILES})
 
 # ============================================================================
-# COMPILER-SPECIFIC SETTINGS
-# ============================================================================
-
-if(MSVC)
-    # Set subsystem to Windows (GUI application)
-    # Rely on the default CRT entry point that matches our WinMain signature.
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        LINK_FLAGS "/SUBSYSTEM:WINDOWS"
-    )
-    
-    # Set output directories
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/Debug"
-        RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/Release"
-    )
-endif()
-
-# ============================================================================
 # POST-BUILD COMMANDS
 # ============================================================================
 
-# Copy icon files to output directory (if needed for development)
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory
         "$<TARGET_FILE_DIR:${PROJECT_NAME}>/resources/icons"
@@ -243,7 +168,6 @@ install(TARGETS ${PROJECT_NAME}
     RUNTIME DESTINATION bin
 )
 
-# Install icon files
 install(DIRECTORY resources/icons/
     DESTINATION bin/resources/icons
     FILES_MATCHING PATTERN "*.ico"
@@ -258,8 +182,6 @@ if(BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
-
-
 # ============================================================================
 # PRINT CONFIGURATION SUMMARY
 # ============================================================================
@@ -271,5 +193,6 @@ message(STATUS "C++ standard: ${CMAKE_CXX_STANDARD}")
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "Build tests: ${BUILD_TESTS}")
+message(STATUS "Defaults: cmake/NetPulseDefaults.cmake")
 message(STATUS "==========================================")
 message(STATUS "")

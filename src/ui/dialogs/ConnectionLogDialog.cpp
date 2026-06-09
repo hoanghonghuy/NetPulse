@@ -2,7 +2,7 @@
 #include "NetPulse/DialogThemeHelper.h"
 #include "NetPulse/ThemeHelper.h"
 #include "NetPulse/Utils.h"
-#include "../../resources/resource.h"
+#include "../../../resources/resource.h"
 #include <commctrl.h>
 #include <windowsx.h>
 

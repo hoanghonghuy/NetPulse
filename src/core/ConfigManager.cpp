@@ -2,6 +2,7 @@
 #include "NetPulse/Utils.h"
 #include "NetPulse/ThemeHelper.h"
 #include <shellapi.h>
+#include <vector>
 
 namespace NetPulse
 {
@@ -452,10 +453,17 @@ bool ConfigManager::IsAutoStartEnabled()
 
 bool ConfigManager::OpenSettingsKey(HKEY& hKey)
 {
+    const wchar_t* registryPath = REGISTRY_PATH;
+    const wchar_t* testRegistryPath = _wgetenv(L"NETPULSE_TEST_REGISTRY_PATH");
+    if (testRegistryPath && testRegistryPath[0] != L'\0')
+    {
+        registryPath = testRegistryPath;
+    }
+
     DWORD disposition = 0;
     LONG result = RegCreateKeyExW(
         HKEY_CURRENT_USER,
-        REGISTRY_PATH,
+        registryPath,
         0,
         nullptr,
         REG_OPTION_NON_VOLATILE,
@@ -495,19 +503,25 @@ bool ConfigManager::WriteDWORD(HKEY hKey, const wchar_t* valueName, DWORD value)
 
 std::wstring ConfigManager::ReadString(HKEY hKey, const wchar_t* valueName, const std::wstring& defaultValue)
 {
-    wchar_t buffer[256] = {0};
-    DWORD bufferSize = sizeof(buffer);
     DWORD type = REG_SZ;
+    DWORD bufferSize = 0;
 
-    LONG result = RegQueryValueExW(hKey, valueName, nullptr, &type, 
-                                    reinterpret_cast<BYTE*>(buffer), &bufferSize);
+    LONG result = RegQueryValueExW(hKey, valueName, nullptr, &type, nullptr, &bufferSize);
+    if (result != ERROR_SUCCESS || type != REG_SZ || bufferSize < sizeof(wchar_t))
+    {
+        return defaultValue;
+    }
+
+    std::vector<wchar_t> buffer(bufferSize / sizeof(wchar_t), L'\0');
+    result = RegQueryValueExW(hKey, valueName, nullptr, &type,
+                              reinterpret_cast<BYTE*>(buffer.data()), &bufferSize);
 
     if (result != ERROR_SUCCESS || type != REG_SZ)
     {
         return defaultValue;
     }
 
-    return std::wstring(buffer);
+    return std::wstring(buffer.data());
 }
 
 bool ConfigManager::WriteString(HKEY hKey, const wchar_t* valueName, const std::wstring& value)
@@ -771,42 +785,25 @@ bool ConfigManager::EnablePortableMode(const AppConfig& currentConfig)
 
 bool ConfigManager::SetPortableMode(bool enable)
 {
-    // Store preference in Registry
     HKEY hKey = nullptr;
-    DWORD disposition = 0;
-    LONG result = RegCreateKeyExW(
-        HKEY_CURRENT_USER,
-        REGISTRY_PATH,
-        0,
-        nullptr,
-        REG_OPTION_NON_VOLATILE,
-        KEY_WRITE,
-        nullptr,
-        &hKey,
-        &disposition
-    );
-
-    if (result != ERROR_SUCCESS)
+    if (!OpenSettingsKey(hKey))
     {
         LogError(L"ConfigManager::SetPortableMode: Failed to open registry key");
         return false;
     }
 
-    DWORD value = enable ? 1 : 0;
-    result = RegSetValueExW(hKey, L"UsePortableMode", 0, REG_DWORD,
-                            reinterpret_cast<const BYTE*>(&value), sizeof(DWORD));
+    bool writeOk = WriteDWORD(hKey, L"UsePortableMode", enable ? 1u : 0u);
     RegCloseKey(hKey);
 
-    if (result != ERROR_SUCCESS)
+    if (!writeOk)
     {
         LogError(L"ConfigManager::SetPortableMode: Failed to write UsePortableMode to registry");
         return false;
     }
 
-    // Update internal state: only enable if file also exists
     m_isPortable = enable && m_portableFileExists;
 
-    LogDebug(L"ConfigManager::SetPortableMode: Portable mode " + 
+    LogDebug(L"ConfigManager::SetPortableMode: Portable mode " +
              std::wstring(enable ? L"ENABLED" : L"DISABLED") +
              L", active=" + std::to_wstring(m_isPortable));
     return true;

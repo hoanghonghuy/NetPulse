@@ -24,8 +24,8 @@ class PingMonitor;
 class UpdateCoordinator
 {
 public:
-    // Callback for logging history samples
-    using LogHistoryCallback = std::function<void(unsigned long long bytesDown, unsigned long long bytesUp)>;
+    // Callback for logging history samples (interfaceName is the actual stats scope used)
+    using LogHistoryCallback = std::function<void(unsigned long long bytesDown, unsigned long long bytesUp, const std::wstring& interfaceName)>;
     // Callback for connection status changes
     using ConnectionStatusCallback = std::function<void(bool isConnected)>;
     // Callback for data usage alerts
@@ -80,11 +80,13 @@ public:
      */
     void ApplyOverlayStyleFromConfig();
 
-private:
     /**
      * Get current network stats based on config (single interface or aggregated)
      */
-    NetworkStats GetCurrentStats();
+    NetworkStats GetCurrentStats() const;
+
+private:
+    std::wstring GetStatsLoggingInterface() const;
 
     /**
      * Update tray icon with current stats
@@ -114,6 +116,13 @@ private:
 
     // Connection state tracking
     bool m_wasConnected;
+    bool m_connectionStateInitialized;
+
+    // History logging scope tracking (reset deltas when scope changes)
+    std::wstring m_lastLoggingScope;
+
+    // Billing month tracking for data usage alerts
+    int m_currentBillingMonthKey;
 
     // Callbacks
     LogHistoryCallback m_logHistoryCallback;

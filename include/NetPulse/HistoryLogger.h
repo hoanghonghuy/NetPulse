@@ -121,6 +121,7 @@ private:
                                const std::vector<HistorySample>& outSamples);
 
     std::once_flag m_initFlag;
+    mutable std::mutex m_dbMutex;
     bool m_sqliteAvailable;
 
     sqlite3* m_db;

@@ -1,9 +1,8 @@
-# CMake configuration for NetworkMonitor tests
+# CMake configuration for NetPulse unit tests
 
-cmake_minimum_required(VERSION 3.16)
-project(NetworkMonitorTests LANGUAGES C CXX)
+include(${CMAKE_SOURCE_DIR}/cmake/NetPulseDefaults.cmake)
 
-set(TEST_SOURCES
+set(NETPULSE_TEST_SOURCES
     main_tests.cpp
     TestUtils.cpp
     history_logger_tests.cpp
@@ -46,44 +45,23 @@ set(TEST_SOURCES
     ../src/core/ConnectionMonitor.cpp
     ../src/ui/ChartRenderer.cpp
     ../third_party/sqlite/sqlite3.c
+    ../resources/app.rc
 )
 
-add_executable(${PROJECT_NAME} ${TEST_SOURCES})
+add_executable(NetPulseTests ${NETPULSE_TEST_SOURCES})
 
-# Use the same C++ standard as the main project
-set_target_properties(${PROJECT_NAME} PROPERTIES
+set_target_properties(NetPulseTests PROPERTIES
     CXX_STANDARD 17
-    CXX_STANDARD_REQUIRED YES
+    CXX_STANDARD_REQUIRED ON
 )
 
-# Include main project headers and sqlite
-target_include_directories(${PROJECT_NAME}
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/../include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/sqlite
-)
-
-# Link against the same Windows system libraries as the main app
-if(WIN32)
-    target_link_libraries(${PROJECT_NAME}
-        PRIVATE
-            Iphlpapi.lib
-            shell32.lib
-            advapi32.lib
-            comctl32.lib
-            Dwmapi.lib
-            winhttp.lib
-            uxtheme.lib
-            ws2_32.lib
-    )
-endif()
+target_include_directories(NetPulseTests PRIVATE ${NETPULSE_INCLUDE_DIRECTORIES})
+netpulse_apply_common_defaults(NetPulseTests)
 
 if(MSVC)
-    # Suppress deprecated GetVersionEx warnings in third-party SQLite only
-    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/sqlite/sqlite3.c PROPERTIES
-        COMPILE_FLAGS "/wd4996"
+    set_target_properties(NetPulseTests PROPERTIES
+        LINK_FLAGS "/SUBSYSTEM:CONSOLE"
     )
 endif()
 
-# Register the test executable with CTest
-add_test(NAME NetworkMonitorTests_All COMMAND ${PROJECT_NAME})
+add_test(NAME NetPulseTests_All COMMAND NetPulseTests)

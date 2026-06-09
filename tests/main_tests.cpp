@@ -24,6 +24,7 @@ using namespace NetPulseTests;
 
 int main()
 {
+    EnableTestSandbox();
     LogTestMessage(L"Running NetworkMonitor tests...");
 
     RunHistoryLoggerTests();

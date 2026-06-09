@@ -110,17 +110,17 @@ bool Application::Initialize(HINSTANCE hInstance)
 
     // Create and initialize tray icon
     m_pTrayIcon = std::make_unique<TrayIcon>();
+    m_pTrayIcon->SetConfigSource(&m_config);
     if (!m_pTrayIcon->Initialize(m_hwnd))
     {
         ShowErrorMessage(LoadStringResource(IDS_ERR_INIT_TRAY_ICON));
         return false;
     }
 
-    // Set tray icon callbacks and configuration source
+    // Set tray icon callbacks
     m_pTrayIcon->SetMenuCallback([this](UINT menuId) { OnMenuCommand(menuId); });
-    m_pTrayIcon->SetConfigSource(&m_config);
     m_pTrayIcon->SetOverlayVisibilityProvider([this]() -> bool {
-        return m_pTaskbarOverlay != nullptr && m_pTaskbarOverlay->IsVisible();
+        return m_pTaskbarOverlay != nullptr && m_pTaskbarOverlay->IsUserWantsVisible();
     });
     m_pTrayIcon->SetFloatingWindowVisibilityProvider([this]() -> bool {
         return m_pFloatingWindow != nullptr && m_pFloatingWindow->IsVisible();
@@ -210,17 +210,7 @@ bool Application::Initialize(HINSTANCE hInstance)
         m_pTaskbarOverlay.get(),
         m_pPingMonitor.get()
     );
-    m_pUpdateCoordinator->SetLogHistoryCallback([this](unsigned long long bytesDown, unsigned long long bytesUp) {
-        // Get interface name for logging
-        std::wstring ifaceName = m_config.selectedInterface;
-        if (ifaceName.empty())
-        {
-            ifaceName = LoadStringResource(IDS_ALL_INTERFACES);
-            if (ifaceName.empty())
-            {
-                ifaceName = L"All Interfaces";
-            }
-        }
+    m_pUpdateCoordinator->SetLogHistoryCallback([this](unsigned long long bytesDown, unsigned long long bytesUp, const std::wstring& ifaceName) {
         HistoryLogger::Instance().AppendSample(ifaceName, bytesDown, bytesUp);
     });
 
@@ -320,13 +310,7 @@ bool Application::Initialize(HINSTANCE hInstance)
         m_pFloatingWindow->SetShowDataToday(m_config.floatingShowDataToday);
         m_pFloatingWindow->SetShowSparkline(m_config.floatingShowSparkline);
         m_pFloatingWindow->SetSparklineTimeRange(m_config.sparklineTimeRange);
-        
-        // Set callback to save sparkline time range when changed via context menu
-        m_pFloatingWindow->SetConfigChangeCallback([this](int timeRange) {
-            m_config.sparklineTimeRange = timeRange;
-            m_pConfigManager->SaveConfig(m_config);
-        });
-        
+
         // Set position if saved
         // Set position if saved, but verify it's on screen (DPI changes can push it off)
         int screenW = GetSystemMetrics(SM_CXSCREEN);
@@ -663,10 +647,10 @@ LRESULT CALLBACK Application::InstanceWindowProc(HWND hwnd, UINT message, WPARAM
                         m_pFloatingWindow->UpdateRAM(m_pSystemMonitor->GetRAMPercent());
                     }
                     
-                    // Update network speed from network monitor
-                    if (m_pNetworkMonitor)
+                    // Update network speed using same stats scope as tray/overlay
+                    if (m_pUpdateCoordinator)
                     {
-                        NetworkStats stats = m_pNetworkMonitor->GetAggregatedStats();
+                        NetworkStats stats = m_pUpdateCoordinator->GetCurrentStats();
                         m_pFloatingWindow->UpdateSpeed(
                             stats.currentDownloadSpeed,
                             stats.currentUploadSpeed,
@@ -851,7 +835,7 @@ void Application::OnHotkey(int hotkeyId)
     {
         if (m_pTaskbarOverlay)
         {
-            bool isVisible = m_pTaskbarOverlay->IsVisible();
+            bool isVisible = m_pTaskbarOverlay->IsUserWantsVisible();
             m_pTaskbarOverlay->Show(!isVisible);
             LogDebug(L"Application::OnHotkey: Toggled overlay visibility");
         }

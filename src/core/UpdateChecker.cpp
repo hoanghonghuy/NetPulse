@@ -1,4 +1,5 @@
 #include "NetPulse/UpdateChecker.h"
+#include "NetPulse/Common.h"
 #include "NetPulse/Utils.h"
 #include <shellapi.h>
 #include <winhttp.h>
@@ -93,7 +94,10 @@ bool UpdateChecker::PerformCheck(std::wstring& outLatestVersion, std::wstring& o
     if (hConnect)
     {
         // 3. Create Request
-        hRequest = WinHttpOpenRequest(hConnect, L"GET", L"/repos/hoanghonghuy/NetworkMonitor/releases/latest",
+        std::wstring releasePath = L"/repos/";
+        releasePath += APP_GITHUB_REPO;
+        releasePath += L"/releases/latest";
+        hRequest = WinHttpOpenRequest(hConnect, L"GET", releasePath.c_str(),
                                       NULL, WINHTTP_NO_REFERER, 
                                       WINHTTP_DEFAULT_ACCEPT_TYPES, 
                                       WINHTTP_FLAG_SECURE);

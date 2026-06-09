@@ -15,7 +15,7 @@ TaskbarOverlay::TaskbarOverlay()
     : m_hInstance(nullptr)
     , m_hwnd(nullptr)
     , m_hTaskbar(nullptr)
-    , m_isVisible(false)
+    , m_userWantsVisible(false)
     , m_initialized(false)
     , m_timerId(0)
     , m_downloadSpeed(0.0)
@@ -102,10 +102,15 @@ void TaskbarOverlay::UpdateSpeed(double downloadSpeed, double uploadSpeed, Speed
     m_uploadSpeed = uploadSpeed;
     m_displayUnit = unit;
 
-    if (m_hwnd && m_isVisible)
+    if (m_hwnd && m_userWantsVisible)
     {
         InvalidateRect(m_hwnd, nullptr, FALSE);
     }
+}
+
+bool TaskbarOverlay::IsVisible() const
+{
+    return m_hwnd != nullptr && IsWindowVisible(m_hwnd);
 }
 
 void TaskbarOverlay::Show(bool show)
@@ -115,7 +120,7 @@ void TaskbarOverlay::Show(bool show)
         return;
     }
 
-    m_isVisible = show;
+    m_userWantsVisible = show;
     
     if (show)
     {
@@ -131,7 +136,7 @@ void TaskbarOverlay::SetDarkTheme(bool dark)
 {
     m_darkTheme = dark;
 
-    if (m_hwnd && m_isVisible)
+    if (m_hwnd && m_userWantsVisible)
     {
         InvalidateRect(m_hwnd, nullptr, TRUE);
     }
@@ -163,12 +168,11 @@ bool TaskbarOverlay::RegisterWindowClass(HINSTANCE hInstance)
 
 bool TaskbarOverlay::CreateOverlayWindow(HINSTANCE hInstance)
 {
-    // Create with WS_EX_TRANSPARENT for click-through
     m_hwnd = CreateWindowExW(
-        WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_LAYERED | WS_EX_NOACTIVATE | WS_EX_TRANSPARENT,
+        WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_LAYERED | WS_EX_NOACTIVATE,
         WINDOW_CLASS_NAME,
         L"NetPulse Overlay",
-        WS_POPUP | WS_VISIBLE,
+        WS_POPUP,
         0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
         nullptr, nullptr, hInstance, this
     );
@@ -178,6 +182,8 @@ bool TaskbarOverlay::CreateOverlayWindow(HINSTANCE hInstance)
         ShowErrorMessage(LoadStringResource(IDS_ERR_CREATE_OVERLAY));
         return false;
     }
+
+    ShowWindow(m_hwnd, SW_HIDE);
 
     // Set transparency - RGB(1,1,1) is transparent color key
     SetLayeredWindowAttributes(m_hwnd, RGB(1, 1, 1), 0, LWA_COLORKEY);
@@ -194,15 +200,20 @@ void TaskbarOverlay::PositionOnTaskbar()
 
     int screenWidth = GetSystemMetrics(SM_CXSCREEN);
     int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-    
+
+    UINT posFlags = SWP_NOACTIVATE;
+    if (m_userWantsVisible && !m_wasHiddenByFullscreen)
+    {
+        posFlags |= SWP_SHOWWINDOW;
+    }
+
     HWND hTaskbar = FindWindowW(L"Shell_TrayWnd", nullptr);
     if (!hTaskbar)
     {
         // Fallback: bottom-right corner
         int x = screenWidth - WINDOW_WIDTH - 60;
         int y = screenHeight - WINDOW_HEIGHT - 7;
-        SetWindowPos(m_hwnd, HWND_TOPMOST, x, y, WINDOW_WIDTH, WINDOW_HEIGHT,
-                     SWP_NOACTIVATE | SWP_SHOWWINDOW);
+        SetWindowPos(m_hwnd, HWND_TOPMOST, x, y, WINDOW_WIDTH, WINDOW_HEIGHT, posFlags);
         return;
     }
 
@@ -273,14 +284,13 @@ void TaskbarOverlay::PositionOnTaskbar()
     // Only update position if it has changed significantly (more than 5 pixels)
     if (abs(currentX - x) > 5 || abs(currentY - y) > 5)
     {
-        SetWindowPos(m_hwnd, HWND_TOPMOST, x, y, WINDOW_WIDTH, WINDOW_HEIGHT,
-                     SWP_NOACTIVATE | SWP_SHOWWINDOW);
+        SetWindowPos(m_hwnd, HWND_TOPMOST, x, y, WINDOW_WIDTH, WINDOW_HEIGHT, posFlags);
     }
 }
 
 void TaskbarOverlay::ForceShow()
 {
-    if (!m_hwnd || !m_isVisible)
+    if (!m_hwnd || !m_userWantsVisible)
     {
         return;
     }
@@ -329,7 +339,7 @@ LRESULT CALLBACK TaskbarOverlay::WindowProc(HWND hwnd, UINT message, WPARAM wPar
                     // Check if fullscreen app is running
                     bool isFullscreen = IsForegroundWindowFullscreen();
                     
-                    if (isFullscreen && pThis->m_isVisible && !pThis->m_wasHiddenByFullscreen)
+                    if (isFullscreen && pThis->m_userWantsVisible && !pThis->m_wasHiddenByFullscreen)
                     {
                         // Hide overlay while fullscreen app is running
                         ShowWindow(hwnd, SW_HIDE);
@@ -341,7 +351,7 @@ LRESULT CALLBACK TaskbarOverlay::WindowProc(HWND hwnd, UINT message, WPARAM wPar
                         pThis->ForceShow();
                         pThis->m_wasHiddenByFullscreen = false;
                     }
-                    else if (pThis->m_isVisible && !pThis->m_wasHiddenByFullscreen)
+                    else if (pThis->m_userWantsVisible && !pThis->m_wasHiddenByFullscreen)
                     {
                         // Normal visibility check
                         BOOL isVisible = IsWindowVisible(hwnd);
@@ -649,7 +659,7 @@ void TaskbarOverlay::SetPingLatency(int latencyMs)
     {
         m_pingLatency = latencyMs;
         // Trigger repaint to update display
-        if (m_hwnd && m_isVisible)
+        if (m_hwnd && m_userWantsVisible)
         {
             InvalidateRect(m_hwnd, nullptr, FALSE);
         }
@@ -671,7 +681,7 @@ void TaskbarOverlay::SetOverlayStyle(int fontSize, COLORREF downloadColor, COLOR
     }
 
     // Trigger repaint
-    if (m_hwnd && m_isVisible)
+    if (m_hwnd && m_userWantsVisible)
     {
         InvalidateRect(m_hwnd, nullptr, FALSE);
     }

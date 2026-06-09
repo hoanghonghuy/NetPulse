@@ -43,6 +43,7 @@
 #define APP_MUTEX_NAME L"NetPulse_SingleInstance"
 #define APP_AUTHOR L"NetPulse Project"
 #define APP_GITHUB_LINK L"https://github.com/hoanghonghuy/NetPulse"
+#define APP_GITHUB_REPO L"hoanghonghuy/NetPulse"
 
 // Update Intervals (milliseconds)
 constexpr UINT UPDATE_INTERVAL_FAST = 1000;      // 1 second
