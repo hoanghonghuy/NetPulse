@@ -31,6 +31,7 @@ void RunComponentRendererTests();
 void RunSystemMonitorTests();
 void RunPingMonitorTests();
 void RunHotkeyManagerTests();
+void RunThemeHelperTests();
 }
 
 using namespace NetPulseTests;
@@ -56,6 +57,7 @@ int main()
     RunTrayIconTests();
     RunTaskbarOverlayTests();
     RunFloatingWindowTests();
+    RunThemeHelperTests();
     RunVpnProxyDetectorTests();
     RunEtwNetworkMonitorTests();
     RunSpeedTestTests();

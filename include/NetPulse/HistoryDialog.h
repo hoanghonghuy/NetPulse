@@ -1,7 +1,12 @@
-﻿#ifndef NETWORK_MONITOR_HISTORY_DIALOG_H
+#ifndef NETWORK_MONITOR_HISTORY_DIALOG_H
 #define NETWORK_MONITOR_HISTORY_DIALOG_H
 
 #include "NetPulse/Common.h"
+
+namespace NetPulseTests
+{
+struct HistoryDialogTestFriend;
+}
 
 namespace NetPulse
 {
@@ -17,6 +22,8 @@ public:
 
     // Show the history management dialog modally
     bool Show(HWND parentWindow, const AppConfig* config);
+
+    friend struct NetPulseTests::HistoryDialogTestFriend;
 
 private:
     // Dialog procedure

@@ -1,9 +1,14 @@
-﻿#ifndef NETWORK_MONITOR_SETTINGS_DIALOG_H
+#ifndef NETWORK_MONITOR_SETTINGS_DIALOG_H
 #define NETWORK_MONITOR_SETTINGS_DIALOG_H
 
 #include "NetPulse/Common.h"
 #include <functional>
 #include <unordered_map>
+
+namespace NetPulseTests
+{
+struct SettingsDialogTestFriend;
+}
 
 namespace NetPulse
 {
@@ -26,6 +31,8 @@ public:
 
     // Set external storage for dialog handle (for tracking/bringing to foreground)
     void SetDialogHandleStorage(HWND* pDialogHandle) { m_pExternalHandle = pDialogHandle; }
+
+    friend struct NetPulseTests::SettingsDialogTestFriend;
 
 private:
     // Dialog procedure

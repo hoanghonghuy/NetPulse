@@ -1,7 +1,8 @@
-﻿#include "NetPulse/Common.h"
+#include "NetPulse/Common.h"
 #include "NetPulse/TrayIcon.h"
 #include "NetPulse/TaskbarOverlay.h"
 #include "NetPulse/FloatingWindow.h"
+#include "NetPulse/ThemeHelper.h"
 #include "TestUtils.h"
 
 #include <windows.h>
@@ -183,10 +184,109 @@ void RunFloatingWindowTests()
     floating.UpdatePing(25);
     floating.UpdateDataToday(1024 * 1024 * 100, 1024 * 1024 * 50);
 
+    // Send standard Win32 messages to test WindowProc / HandleMessage paths
+    HWND hfw = floating.GetHWND();
+    if (hfw)
+    {
+        // Add data points to make sure rendering path handles sparklines
+        floating.UpdateSpeed(2048.0, 1024.0, SpeedUnit::KiloBytesPerSecond);
+        floating.UpdateCPU(50.0);
+        floating.UpdateRAM(70.0);
+        floating.UpdatePing(30);
+
+        SendMessageW(hfw, WM_PAINT, 0, 0);
+        SendMessageW(hfw, WM_ERASEBKGND, 0, 0);
+        SendMessageW(hfw, WM_NCHITTEST, 0, 0);
+        
+        // Test dragging snap-to-edge
+        RECT movingRect = { 100, 100, 100 + 190, 100 + 90 };
+        SendMessageW(hfw, WM_MOVING, 0, reinterpret_cast<LPARAM>(&movingRect));
+        
+        // Test double-click to toggle mini-mode
+        SendMessageW(hfw, WM_NCLBUTTONDBLCLK, 0, 0);
+        AssertTrue(floating.IsMiniMode(), L"FloatingWindow toggled to mini-mode via double-click");
+        
+        SendMessageW(hfw, WM_NCLBUTTONDBLCLK, 0, 0);
+        AssertTrue(!floating.IsMiniMode(), L"FloatingWindow toggled back to normal-mode via double-click");
+        
+        // Test ExportChartAsBMP
+        std::wstring tempBmpPath = L"temp_sparkline_chart.bmp";
+        bool exported = floating.ExportChartAsBMP(tempBmpPath);
+        AssertTrue(exported, L"FloatingWindow exported sparkline chart as BMP successfully");
+        DeleteFileW(tempBmpPath.c_str()); // cleanup
+    }
+
     floating.Destroy();
     AssertTrue(floating.GetHWND() == nullptr, L"FloatingWindow HWND is null after Destroy");
 
     AssertTrue(true, L"FloatingWindow Phase 1 tests completed successfully");
+}
+
+void RunThemeHelperTests()
+{
+    LogTestMessage(L"=== ThemeHelper tests ===");
+
+    // Test: GetColors for all ThemeMode presets
+    const ThemeMode modes[] = {
+        ThemeMode::SystemDefault,
+        ThemeMode::Light,
+        ThemeMode::Dark,
+        ThemeMode::Dracula,
+        ThemeMode::Cyberpunk,
+        ThemeMode::Nord,
+        ThemeMode::Forest,
+        ThemeMode::OLED,
+        ThemeMode::SolarizedLight,
+        ThemeMode::MorningMist,
+        ThemeMode::SoftPaper,
+        ThemeMode::MintFresh,
+        ThemeMode::Lavender,
+        ThemeMode::RosePink
+    };
+
+    for (auto mode : modes)
+    {
+        const auto& colors = ThemeHelper::GetColors(mode);
+        // Basic check that it doesn't crash and returns a valid struct
+        AssertTrue(colors.background != 0 || colors.textPrimary != 0, L"ThemeHelper::GetColors returned valid colors");
+    }
+
+    // Test: GetColors with boolean
+    const auto& darkColors = ThemeHelper::GetColors(true);
+    const auto& lightColors = ThemeHelper::GetColors(false);
+    AssertTrue(darkColors.background != lightColors.background, L"ThemeHelper::GetColors(bool) distinguishes dark/light");
+
+    // Test: SetCurrentTheme / GetCurrentTheme
+    ThemeHelper::SetCurrentTheme(ThemeMode::Nord);
+    AssertTrue(ThemeHelper::GetCurrentTheme() == ThemeMode::Nord, L"ThemeHelper::SetCurrentTheme sets correctly");
+
+    ThemeHelper::SetCurrentTheme(ThemeMode::Dark);
+    AssertTrue(ThemeHelper::GetCurrentTheme() == ThemeMode::Dark, L"ThemeHelper::SetCurrentTheme sets correctly to Dark");
+
+    // Test: AllowDarkModeForApp
+    ThemeHelper::AllowDarkModeForApp(true);
+    ThemeHelper::AllowDarkModeForApp(false);
+
+    // Test: IsSystemInDarkMode
+    bool isSystemDark = ThemeHelper::IsSystemInDarkMode();
+    LogTestMessage((L"  System is in dark mode: " + std::wstring(isSystemDark ? L"Yes" : L"No")).c_str());
+
+    // Test: Apply theme functions with a real window
+    HWND hwnd = CreateTestWindow();
+    if (hwnd)
+    {
+        ThemeHelper::AllowDarkModeForWindow(hwnd, true);
+        ThemeHelper::ApplyDarkTitleBar(hwnd, true);
+        ThemeHelper::ApplyDarkThemeToControl(hwnd, true);
+        
+        ThemeHelper::AllowDarkModeForWindow(hwnd, false);
+        ThemeHelper::ApplyDarkTitleBar(hwnd, false);
+        ThemeHelper::ApplyDarkThemeToControl(hwnd, false);
+
+        DestroyWindow(hwnd);
+    }
+
+    AssertTrue(true, L"ThemeHelper tests completed successfully");
 }
 
 } // namespace NetPulseTests

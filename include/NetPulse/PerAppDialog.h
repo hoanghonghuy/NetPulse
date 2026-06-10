@@ -1,4 +1,4 @@
-﻿#ifndef NETWORK_MONITOR_PERAPP_DIALOG_H
+#ifndef NETWORK_MONITOR_PERAPP_DIALOG_H
 #define NETWORK_MONITOR_PERAPP_DIALOG_H
 
 #include "NetPulse/Common.h"
@@ -6,6 +6,11 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <memory>
+
+namespace NetPulseTests
+{
+struct PerAppDialogTestFriend;
+}
 
 namespace NetPulse
 {
@@ -29,6 +34,8 @@ public:
      * @return Dialog result
      */
     INT_PTR Show(HWND parentWindow, const AppConfig* config);
+
+    friend struct NetPulseTests::PerAppDialogTestFriend;
 
 private:
     static INT_PTR CALLBACK DialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
