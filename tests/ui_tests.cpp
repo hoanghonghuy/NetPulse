@@ -45,6 +45,31 @@ namespace
     }
 }
 
+struct MenuAutoCloser
+{
+    HWND hOwner;
+    HANDLE hThread;
+    MenuAutoCloser(HWND owner) : hOwner(owner), hThread(nullptr)
+    {
+        hThread = CreateThread(nullptr, 0, StaticThreadProc, this, 0, nullptr);
+    }
+    ~MenuAutoCloser()
+    {
+        if (hThread)
+        {
+            WaitForSingleObject(hThread, 5000);
+            CloseHandle(hThread);
+        }
+    }
+    static DWORD WINAPI StaticThreadProc(LPVOID param)
+    {
+        auto* self = reinterpret_cast<MenuAutoCloser*>(param);
+        Sleep(150); // wait for menu to populate
+        PostMessageW(self->hOwner, WM_CANCELMODE, 0, 0);
+        return 0;
+    }
+};
+
 void RunTrayIconTests()
 {
     LogTestMessage(L"=== TrayIcon tests ===");
@@ -66,14 +91,49 @@ void RunTrayIconTests()
     }
 
     AppConfig config;
+    config.trayAnimationEnabled = true;
+    config.trayAnimationThresholdKB = 100;
     icon.SetConfigSource(&config);
 
+    // Callbacks
+    int doubleClickCount = 0;
+    icon.SetDoubleClickCallback([&]() {
+        doubleClickCount++;
+    });
+    icon.SetOverlayVisibilityProvider([&]() { return true; });
+    icon.SetFloatingWindowVisibilityProvider([&]() { return false; });
+
     NetworkStats stats;
-    stats.currentDownloadSpeed = 1024.0;
-    stats.currentUploadSpeed = 512.0;
+    stats.currentDownloadSpeed = 2000000.0;
+    stats.currentUploadSpeed = 2000000.0;
+    stats.peakDownloadSpeed = 5000000.0;
+    stats.peakUploadSpeed = 5000000.0;
 
     icon.UpdateTooltip(stats, SpeedUnit::KiloBytesPerSecond);
+    
+    // Trigger animation start
     icon.UpdateIcon(stats.currentDownloadSpeed, stats.currentUploadSpeed);
+    
+    // Pulse animation ticks
+    icon.OnAnimationTick();
+    
+    // Trigger animation stop
+    icon.UpdateIcon(0.0, 0.0);
+
+    // Trigger double click
+    icon.HandleMessage(WM_TRAYICON, 0, WM_LBUTTONDBLCLK);
+    AssertTrue(doubleClickCount == 1, L"TrayIcon double-click callback invoked");
+
+    // Show menu test using AutoCloser
+    {
+        MenuAutoCloser menuCloser(hwnd);
+        icon.HandleMessage(WM_TRAYICON, 0, WM_RBUTTONUP);
+    }
+
+    // Call other methods to cover branches
+    icon.ShowBalloonNotification(L"Test Title", L"Test Message");
+    icon.RefreshIcon(true);
+    icon.RefreshIcon(false);
 
     icon.Cleanup();
     DestroyWindow(hwnd);
@@ -102,6 +162,28 @@ void RunTaskbarOverlayTests()
     AssertTrue(overlay.IsVisible(), L"TaskbarOverlay visible after Show(true)");
 
     overlay.UpdateSpeed(2048.0, 1024.0, SpeedUnit::KiloBytesPerSecond);
+    overlay.SetPingLatency(20);
+    overlay.SetDarkTheme(true);
+    overlay.SetOverlayStyle(12, RGB(0, 255, 0), RGB(255, 0, 0));
+
+    // Handle messages using FindWindowW to retrieve overlay HWND
+    HWND hwndOverlay = FindWindowW(L"NetworkMonitorTaskbarOverlay", nullptr);
+    if (hwndOverlay)
+    {
+        SendMessageW(hwndOverlay, WM_PAINT, 0, 0);
+        SendMessageW(hwndOverlay, WM_ERASEBKGND, 0, 0);
+        SendMessageW(hwndOverlay, WM_DISPLAYCHANGE, 0, 0);
+        SendMessageW(hwndOverlay, WM_SETTINGCHANGE, 0, 0);
+        SendMessageW(hwndOverlay, WM_TIMER, 1001, 0); // Check visibility timer
+        
+        // Right click callback test
+        int rClickCount = 0;
+        overlay.SetRightClickCallback([&]() {
+            rClickCount++;
+        });
+        SendMessageW(hwndOverlay, WM_RBUTTONUP, 0, 0);
+        AssertTrue(rClickCount == 1, L"TaskbarOverlay right click callback invoked");
+    }
 
     overlay.Show(false);
     AssertTrue(!overlay.IsUserWantsVisible(), L"TaskbarOverlay user preference disabled after Show(false)");
@@ -111,8 +193,6 @@ void RunTaskbarOverlayTests()
 
     AssertTrue(true, L"TaskbarOverlay Initialize/Show/Update/Cleanup executed without crash");
 }
-
-// ========== PHASE 1: FLOATING WINDOW TESTS ==========
 
 void RunFloatingWindowTests()
 {
@@ -183,6 +263,22 @@ void RunFloatingWindowTests()
     floating.UpdateRAM(60.0);
     floating.UpdatePing(25);
     floating.UpdateDataToday(1024 * 1024 * 100, 1024 * 1024 * 50);
+    floating.UpdateVpnStatus(true, true);
+    floating.UpdatePublicIP(L"1.2.3.4");
+    floating.SetShowVpnStatus(true);
+    floating.SetShowPublicIP(true);
+    floating.SetShowNetwork(true);
+    floating.SetShowCPU(true);
+    floating.SetShowRAM(true);
+    floating.SetShowPing(true);
+    floating.SetShowDataToday(true);
+    floating.SetShowSparkline(true);
+    floating.SetSparklineTimeRange(1);
+    floating.SetOpacity(180);
+    floating.SetDarkTheme(true);
+    floating.SetPosition(100, 100);
+    int posX = 0, posY = 0;
+    floating.GetPosition(posX, posY);
 
     // Send standard Win32 messages to test WindowProc / HandleMessage paths
     HWND hfw = floating.GetHWND();
