@@ -1,4 +1,4 @@
-﻿#include "NetPulse/EtwNetworkMonitor.h"
+#include "NetPulse/EtwNetworkMonitor.h"
 #include "NetPulse/Utils.h"
 #include <tdh.h>
 #include <in6addr.h>
@@ -9,6 +9,49 @@
 namespace NetPulse
 {
 
+class WinEtwSession : public IEtwSession
+{
+public:
+    ULONG Start(TRACEHANDLE& sessionHandle, const std::wstring& sessionName, PEVENT_TRACE_PROPERTIES properties) override
+    {
+        return ::StartTraceW(&sessionHandle, sessionName.c_str(), properties);
+    }
+
+    ULONG Stop(TRACEHANDLE sessionHandle, const std::wstring& sessionName, PEVENT_TRACE_PROPERTIES properties) override
+    {
+        return ::ControlTraceW(sessionHandle, sessionName.empty() ? nullptr : sessionName.c_str(), properties, EVENT_TRACE_CONTROL_STOP);
+    }
+
+    ULONG EnableProvider(TRACEHANDLE sessionHandle, const GUID* providerGuid, UCHAR level, ULONGLONG matchAnyKeyword, ULONGLONG matchAllKeyword) override
+    {
+        return ::EnableTraceEx2(
+            sessionHandle,
+            providerGuid,
+            EVENT_CONTROL_CODE_ENABLE_PROVIDER,
+            level,
+            matchAnyKeyword,
+            matchAllKeyword,
+            0,
+            nullptr
+        );
+    }
+
+    TRACEHANDLE Open(EVENT_TRACE_LOGFILEW* logfile) override
+    {
+        return ::OpenTraceW(logfile);
+    }
+
+    ULONG Process(TRACEHANDLE* traceHandles, ULONG count) override
+    {
+        return ::ProcessTrace(traceHandles, count, nullptr, nullptr);
+    }
+
+    ULONG Close(TRACEHANDLE traceHandle) override
+    {
+        return ::CloseTrace(traceHandle);
+    }
+};
+
 // Static instance for callback
 EtwNetworkMonitor* EtwNetworkMonitor::s_instance = nullptr;
 
@@ -17,12 +60,19 @@ EtwNetworkMonitor* EtwNetworkMonitor::s_instance = nullptr;
 static const GUID KernelNetworkProviderGuid = 
     { 0x7dd42a49, 0x5329, 0x4832, { 0x8d, 0xfd, 0x43, 0xd9, 0x79, 0x15, 0x3a, 0x88 } };
 
-EtwNetworkMonitor::EtwNetworkMonitor()
-    : m_sessionHandle(0)
+EtwNetworkMonitor::EtwNetworkMonitor(IEtwSession* etwSession)
+    : m_defaultEtwSession(nullptr)
+    , m_pEtwSession(etwSession)
+    , m_sessionHandle(0)
     , m_traceHandle(INVALID_PROCESSTRACE_HANDLE)
     , m_running(false)
     , m_stopRequested(false)
 {
+    if (!m_pEtwSession)
+    {
+        m_defaultEtwSession = std::make_unique<WinEtwSession>();
+        m_pEtwSession = m_defaultEtwSession.get();
+    }
 }
 
 EtwNetworkMonitor::~EtwNetworkMonitor()
@@ -53,7 +103,7 @@ bool EtwNetworkMonitor::Start()
     pSessionProps->LoggerNameOffset = sizeof(EVENT_TRACE_PROPERTIES);
     
     // Try to stop any existing session first
-    ControlTraceW(0, SESSION_NAME, pSessionProps, EVENT_TRACE_CONTROL_STOP);
+    m_pEtwSession->Stop(0, SESSION_NAME, pSessionProps);
     
     // Reset properties after stop attempt
     ZeroMemory(pSessionProps, bufferSize);
@@ -64,7 +114,7 @@ bool EtwNetworkMonitor::Start()
     pSessionProps->LoggerNameOffset = sizeof(EVENT_TRACE_PROPERTIES);
     
     // Start the trace session
-    ULONG status = StartTraceW(&m_sessionHandle, SESSION_NAME, pSessionProps);
+    ULONG status = m_pEtwSession->Start(m_sessionHandle, SESSION_NAME, pSessionProps);
     if (status != ERROR_SUCCESS)
     {
         LogError(L"EtwNetworkMonitor::Start: StartTraceW failed with error " + std::to_wstring(status));
@@ -73,21 +123,18 @@ bool EtwNetworkMonitor::Start()
     }
     
     // Enable the kernel network provider
-    status = EnableTraceEx2(
+    status = m_pEtwSession->EnableProvider(
         m_sessionHandle,
         &KernelNetworkProviderGuid,
-        EVENT_CONTROL_CODE_ENABLE_PROVIDER,
         TRACE_LEVEL_INFORMATION,
         0,  // MatchAnyKeyword
-        0,  // MatchAllKeyword
-        0,  // Timeout
-        nullptr
+        0   // MatchAllKeyword
     );
     
     if (status != ERROR_SUCCESS)
     {
         LogError(L"EtwNetworkMonitor::Start: EnableTraceEx2 failed with error " + std::to_wstring(status));
-        ControlTraceW(m_sessionHandle, nullptr, pSessionProps, EVENT_TRACE_CONTROL_STOP);
+        m_pEtwSession->Stop(m_sessionHandle, L"", pSessionProps);
         m_sessionHandle = 0;
         s_instance = nullptr;
         return false;
@@ -122,14 +169,14 @@ void EtwNetworkMonitor::Stop()
         pSessionProps->Wnode.BufferSize = static_cast<ULONG>(bufferSize);
         pSessionProps->LoggerNameOffset = sizeof(EVENT_TRACE_PROPERTIES);
         
-        ControlTraceW(m_sessionHandle, nullptr, pSessionProps, EVENT_TRACE_CONTROL_STOP);
+        m_pEtwSession->Stop(m_sessionHandle, L"", pSessionProps);
         m_sessionHandle = 0;
     }
     
     // Close the trace handle (this will cause ProcessTrace to return)
     if (m_traceHandle != INVALID_PROCESSTRACE_HANDLE)
     {
-        CloseTrace(m_traceHandle);
+        m_pEtwSession->Close(m_traceHandle);
         m_traceHandle = INVALID_PROCESSTRACE_HANDLE;
     }
     
@@ -152,7 +199,7 @@ void EtwNetworkMonitor::ProcessThreadProc()
     traceLogfile.ProcessTraceMode = PROCESS_TRACE_MODE_REAL_TIME | PROCESS_TRACE_MODE_EVENT_RECORD;
     traceLogfile.EventRecordCallback = EventRecordCallback;
     
-    m_traceHandle = OpenTraceW(&traceLogfile);
+    m_traceHandle = m_pEtwSession->Open(&traceLogfile);
     if (m_traceHandle == INVALID_PROCESSTRACE_HANDLE)
     {
         LogError(L"EtwNetworkMonitor::ProcessThreadProc: OpenTraceW failed");
@@ -160,7 +207,7 @@ void EtwNetworkMonitor::ProcessThreadProc()
     }
     
     // This will block until the trace is closed
-    ULONG status = ProcessTrace(&m_traceHandle, 1, nullptr, nullptr);
+    ULONG status = m_pEtwSession->Process(&m_traceHandle, 1);
     if (status != ERROR_SUCCESS && status != ERROR_CANCELLED)
     {
         LogError(L"EtwNetworkMonitor::ProcessThreadProc: ProcessTrace failed with error " + std::to_wstring(status));

@@ -7,6 +7,7 @@ set(NETPULSE_TEST_SOURCES
     main_tests.cpp
     TestUtils.cpp
     system_monitor_tests.cpp
+    ping_monitor_tests.cpp
     history_logger_tests.cpp
     network_monitor_tests.cpp
     utils_tests.cpp
@@ -25,12 +26,14 @@ set(NETPULSE_TEST_SOURCES
     update_checker_tests.cpp
     etw_network_monitor_tests.cpp
     component_renderer_tests.cpp
+    hotkey_manager_tests.cpp
     ../src/core/HistoryLogger.cpp
     ../src/core/NetworkMonitor.cpp
     ../src/core/NetworkCalculator.cpp
     ../src/core/ConfigManager.cpp
     ../src/core/PingMonitor.cpp
     ../src/core/Utils.cpp
+    ../src/core/HotkeyManager.cpp
     ../src/ui/TrayIcon.cpp
     ../src/ui/TaskbarOverlay.cpp
     ../src/ui/ThemeHelper.cpp

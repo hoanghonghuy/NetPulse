@@ -1,5 +1,8 @@
 #include "TestUtils.h"
 #include "NetPulse/EtwNetworkMonitor.h"
+#include "test_fakes/FakeEtwSession.h"
+#include <thread>
+#include <chrono>
 
 namespace NetPulseTests
 {
@@ -11,6 +14,14 @@ struct EtwNetworkMonitorTestFriend
     static EtwNetworkMonitor* GetStaticInstance()
     {
         return EtwNetworkMonitor::s_instance;
+    }
+    static TRACEHANDLE GetSessionHandle(const EtwNetworkMonitor& m)
+    {
+        return m.m_sessionHandle;
+    }
+    static TRACEHANDLE GetTraceHandle(const EtwNetworkMonitor& m)
+    {
+        return m.m_traceHandle;
     }
 };
 
@@ -67,26 +78,62 @@ void TestEtwProcessNameSpecialPids()
                L"PID 4 maps to System");
 }
 
-void TestEtwStaticInstanceClearedOnStop()
+void TestEtwStaticInstanceClearedOnStopWithFake()
 {
-    LogTestMessage(L"  Running TestEtwStaticInstanceClearedOnStop...");
+    LogTestMessage(L"  Running TestEtwStaticInstanceClearedOnStopWithFake...");
 
-    EtwNetworkMonitor monitor;
-    if (monitor.Start())
-    {
-        AssertTrue(EtwNetworkMonitorTestFriend::GetStaticInstance() != nullptr,
-                   L"Start sets static instance when successful");
-        monitor.Stop();
-        AssertTrue(EtwNetworkMonitorTestFriend::GetStaticInstance() == nullptr,
-                   L"Stop clears static instance");
-        AssertTrue(!monitor.IsRunning(), L"Stop clears running flag");
-    }
-    else
-    {
-        LogTestMessage(L"    Start failed (permissions?) — verifying fail path clears instance");
-        AssertTrue(EtwNetworkMonitorTestFriend::GetStaticInstance() == nullptr,
-                   L"Start fail path clears static instance");
-    }
+    FakeEtwSession fake;
+    EtwNetworkMonitor monitor(&fake);
+    AssertTrue(monitor.Start(), L"Start succeeds with fake session");
+    AssertTrue(fake.m_startCalls == 1, L"Start calls fake Start");
+    AssertTrue(fake.m_enableCalls == 1, L"Start calls fake EnableTraceEx2");
+    AssertTrue(EtwNetworkMonitorTestFriend::GetStaticInstance() != nullptr, L"Start sets static instance");
+    AssertTrue(monitor.IsRunning(), L"Monitor is marked running");
+    
+    std::wstring debugStart = L"    SessionHandle after start: " + std::to_wstring(EtwNetworkMonitorTestFriend::GetSessionHandle(monitor)) +
+                             L", TraceHandle: " + std::to_wstring(EtwNetworkMonitorTestFriend::GetTraceHandle(monitor));
+    LogTestMessage(debugStart.c_str());
+
+    // Wait a brief moment to ensure ProcessThreadProc has run and set m_traceHandle
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+    monitor.Stop();
+    
+    std::wstring debugStop = L"    Stop calls: " + std::to_wstring(fake.m_stopCalls) +
+                            L", Close calls: " + std::to_wstring(fake.m_closeCalls);
+    LogTestMessage(debugStop.c_str());
+
+    AssertTrue(fake.m_stopCalls == 2, L"Stop calls fake Stop twice (once on cleanup, once on stop)");
+    AssertTrue(fake.m_closeCalls == 1, L"Stop calls fake CloseTrace");
+    AssertTrue(EtwNetworkMonitorTestFriend::GetStaticInstance() == nullptr, L"Stop clears static instance");
+    AssertTrue(!monitor.IsRunning(), L"Stop clears running flag");
+}
+
+void TestEtwStartFailWithFake()
+{
+    LogTestMessage(L"  Running TestEtwStartFailWithFake...");
+
+    FakeEtwSession fake;
+    fake.m_startResult = ERROR_ACCESS_DENIED;
+    EtwNetworkMonitor monitor(&fake);
+    AssertTrue(!monitor.Start(), L"Start fails when StartTraceW returns error");
+    AssertTrue(fake.m_startCalls == 1, L"Start calls fake Start");
+    AssertTrue(fake.m_enableCalls == 0, L"Start does not call EnableProvider if StartTrace fails");
+    AssertTrue(EtwNetworkMonitorTestFriend::GetStaticInstance() == nullptr, L"Static instance remains null");
+}
+
+void TestEtwEnableProviderFailWithFake()
+{
+    LogTestMessage(L"  Running TestEtwEnableProviderFailWithFake...");
+
+    FakeEtwSession fake;
+    fake.m_enableResult = ERROR_INVALID_PARAMETER;
+    EtwNetworkMonitor monitor(&fake);
+    AssertTrue(!monitor.Start(), L"Start fails when EnableTraceEx2 returns error");
+    AssertTrue(fake.m_startCalls == 1, L"Start calls fake Start");
+    AssertTrue(fake.m_enableCalls == 1, L"Start calls fake EnableProvider");
+    AssertTrue(fake.m_stopCalls == 2, L"Start stops the session if enable provider fails (including initial cleanup)");
+    AssertTrue(EtwNetworkMonitorTestFriend::GetStaticInstance() == nullptr, L"Static instance remains null");
 }
 
 void RunEtwNetworkMonitorTests()
@@ -97,7 +144,9 @@ void RunEtwNetworkMonitorTests()
     TestEtwTrafficAggregation();
     TestEtwResetStats();
     TestEtwProcessNameSpecialPids();
-    TestEtwStaticInstanceClearedOnStop();
+    TestEtwStaticInstanceClearedOnStopWithFake();
+    TestEtwStartFailWithFake();
+    TestEtwEnableProviderFailWithFake();
 
     LogTestMessage(L"EtwNetworkMonitor tests completed.");
 }

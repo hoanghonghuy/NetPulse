@@ -16,6 +16,9 @@
 #pragma comment(lib, "advapi32.lib")
 #endif
 
+#include "NetPulse/Interfaces/IEtwSession.h"
+#include <memory>
+
 namespace NetPulseTests
 {
 struct EtwNetworkMonitorTestFriend;
@@ -69,7 +72,7 @@ struct ProcessTrafficStats
 class EtwNetworkMonitor
 {
 public:
-    EtwNetworkMonitor();
+    explicit EtwNetworkMonitor(IEtwSession* etwSession = nullptr);
     ~EtwNetworkMonitor();
 
     /**
@@ -124,6 +127,8 @@ private:
     void ProcessThreadProc();
 
     // Session management
+    std::unique_ptr<IEtwSession> m_defaultEtwSession;
+    IEtwSession* m_pEtwSession;
     TRACEHANDLE m_sessionHandle;
     TRACEHANDLE m_traceHandle;
     std::thread m_processThread;

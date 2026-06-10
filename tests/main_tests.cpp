@@ -29,6 +29,8 @@ void RunUpdateCheckerTests();
 void RunEtwNetworkMonitorTests();
 void RunComponentRendererTests();
 void RunSystemMonitorTests();
+void RunPingMonitorTests();
+void RunHotkeyManagerTests();
 }
 
 using namespace NetPulseTests;
@@ -59,6 +61,8 @@ int main()
     RunSpeedTestTests();
     RunComponentRendererTests();
     RunSystemMonitorTests();
+    RunPingMonitorTests();
+    RunHotkeyManagerTests();
 
     int failures = GetFailureCount();
     if (failures == 0)

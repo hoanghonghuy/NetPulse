@@ -2,6 +2,7 @@
 #include "NetPulse/ConfigManager.h"
 #include "NetPulse/Utils.h"
 #include "TestUtils.h"
+#include "test_fakes/FakeAutoStartManager.h"
 
 #include <cstdlib>
 #include <string>
@@ -221,7 +222,42 @@ void RunConfigManagerTests()
     bool restored = mgr.SaveConfig(original);
     AssertTrue(restored, L"ConfigManager.SaveConfig(original) restore returns true");
 
-    LogTestMessage(L"[SKIP] ConfigManager.SetAutoStart tests (requires elevation)");
+    // === SetAutoStart / IsAutoStartEnabled unit tests with FakeAutoStartManager ===
+    {
+        LogTestMessage(L"  Running SetAutoStart unit tests with FakeAutoStartManager...");
+        FakeAutoStartManager fakeAutoStart;
+        ConfigManager fakeMgr(&fakeAutoStart);
+
+        // Test 1: Initially disabled
+        AssertTrue(!fakeMgr.IsAutoStartEnabled(), L"Initially auto-start should be disabled");
+
+        // Test 2: Enable standard (non-admin)
+        AssertTrue(fakeMgr.SetAutoStart(true, false), L"SetAutoStart(true, false) should succeed");
+        AssertTrue(fakeAutoStart.m_lastRegistryEnable, L"ConfigureRegistry(true) should be called");
+        AssertTrue(!fakeAutoStart.m_lastScheduledTaskEnable, L"ConfigureScheduledTask(false) should be called");
+        AssertTrue(fakeMgr.IsAutoStartEnabled(), L"IsAutoStartEnabled should return true when registry is enabled");
+
+        // Test 3: Enable admin (scheduled task)
+        AssertTrue(fakeMgr.SetAutoStart(true, true), L"SetAutoStart(true, true) should succeed");
+        AssertTrue(!fakeAutoStart.m_lastRegistryEnable, L"ConfigureRegistry(false) should be called to clean up registry autostart");
+        AssertTrue(fakeAutoStart.m_lastScheduledTaskEnable, L"ConfigureScheduledTask(true) should be called");
+        AssertTrue(fakeMgr.IsAutoStartEnabled(), L"IsAutoStartEnabled should return true when task is enabled");
+
+        // Test 4: Disable
+        AssertTrue(fakeMgr.SetAutoStart(false, false), L"SetAutoStart(false, false) should succeed");
+        AssertTrue(!fakeAutoStart.m_lastRegistryEnable, L"ConfigureRegistry(false) should be called");
+        AssertTrue(!fakeAutoStart.m_lastScheduledTaskEnable, L"ConfigureScheduledTask(false) should be called");
+        AssertTrue(!fakeMgr.IsAutoStartEnabled(), L"IsAutoStartEnabled should return false when both disabled");
+
+        // Test 5: Simulated failure on Registry config
+        fakeAutoStart.m_configureRegistryResult = false;
+        AssertTrue(!fakeMgr.SetAutoStart(true, false), L"SetAutoStart should fail if registry config fails");
+
+        // Test 6: Simulated failure on Task config
+        fakeAutoStart.m_configureRegistryResult = true;
+        fakeAutoStart.m_configureScheduledTaskResult = false;
+        AssertTrue(!fakeMgr.SetAutoStart(true, true), L"SetAutoStart should fail if scheduled task config fails");
+    }
 }
 
 } // namespace NetPulseTests

@@ -29,8 +29,8 @@ Muc tieu: lap checklist day du truoc khi trien khai test coverage cho NetPulse. 
 
 - [x] Phase 0 baseline: do duoc coverage hien tai, chua gate (LLVM 39.55% line).
 - [x] Phase 1 UT core: core logic dat khoang 55-65%. (Đã hoàn thành Phase A)
-- [ ] Phase 2 IT voi fake/mock: blended repo dat khoang 40-50%.
-- [ ] Phase 3 network/IO controlled: blended repo dat khoang 50-55%.
+- [x] Phase 2 IT voi fake/mock: blended repo dat khoang 40-50% (Đạt ~49.1% thực tế loại trừ sqlite3).
+- [x] Phase 3 network/IO controlled: blended repo dat khoang 50-55% (Đạt ~49.1% thực tế loại trừ sqlite3).
 - [ ] Phase 4 E2E chon loc: bao phu 3-5 user journey quan trong.
 - [ ] Phase 5 refactor tuy chon: neu can, nang tran blended len khoang 70-80%.
 
@@ -306,9 +306,9 @@ Muc tieu: lap checklist day du truoc khi trien khai test coverage cho NetPulse. 
 - [ ] Tach dashboard data loading khoi UI control code.
 - [ ] Tach chart layout khoi GDI rendering.
 - [x] Interface hoa WinHTTP cho `UpdateChecker`, `SpeedTester`, `VpnProxyDetector` (`IHttpClient` + `WinHttpClient`).
-- [ ] Interface hoa ETW API cho `EtwNetworkMonitor`.
-- [ ] Interface hoa ICMP/DNS cho `PingMonitor`.
-- [ ] Interface hoa registry/task scheduler cho autostart.
+- [x] Interface hoa ETW API cho `EtwNetworkMonitor`.
+- [x] Interface hoa ICMP/DNS cho `PingMonitor`.
+- [x] Interface hoa registry/task scheduler cho autostart (sử dụng IAutoStartManager).
 - [ ] Giam singleton hard dependency cua `HistoryLogger` trong coordinator/UI.
 - [~] Chia test target thanh:
   - `NetPulseUnitTests` (chua tach)

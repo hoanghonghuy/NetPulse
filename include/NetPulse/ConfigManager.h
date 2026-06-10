@@ -3,13 +3,19 @@
 
 #include "NetPulse/Common.h"
 #include "NetPulse/Interfaces/IConfigProvider.h"
+#include "NetPulse/Interfaces/IAutoStartManager.h"
 #include <windows.h>
+#include <memory>
 
 namespace NetPulse {
 
 class ConfigManager : public IConfigProvider {
 public:
-  ConfigManager();
+  static constexpr const wchar_t *REGISTRY_PATH = L"Software\\NetworkMonitor";
+  static constexpr const wchar_t *AUTOSTART_PATH =
+      L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
+
+  explicit ConfigManager(IAutoStartManager* autoStartMgr = nullptr);
   ~ConfigManager() override;
 
   /**
@@ -143,16 +149,15 @@ private:
   bool WriteIniString(const wchar_t* section, const wchar_t* key, const std::wstring& value);
 
 private:
-  // NOTE: Uses legacy name "NetworkMonitor" for backward compatibility with existing user settings.
-  static constexpr const wchar_t *REGISTRY_PATH = L"Software\\NetworkMonitor";
-  static constexpr const wchar_t *AUTOSTART_PATH =
-      L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
   static constexpr const wchar_t *PORTABLE_FILENAME = L"netpulse.ini";
   static constexpr const wchar_t *INI_SECTION = L"Settings";
 
   bool m_isPortable = false;           // Currently using portable mode (file exists AND enabled)
   bool m_portableFileExists = false;   // INI file exists on disk
   std::wstring m_portableFilePath;
+
+  IAutoStartManager* m_pAutoStartManager = nullptr;
+  std::unique_ptr<IAutoStartManager> m_defaultAutoStartManager;
 };
 
 } // namespace NetPulse
