@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // File: main_tests.cpp
 // Description: Test runner for NetworkMonitor
 // Author: NetworkMonitor Project (tests)
@@ -28,6 +28,7 @@ void RunConnectionMonitorTests();
 void RunUpdateCheckerTests();
 void RunEtwNetworkMonitorTests();
 void RunComponentRendererTests();
+void RunSystemMonitorTests();
 }
 
 using namespace NetPulseTests;
@@ -57,6 +58,7 @@ int main()
     RunEtwNetworkMonitorTests();
     RunSpeedTestTests();
     RunComponentRendererTests();
+    RunSystemMonitorTests();
 
     int failures = GetFailureCount();
     if (failures == 0)

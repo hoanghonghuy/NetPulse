@@ -1,6 +1,7 @@
 #include "NetPulse/UpdateCoordinator.h"
 #include "NetPulse/HistoryLogger.h"
 #include "NetPulse/TaskbarOverlay.h"
+#include "NetPulse/PingMonitor.h"
 #include "test_fakes/FakeNetworkStatsProvider.h"
 #include "TestUtils.h"
 
@@ -241,6 +242,45 @@ void RunUpdateCoordinatorTests()
     AssertTrue(ifaceAlertCallbacks == 1 && ifaceAlertThreshold == 80,
                L"UpdateCoordinator quota alert uses selected interface filter");
 
+    // Test multiple ticks with zero delta (stats unchanged) not appending history
+    {
+        FakeNetworkStatsProvider zeroDeltaProvider;
+        zeroDeltaProvider.m_aggregated.bytesReceived = 1000ULL;
+        zeroDeltaProvider.m_aggregated.bytesSent = 500ULL;
+        zeroDeltaProvider.m_aggregated.isActive = true;
+
+        AppConfig zeroDeltaConfig;
+        zeroDeltaConfig.enableLogging = true;
+        zeroDeltaConfig.enableDataUsageAlerts = false;
+
+        UpdateCoordinator zeroDeltaCoordinator;
+        zeroDeltaCoordinator.Initialize(&zeroDeltaConfig, &zeroDeltaProvider, nullptr, nullptr, nullptr);
+
+        int zeroDeltaCallbacks = 0;
+        zeroDeltaCoordinator.SetLogHistoryCallback(
+            [&](unsigned long long, unsigned long long, const std::wstring&)
+            {
+                ++zeroDeltaCallbacks;
+            });
+
+        // 1st tick establishes baseline
+        zeroDeltaCoordinator.OnNetworkUpdateTick();
+        AssertTrue(zeroDeltaCallbacks == 0, L"Zero delta: 1st tick baseline");
+
+        // 2nd tick: stats unchanged
+        zeroDeltaCoordinator.OnNetworkUpdateTick();
+        AssertTrue(zeroDeltaCallbacks == 0, L"Zero delta: 2nd tick unchanged, no logging");
+
+        // 3rd tick: stats unchanged
+        zeroDeltaCoordinator.OnNetworkUpdateTick();
+        AssertTrue(zeroDeltaCallbacks == 0, L"Zero delta: 3rd tick unchanged, no logging");
+
+        // 4th tick: stats increase
+        zeroDeltaProvider.m_aggregated.bytesReceived = 1200ULL;
+        zeroDeltaCoordinator.OnNetworkUpdateTick();
+        AssertTrue(zeroDeltaCallbacks == 1, L"Zero delta: 4th tick increased, logs history");
+    }
+
     TaskbarOverlay overlay;
     if (overlay.Initialize(GetModuleHandleW(nullptr)))
     {
@@ -254,13 +294,32 @@ void RunUpdateCoordinatorTests()
         AppConfig overlayConfig;
         overlayConfig.enableLogging = false;
         overlayConfig.enableDataUsageAlerts = false;
-        overlayConfig.displayUnit = SpeedUnit::KiloBytesPerSecond;
 
-        UpdateCoordinator overlayCoordinator;
-        overlayCoordinator.Initialize(&overlayConfig, &overlayProvider, nullptr, &overlay, nullptr);
-        overlayCoordinator.OnNetworkUpdateTick();
-        AssertTrue(overlay.IsUserWantsVisible(),
-                   L"UpdateCoordinator overlay update path runs when user wants visible");
+        // Test with different SpeedUnit options
+        SpeedUnit testUnits[] = {
+            SpeedUnit::BytesPerSecond,
+            SpeedUnit::KiloBytesPerSecond,
+            SpeedUnit::MegaBytesPerSecond,
+            SpeedUnit::MegaBitsPerSecond
+        };
+
+        for (SpeedUnit unit : testUnits)
+        {
+            overlayConfig.displayUnit = unit;
+            UpdateCoordinator overlayCoordinator;
+            overlayCoordinator.Initialize(&overlayConfig, &overlayProvider, nullptr, &overlay, nullptr);
+            overlayCoordinator.OnNetworkUpdateTick();
+            // Just verify it runs and doesn't crash
+            AssertTrue(overlay.IsUserWantsVisible(), L"UpdateCoordinator overlay update runs without crash");
+        }
+
+        // Test OnPingTick with PingMonitor
+        PingMonitor pingMon; // uninitialized
+        UpdateCoordinator pingCoordinator;
+        pingCoordinator.Initialize(&overlayConfig, &overlayProvider, nullptr, &overlay, &pingMon);
+        pingCoordinator.OnPingTick();
+        AssertTrue(true, L"UpdateCoordinator OnPingTick runs without crash");
+
         overlay.Cleanup();
     }
 }

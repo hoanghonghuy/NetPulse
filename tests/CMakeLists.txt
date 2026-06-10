@@ -6,6 +6,7 @@ include(${CMAKE_SOURCE_DIR}/cmake/NetPulseCoverage.cmake)
 set(NETPULSE_TEST_SOURCES
     main_tests.cpp
     TestUtils.cpp
+    system_monitor_tests.cpp
     history_logger_tests.cpp
     network_monitor_tests.cpp
     utils_tests.cpp

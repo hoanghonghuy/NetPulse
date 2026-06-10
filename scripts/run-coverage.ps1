@@ -19,9 +19,9 @@ function Invoke-LlvmCoverage {
     cmake --build $BuildDir --target NetPulseTests -j 4
 
     $TestExe = Join-Path $BuildDir "tests\NetPulseTests.exe"
-    $ProfRawDir = Join-Path $BuildDir "coverage-profraw"
-    $ProfData = Join-Path $BuildDir "coverage.profdata"
-    $ReportDir = Join-Path $BuildDir "coverage-report"
+    $ProfRawDir = [System.IO.Path]::GetFullPath((Join-Path $RepoRoot (Join-Path $BuildDir "coverage-profraw")))
+    $ProfData = [System.IO.Path]::GetFullPath((Join-Path $RepoRoot (Join-Path $BuildDir "coverage.profdata")))
+    $ReportDir = [System.IO.Path]::GetFullPath((Join-Path $RepoRoot (Join-Path $BuildDir "coverage-report")))
 
     if (Test-Path $ProfRawDir) {
         Remove-Item $ProfRawDir -Recurse -Force
@@ -33,8 +33,9 @@ function Invoke-LlvmCoverage {
     New-Item -ItemType Directory -Path $ReportDir | Out-Null
 
     $env:LLVM_PROFILE_FILE = Join-Path $ProfRawDir "NetPulseTests-%p.profraw"
-    Push-Location (Split-Path $TestExe)
-    & $TestExe
+    $AbsoluteTestExe = (Resolve-Path $TestExe).Path
+    Push-Location (Split-Path $AbsoluteTestExe)
+    & $AbsoluteTestExe
     if ($LASTEXITCODE -ne 0) {
         throw "NetPulseTests failed with exit code $LASTEXITCODE"
     }
@@ -43,12 +44,12 @@ function Invoke-LlvmCoverage {
     llvm-profdata merge -sparse (Join-Path $ProfRawDir "*.profraw") -o $ProfData
 
     $IgnoreRegex = "third_party|tests\\"
-    llvm-cov export $TestExe -instr-profile=$ProfData `
+    llvm-cov export $TestExe -instr-profile $ProfData `
         -format=lcov `
         -ignore-filename-regex=$IgnoreRegex `
         | Out-File -Encoding ascii (Join-Path $ReportDir "coverage.lcov")
 
-    llvm-cov report $TestExe -instr-profile=$ProfData `
+    llvm-cov report $TestExe -instr-profile $ProfData `
         -ignore-filename-regex=$IgnoreRegex `
         | Tee-Object -FilePath (Join-Path $ReportDir "summary.txt")
 

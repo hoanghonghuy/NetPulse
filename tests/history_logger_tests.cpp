@@ -1,4 +1,4 @@
-﻿#include "NetPulse/Common.h"
+#include "NetPulse/Common.h"
 #include "NetPulse/Utils.h"
 #include "NetPulse/HistoryLogger.h"
 #include "TestUtils.h"
@@ -182,6 +182,61 @@ void RunHistoryLoggerTests()
     okRecent = logger.GetRecentSamples(10, samples, &concurrentIface, false);
     AssertTrue(okRecent && !samples.empty(),
                L"HistoryLogger concurrent append/query does not corrupt data");
+
+    // Chart query and extended tests
+    cleared = logger.DeleteAll();
+    AssertTrue(cleared, L"HistoryLogger.DeleteAll before chart tests");
+
+    std::time_t now = std::time(nullptr);
+    std::tm localTime = {};
+    AssertTrue(localtime_s(&localTime, &now) == 0, L"localtime_s succeeds");
+    int currentYear = localTime.tm_year + 1900;
+    int currentMonth = localTime.tm_mon + 1;
+    int currentDay = localTime.tm_mday;
+
+    logger.AppendSample(ifaceName, 1200ULL, 800ULL);
+
+    std::vector<DailyUsage> dailyData;
+    bool okDaily = logger.GetDailyUsage(currentYear, currentMonth, dailyData);
+    AssertTrue(okDaily, L"HistoryLogger.GetDailyUsage succeeds");
+    AssertTrue(dailyData.size() == 1, L"HistoryLogger.GetDailyUsage returns 1 day");
+    AssertTrue(dailyData[0].day == currentDay, L"HistoryLogger.GetDailyUsage returns correct day");
+    AssertTrue(dailyData[0].bytesDown == 1200ULL && dailyData[0].bytesUp == 800ULL, L"HistoryLogger.GetDailyUsage returns correct bytes");
+
+    std::vector<MonthlyUsage> monthlyData;
+    bool okMonthly = logger.GetMonthlyUsage(currentYear, monthlyData);
+    AssertTrue(okMonthly, L"HistoryLogger.GetMonthlyUsage succeeds");
+    AssertTrue(monthlyData.size() == 1, L"HistoryLogger.GetMonthlyUsage returns 1 month");
+    AssertTrue(monthlyData[0].month == currentMonth, L"HistoryLogger.GetMonthlyUsage returns correct month");
+    AssertTrue(monthlyData[0].bytesDown == 1200ULL && monthlyData[0].bytesUp == 800ULL, L"HistoryLogger.GetMonthlyUsage returns correct bytes");
+
+    // Empty month/year queries
+    dailyData.clear();
+    okDaily = logger.GetDailyUsage(1999, 12, dailyData);
+    AssertTrue(okDaily, L"HistoryLogger.GetDailyUsage for empty month succeeds");
+    AssertTrue(dailyData.empty(), L"HistoryLogger.GetDailyUsage for empty month returns no data");
+
+    monthlyData.clear();
+    okMonthly = logger.GetMonthlyUsage(1999, monthlyData);
+    AssertTrue(okMonthly, L"HistoryLogger.GetMonthlyUsage for empty year succeeds");
+    AssertTrue(monthlyData.empty(), L"HistoryLogger.GetMonthlyUsage for empty year returns no data");
+
+    // Invalid parameters (mktime fails)
+    dailyData.clear();
+    bool failDaily = logger.GetDailyUsage(999999, 1, dailyData);
+    AssertTrue(!failDaily, L"HistoryLogger.GetDailyUsage with invalid year fails");
+
+    monthlyData.clear();
+    bool failMonthly = logger.GetMonthlyUsage(999999, monthlyData);
+    AssertTrue(!failMonthly, L"HistoryLogger.GetMonthlyUsage with invalid year fails");
+
+    // Test GetRecentSamples onlyToday=true
+    cleared = logger.DeleteAll();
+    logger.AppendSample(ifaceName, 500ULL, 250ULL);
+    std::vector<HistorySample> recentSamples;
+    bool okRecentToday = logger.GetRecentSamples(10, recentSamples, &ifaceName, true);
+    AssertTrue(okRecentToday, L"HistoryLogger.GetRecentSamples with onlyToday=true succeeds");
+    AssertTrue(recentSamples.size() == 1, L"HistoryLogger.GetRecentSamples with onlyToday=true returns current sample");
 }
 
 } // namespace NetPulseTests

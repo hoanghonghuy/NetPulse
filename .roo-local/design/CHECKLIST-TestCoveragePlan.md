@@ -28,7 +28,7 @@ Muc tieu: lap checklist day du truoc khi trien khai test coverage cho NetPulse. 
 ## Muc Tieu Coverage De Xuat
 
 - [x] Phase 0 baseline: do duoc coverage hien tai, chua gate (LLVM 39.55% line).
-- [ ] Phase 1 UT core: core logic dat khoang 55-65%.
+- [x] Phase 1 UT core: core logic dat khoang 55-65%. (Đã hoàn thành Phase A)
 - [ ] Phase 2 IT voi fake/mock: blended repo dat khoang 40-50%.
 - [ ] Phase 3 network/IO controlled: blended repo dat khoang 50-55%.
 - [ ] Phase 4 E2E chon loc: bao phu 3-5 user journey quan trong.
@@ -334,12 +334,13 @@ Muc tieu: lap checklist day du truoc khi trien khai test coverage cho NetPulse. 
 - [x] `tests/menu_handler_tests.cpp`
 - [x] `tests/language_manager_tests.cpp`
 - [ ] `tests/resource_tests.cpp` (i18n coverage trong `language_manager_tests.cpp`)
-- [~] `tests/history_logger_extended_tests.cpp` (logic mo rong trong `history_logger_tests.cpp`)
+- [x] `tests/history_logger_extended_tests.cpp` (đã gộp vào `history_logger_tests.cpp`)
 - [x] `tests/speed_test_history_persistence_tests.cpp`
 - [x] `tests/update_checker_tests.cpp`
 - [x] `tests/connection_monitor_tests.cpp`
-- [~] `tests/per_app_monitor_tests.cpp` (smoke trong `connection_monitor_tests.cpp`)
+- [x] `tests/per_app_monitor_tests.cpp` (đã gộp vào `connection_monitor_tests.cpp`)
 - [x] `tests/test_fakes/` cho fake providers.
+- [x] `tests/system_monitor_tests.cpp` (đã thêm mới trong Phase A)
 
 ## Rủi Ro Neu Co Gan Dat 100%
 

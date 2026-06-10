@@ -1,5 +1,6 @@
 #include "NetPulse/Common.h"
 #include "NetPulse/Utils.h"
+#include "NetPulse/ThemeHelper.h"
 #include "TestUtils.h"
 #include "../../resources/resource.h"
 
@@ -49,6 +50,48 @@ void RunUtilsTests()
     SetDebugLoggingEnabled(false);
     LogDebug(L"test debug message disabled");
     AssertTrue(true, L"SetDebugLoggingEnabled and log functions do not crash");
+
+    // Test GetLastErrorString
+    SetLastError(ERROR_ACCESS_DENIED);
+    std::wstring errStr = GetLastErrorString();
+    AssertTrue(!errStr.empty() && errStr != L"No error", L"GetLastErrorString returns non-empty message for ERROR_ACCESS_DENIED");
+    SetLastError(0);
+    AssertTrue(GetLastErrorString() == L"No error", L"GetLastErrorString returns No error when error code is 0");
+
+    // Test FormatSpeed overflows to GB/s
+    AssertTrue(FormatSpeed(1024.0 * 1024.0 * 1024.0 * 2.5, SpeedUnit::BytesPerSecond) == L"2.50 GB/s",
+               L"FormatSpeed overflow to GB/s (BytesPerSecond)");
+    AssertTrue(FormatSpeed(1024.0 * 1024.0 * 1024.0 * 3.5, SpeedUnit::KiloBytesPerSecond) == L"3.50 GB/s",
+               L"FormatSpeed overflow to GB/s (KiloBytesPerSecond)");
+    AssertTrue(FormatSpeed(1024.0 * 1024.0 * 1024.0 * 4.5, SpeedUnit::MegaBytesPerSecond) == L"4.50 GB/s",
+               L"FormatSpeed overflow to GB/s (MegaBytesPerSecond)");
+
+    // Test IsDarkThemeEnabled and IsCustomThemeEnabled
+    AppConfig themeConfig;
+
+    // Light themes
+    themeConfig.themeMode = ThemeMode::Light;
+    AssertTrue(!IsDarkThemeEnabled(themeConfig), L"IsDarkThemeEnabled(Light) is false");
+    AssertTrue(!IsCustomThemeEnabled(themeConfig), L"IsCustomThemeEnabled(Light) is false");
+
+    themeConfig.themeMode = ThemeMode::SolarizedLight;
+    AssertTrue(!IsDarkThemeEnabled(themeConfig), L"IsDarkThemeEnabled(SolarizedLight) is false");
+    AssertTrue(IsCustomThemeEnabled(themeConfig), L"IsCustomThemeEnabled(SolarizedLight) is true");
+
+    // Dark themes
+    themeConfig.themeMode = ThemeMode::Dark;
+    AssertTrue(IsDarkThemeEnabled(themeConfig), L"IsDarkThemeEnabled(Dark) is true");
+    AssertTrue(IsCustomThemeEnabled(themeConfig), L"IsCustomThemeEnabled(Dark) is true");
+
+    themeConfig.themeMode = ThemeMode::Dracula;
+    AssertTrue(IsDarkThemeEnabled(themeConfig), L"IsDarkThemeEnabled(Dracula) is true");
+    AssertTrue(IsCustomThemeEnabled(themeConfig), L"IsCustomThemeEnabled(Dracula) is true");
+
+    // System default theme
+    themeConfig.themeMode = ThemeMode::SystemDefault;
+    bool systemDark = ThemeHelper::IsSystemInDarkMode();
+    AssertTrue(IsDarkThemeEnabled(themeConfig) == systemDark, L"IsDarkThemeEnabled(SystemDefault) matches system dark mode");
+    AssertTrue(IsCustomThemeEnabled(themeConfig) == systemDark, L"IsCustomThemeEnabled(SystemDefault) matches system dark mode");
 }
 
 } // namespace NetPulseTests
