@@ -157,6 +157,11 @@ void RunHistoryLoggerTests()
     AssertTrue(trickyContent.find("\"NIC \"\"main\"\", backup\"") != std::string::npos,
                L"HistoryLogger.ExportToCSV escapes comma and quotes in interface");
 
+    // Test ExportToCSV with daysBack filter
+    const std::wstring filterExportPath = GetTestSandboxDir() + L"\\history_export_filter.csv";
+    exported = logger.ExportToCSV(filterExportPath, &trickyIface, 3);
+    AssertTrue(exported, L"HistoryLogger.ExportToCSV with daysBack filter succeeds");
+
     cleared = logger.DeleteAll();
     constexpr int kThreadCount = 4;
     std::vector<std::thread> workers;
