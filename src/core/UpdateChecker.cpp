@@ -8,10 +8,84 @@
 #include <sstream>
 #include <regex>
 #include <vector>
+#include <chrono>
 
 namespace NetPulse
 {
 
+UpdateChecker::~UpdateChecker()
+{
+    CancelAndWait();
+}
+
+void UpdateChecker::CancelAndWait()
+{
+    m_cancelFlag = true;
+    if (m_checkFuture.valid())
+    {
+        m_checkFuture.wait_for(std::chrono::seconds(5));
+    }
+}
+
+void UpdateChecker::CheckForUpdatesAsync(HWND hParent, bool silent)
+{
+    CancelAndWait();
+    m_cancelFlag = false;
+
+    m_checkFuture = std::async(std::launch::async, [this, hParent, silent]()
+    {
+        std::wstring latestVersion;
+        std::wstring downloadUrl;
+
+        if (m_cancelFlag) return;
+
+        bool success = PerformCheck(latestVersion, downloadUrl);
+
+        if (m_cancelFlag) return;
+
+        if (success)
+        {
+            std::wstring cleanLatest = StripVersionPrefix(latestVersion);
+            std::wstring cleanCurrent = StripVersionPrefix(APP_VERSION);
+
+            if (CompareVersions(cleanLatest, cleanCurrent) > 0)
+            {
+                std::wstringstream msg;
+                msg << L"A new version of NetPulse is available!\n\n"
+                    << L"Current Version: " << APP_VERSION << L"\n"
+                    << L"Latest Version: " << latestVersion << L"\n\n"
+                    << L"Do you want to visit the download page?";
+
+                if (m_cancelFlag) return;
+
+                int result = ShowDarkMessageBox(hParent, msg.str(), L"Update Available", MB_YESNO | MB_ICONINFORMATION, true);
+                
+                if (m_cancelFlag) return;
+
+                if (result == IDYES)
+                {
+                    ShellExecuteW(nullptr, L"open", downloadUrl.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                }
+            }
+            else if (!silent)
+            {
+                std::wstringstream msg;
+                msg << L"You are using the latest version of NetPulse.\n"
+                    << L"Version: " << APP_VERSION;
+
+                if (m_cancelFlag) return;
+                ShowDarkMessageBox(hParent, msg.str(), L"Check for Updates", MB_OK | MB_ICONINFORMATION, true);
+            }
+        }
+        else if (!silent)
+        {
+            if (m_cancelFlag) return;
+            ShowDarkMessageBox(hParent, L"Failed to check for updates.\nPlease check your internet connection.", L"Error", MB_OK | MB_ICONERROR, true);
+        }
+    });
+}
+
+// DEPRECATED: Keep for backward compatibility / E2E tests
 void UpdateChecker::CheckForUpdates(HWND hParent, bool silent)
 {
     std::thread([hParent, silent]()

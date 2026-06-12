@@ -5,6 +5,8 @@
 #include <string>
 #include <functional>
 #include <memory>
+#include <future>
+#include <atomic>
 
 namespace NetPulseTests
 {
@@ -21,6 +23,13 @@ class UpdateChecker
 public:
     using UpdateCheckCallback = std::function<void(bool hasUpdate, const std::wstring& latestVersion, const std::wstring& downloadUrl)>;
 
+    UpdateChecker() = default;
+    ~UpdateChecker();
+
+    // Instance-based (lifecycle-safe): dùng trong Application
+    void CheckForUpdatesAsync(HWND hParent, bool silent);
+    void CancelAndWait();
+
     static void CheckForUpdates(HWND hParent, bool silent);
 
     static std::wstring GetGitHubReleaseApiPath();
@@ -36,6 +45,9 @@ private:
     static bool PerformCheck(std::wstring& outLatestVersion,
                              std::wstring& outUrl,
                              IHttpClient* httpClient = nullptr);
+
+    std::future<void> m_checkFuture;
+    std::atomic<bool> m_cancelFlag{false};
 };
 
 } // namespace NetPulse

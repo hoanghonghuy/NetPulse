@@ -1,4 +1,4 @@
-﻿#include "NetPulse/Common.h"
+#include "NetPulse/Common.h"
 #include "NetPulse/DialogManager.h"
 #include "NetPulse/NetworkMonitor.h"
 #include "NetPulse/SettingsDialog.h"
@@ -323,15 +323,22 @@ void DialogManager::ShowSpeedTest()
 // Helper for About Dialog
 static INT_PTR CALLBACK AboutDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    static AppConfig* s_pConfig = nullptr;
+    AppConfig* pConfig = nullptr;
+    
+    if (message == WM_INITDIALOG)
+    {
+        pConfig = reinterpret_cast<AppConfig*>(lParam);
+        SetWindowLongPtrW(hDlg, DWLP_USER, reinterpret_cast<LONG_PTR>(pConfig));
+    }
+    else
+    {
+        pConfig = reinterpret_cast<AppConfig*>(GetWindowLongPtrW(hDlg, DWLP_USER));
+    }
     
     switch (message)
     {
     case WM_INITDIALOG:
         {
-            // Store config pointer passed via lParam
-            s_pConfig = reinterpret_cast<AppConfig*>(lParam);
-            
             // Center the dialog relative to parent (or desktop if no parent/hidden)
             HWND hParent = GetParent(hDlg);
             RECT rcOwner, rcDlg, rc;
@@ -368,9 +375,9 @@ static INT_PTR CALLBACK AboutDialogProc(HWND hDlg, UINT message, WPARAM wParam, 
                 SWP_NOSIZE);
 
             // Apply theme LAST, matching SpeedTestDialog logic
-            if (s_pConfig && IsCustomThemeEnabled(*s_pConfig))
+            if (pConfig && IsCustomThemeEnabled(*pConfig))
             {
-                bool useDarkTitleBar = IsDarkThemeEnabled(*s_pConfig);
+                bool useDarkTitleBar = IsDarkThemeEnabled(*pConfig);
                 ThemeHelper::ApplyDarkTitleBar(hDlg, useDarkTitleBar);
                 
                 // Make OK button owner-draw for dark theme
@@ -396,7 +403,7 @@ static INT_PTR CALLBACK AboutDialogProc(HWND hDlg, UINT message, WPARAM wParam, 
         }
 
     case WM_DRAWITEM:
-        if (s_pConfig && IsCustomThemeEnabled(*s_pConfig))
+        if (pConfig && IsCustomThemeEnabled(*pConfig))
         {
             DRAWITEMSTRUCT* pDrawItem = reinterpret_cast<DRAWITEMSTRUCT*>(lParam);
             if (pDrawItem->CtlType == ODT_BUTTON && pDrawItem->CtlID == IDOK)
@@ -431,7 +438,7 @@ static INT_PTR CALLBACK AboutDialogProc(HWND hDlg, UINT message, WPARAM wParam, 
         
     case WM_CTLCOLORDLG:
     case WM_CTLCOLORSTATIC:
-        if (s_pConfig && IsCustomThemeEnabled(*s_pConfig))
+        if (pConfig && IsCustomThemeEnabled(*pConfig))
         {
             HDC hdc = (HDC)wParam;
             const auto& colors = ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme());

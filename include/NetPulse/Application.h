@@ -1,4 +1,4 @@
-﻿#ifndef NETWORK_MONITOR_APPLICATION_H
+#ifndef NETWORK_MONITOR_APPLICATION_H
 #define NETWORK_MONITOR_APPLICATION_H
 
 #include "NetPulse/Common.h"
@@ -26,6 +26,8 @@ struct ApplicationTestFriend;
 
 namespace NetPulse
 {
+
+class UpdateChecker;
 
 class Application
 {
@@ -100,6 +102,7 @@ private:
     std::unique_ptr<SystemMonitor> m_pSystemMonitor;
     std::unique_ptr<VpnProxyDetector> m_pVpnDetector;  // Phase 3: VPN/Proxy detection
     std::unique_ptr<ConnectionMonitor> m_pConnectionMonitor;  // Phase 4: Connection watchdog
+    std::unique_ptr<UpdateChecker> m_pUpdateChecker;
 
     // Application state
     AppConfig m_config;

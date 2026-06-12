@@ -51,7 +51,7 @@ SpeedTester::~SpeedTester()
     m_resultCallback = nullptr;
     if (m_testThread.joinable())
     {
-        m_testThread.detach();
+        m_testThread.join();
     }
 }
 

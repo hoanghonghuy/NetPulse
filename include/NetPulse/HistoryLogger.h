@@ -38,6 +38,12 @@ struct MonthlyUsage
 class HistoryLogger
 {
 public:
+    /**
+     * Singleton instance. 
+     * WARNING: Do NOT access from detached threads that may outlive main().
+     * The singleton is destroyed during static finalization — access after
+     * destruction is undefined behavior.
+     */
     static HistoryLogger& Instance();
 
     /**
