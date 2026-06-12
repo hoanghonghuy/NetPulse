@@ -48,6 +48,7 @@ private:
 
     std::future<void> m_checkFuture;
     std::atomic<bool> m_cancelFlag{false};
+    IHttpClient* m_pMockHttpClient = nullptr;
 };
 
 } // namespace NetPulse

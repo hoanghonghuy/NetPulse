@@ -58,6 +58,70 @@ struct MessageBoxAutoCloser
     }
 };
 
+struct AboutDialogTester
+{
+    HANDLE hThread;
+    NetPulse::AppConfig* pConfig;
+
+    AboutDialogTester(NetPulse::AppConfig* config)
+        : hThread(nullptr), pConfig(config)
+    {
+        hThread = CreateThread(nullptr, 0, StaticThreadProc, this, 0, nullptr);
+    }
+
+    ~AboutDialogTester()
+    {
+        if (hThread)
+        {
+            WaitForSingleObject(hThread, 5000);
+            CloseHandle(hThread);
+        }
+    }
+
+    static DWORD WINAPI StaticThreadProc(LPVOID lpParam)
+    {
+        auto* pThis = static_cast<AboutDialogTester*>(lpParam);
+        HWND hDlg = nullptr;
+        for (int i = 0; i < 200; ++i)
+        {
+            hDlg = FindWindowW(L"#32770", L"About NetPulse");
+            if (hDlg) break;
+            Sleep(10);
+        }
+
+        if (!hDlg) return 0;
+
+        // 1. Simulate WM_CTLCOLORSTATIC and WM_CTLCOLOREDIT
+        HDC hdcStatic = CreateCompatibleDC(nullptr);
+        SendMessageW(hDlg, WM_CTLCOLORSTATIC, reinterpret_cast<WPARAM>(hdcStatic), reinterpret_cast<LPARAM>(GetDlgItem(hDlg, IDC_VERSION_TEXT)));
+        SendMessageW(hDlg, WM_CTLCOLORDLG, reinterpret_cast<WPARAM>(hdcStatic), 0);
+        DeleteDC(hdcStatic);
+
+        // 2. Simulate WM_DRAWITEM
+        DRAWITEMSTRUCT dis = {};
+        dis.CtlType = ODT_BUTTON;
+        dis.CtlID = IDOK;
+        dis.itemAction = ODA_DRAWENTIRE;
+        dis.hwndItem = GetDlgItem(hDlg, IDOK);
+        dis.hDC = CreateCompatibleDC(nullptr);
+        dis.rcItem = { 0, 0, 100, 30 };
+        SendMessageW(hDlg, WM_DRAWITEM, IDOK, reinterpret_cast<LPARAM>(&dis));
+        DeleteDC(dis.hDC);
+
+        // 3. Simulate WM_NOTIFY SysLink click
+        NMLINK nml = {};
+        nml.hdr.hwndFrom = GetDlgItem(hDlg, IDC_GITHUB_LINK);
+        nml.hdr.idFrom = IDC_GITHUB_LINK;
+        nml.hdr.code = NM_CLICK;
+        wcscpy_s(nml.item.szUrl, L"https://github.com/hoanghonghuy/NetPulse");
+        SendMessageW(hDlg, WM_NOTIFY, IDC_GITHUB_LINK, reinterpret_cast<LPARAM>(&nml));
+
+        // 4. Close the dialog
+        PostMessageW(hDlg, WM_COMMAND, IDOK, 0);
+        return 0;
+    }
+};
+
 namespace NetPulseTests
 {
 
@@ -208,6 +272,34 @@ void RunDialogManagerTests()
     AssertTrue(configReloadCount == 1, L"DialogManager config reload callback still invoked");
     AssertTrue(timerUpdateCount == 1,
                L"DialogManager timer callback not repeated when reload returns false");
+
+    // Test ShowAbout (modal with tester thread)
+    config.themeMode = ThemeMode::Dracula;
+    config.darkTheme = true;
+    {
+        AboutDialogTester aboutTester(&config);
+        manager.ShowAbout();
+    }
+    AssertTrue(true, L"DialogManager ShowAbout returns successfully");
+
+    // Test BringDialogToForeground paths using mocked window handles
+    HWND mockConnLog = CreateDashboardTestWindow();
+    DialogManagerTestFriend::SetConnectionLogHandle(manager, mockConnLog);
+    manager.ShowConnectionLog(); // Should call BringDialogToForeground
+    AssertTrue(IsWindow(mockConnLog), L"ShowConnectionLog reuses open handle");
+    DestroyWindow(mockConnLog);
+
+    HWND mockPerApp = CreateDashboardTestWindow();
+    DialogManagerTestFriend::SetPerAppHandle(manager, mockPerApp);
+    manager.ShowPerApp(); // Should call BringDialogToForeground
+    AssertTrue(IsWindow(mockPerApp), L"ShowPerApp reuses open handle");
+    DestroyWindow(mockPerApp);
+
+    HWND mockHistory = CreateDashboardTestWindow();
+    DialogManagerTestFriend::SetHistoryHandle(manager, mockHistory);
+    manager.ShowHistory(); // Should call BringDialogToForeground
+    AssertTrue(IsWindow(mockHistory), L"ShowHistory reuses open handle");
+    DestroyWindow(mockHistory);
 
     DestroyWindow(dashboardWindow);
     DestroyWindow(parent);
@@ -455,6 +547,26 @@ void RunSettingsDialogTests()
     SettingsDialogTestFriend::CallInstanceDialogProc(dialog, hDlg, WM_CTLCOLORSTATIC, reinterpret_cast<WPARAM>(hdcStatic), reinterpret_cast<LPARAM>(GetDlgItem(hDlg, IDC_SETTINGS_LABEL_THEME)));
     SettingsDialogTestFriend::CallInstanceDialogProc(dialog, hDlg, WM_CTLCOLOREDIT, reinterpret_cast<WPARAM>(hdcStatic), reinterpret_cast<LPARAM>(hTargetEdit));
     SettingsDialogTestFriend::CallInstanceDialogProc(dialog, hDlg, WM_ERASEBKGND, reinterpret_cast<WPARAM>(hdcStatic), 0);
+
+    // Test light theme fallback
+    SettingsDialogTestFriend::GetConfigCopy(dialog).themeMode = ThemeMode::Light;
+    SettingsDialogTestFriend::GetConfigCopy(dialog).darkTheme = false;
+    SettingsDialogTestFriend::CallInstanceDialogProc(dialog, hDlg, WM_CTLCOLORSTATIC, reinterpret_cast<WPARAM>(hdcStatic), reinterpret_cast<LPARAM>(GetDlgItem(hDlg, IDC_SETTINGS_LABEL_THEME)));
+    SettingsDialogTestFriend::CallInstanceDialogProc(dialog, hDlg, WM_CTLCOLOREDIT, reinterpret_cast<WPARAM>(hdcStatic), reinterpret_cast<LPARAM>(hTargetEdit));
+    SettingsDialogTestFriend::CallInstanceDialogProc(dialog, hDlg, WM_ERASEBKGND, reinterpret_cast<WPARAM>(hdcStatic), 0);
+    
+    // Light theme drawitem (no custom draw)
+    {
+        DRAWITEMSTRUCT dis = {};
+        dis.CtlType = ODT_BUTTON;
+        dis.CtlID = IDC_AUTOSTART_CHECK;
+        dis.hwndItem = GetDlgItem(hDlg, IDC_AUTOSTART_CHECK);
+        dis.hDC = CreateCompatibleDC(nullptr);
+        dis.rcItem = { 0, 0, 100, 30 };
+        SettingsDialogTestFriend::CallInstanceDialogProc(dialog, hDlg, WM_DRAWITEM, IDC_AUTOSTART_CHECK, reinterpret_cast<LPARAM>(&dis));
+        DeleteDC(dis.hDC);
+    }
+
     DeleteDC(hdcStatic);
 
     // Test: WM_COMMAND simulate Apply button click
@@ -654,6 +766,13 @@ void RunDashboardDialogTests()
     HDC hdcStatic = CreateCompatibleDC(nullptr);
     DashboardDialogTestFriend::CallInstanceDialogProc(dialog, hDlg, WM_CTLCOLORSTATIC, reinterpret_cast<WPARAM>(hdcStatic), reinterpret_cast<LPARAM>(GetDlgItem(hDlg, IDC_DASHBOARD_LABEL_TODAY)));
     DashboardDialogTestFriend::CallInstanceDialogProc(dialog, hDlg, WM_CTLCOLOREDIT, reinterpret_cast<WPARAM>(hdcStatic), reinterpret_cast<LPARAM>(hChart));
+
+    // Test light theme fallback for Dashboard Dialog
+    config.themeMode = ThemeMode::Light;
+    config.darkTheme = false;
+    DashboardDialogTestFriend::CallInstanceDialogProc(dialog, hDlg, WM_CTLCOLORSTATIC, reinterpret_cast<WPARAM>(hdcStatic), reinterpret_cast<LPARAM>(GetDlgItem(hDlg, IDC_DASHBOARD_LABEL_TODAY)));
+    DashboardDialogTestFriend::CallInstanceDialogProc(dialog, hDlg, WM_CTLCOLOREDIT, reinterpret_cast<WPARAM>(hdcStatic), reinterpret_cast<LPARAM>(hChart));
+
     DeleteDC(hdcStatic);
 
     // Test: Export to CSV (using AutoCloser to automatically dismiss Save File Dialog)

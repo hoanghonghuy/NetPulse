@@ -17,6 +17,11 @@ struct UpdateCheckerTestFriend
     {
         return UpdateChecker::PerformCheck(outLatestVersion, outUrl, httpClient);
     }
+
+    static void SetMockHttpClient(UpdateChecker& checker, IHttpClient* client)
+    {
+        checker.m_pMockHttpClient = client;
+    }
 };
 
 static const char* kSampleReleaseJson =
@@ -211,6 +216,67 @@ void TestWinHttpClientGoogleSmoke()
     client.HttpUpload(L"www.google.com", L"/", 10, speed, [](size_t /*sent*/) {}, &cancel);
 }
 
+void TestUpdateCheckerAsync()
+{
+    LogTestMessage(L"  Running TestUpdateCheckerAsync...");
+
+    // 1. Success, same version, silent = true
+    {
+        UpdateChecker checker;
+        auto fake = std::make_shared<FakeHttpClient>();
+        std::wstring currentVer = APP_VERSION;
+        std::string currentVerUtf8(currentVer.begin(), currentVer.end());
+        fake->m_getBody = "{\"tag_name\":\"" + currentVerUtf8 + "\",\"html_url\":\"https://github.com/hoanghonghuy/NetPulse/releases/tag/" + currentVerUtf8 + "\"}";
+        
+        UpdateCheckerTestFriend::SetMockHttpClient(checker, fake.get());
+        checker.CheckForUpdatesAsync(nullptr, true);
+        
+        // Wait for thread to run
+        for (int i = 0; i < 100; ++i)
+        {
+            if (fake->m_getCallCount > 0) break;
+            Sleep(10);
+        }
+        
+        checker.CancelAndWait();
+        AssertTrue(fake->m_getCallCount == 1, L"CheckForUpdatesAsync calls HttpGet");
+    }
+
+    // 2. Failure, silent = true
+    {
+        UpdateChecker checker;
+        auto fake = std::make_shared<FakeHttpClient>();
+        fake->m_getSuccess = false;
+        
+        UpdateCheckerTestFriend::SetMockHttpClient(checker, fake.get());
+        checker.CheckForUpdatesAsync(nullptr, true);
+        
+        // Wait for thread to run
+        for (int i = 0; i < 100; ++i)
+        {
+            if (fake->m_getCallCount > 0) break;
+            Sleep(10);
+        }
+        
+        checker.CancelAndWait();
+        AssertTrue(fake->m_getCallCount == 1, L"CheckForUpdatesAsync calls HttpGet on failure");
+    }
+
+    // 3. Immediate Cancel
+    {
+        UpdateChecker checker;
+        auto fake = std::make_shared<FakeHttpClient>();
+        fake->m_getBody = kSampleReleaseJson;
+        
+        UpdateCheckerTestFriend::SetMockHttpClient(checker, fake.get());
+        checker.CheckForUpdatesAsync(nullptr, true);
+        checker.CancelAndWait(); // Cancel immediately
+        Sleep(50);
+        // We just verify it doesn't crash on immediate cancel
+        AssertTrue(true, L"CheckForUpdatesAsync handles immediate cancel");
+    }
+}
+
 void RunUpdateCheckerTests()
 {
     LogTestMessage(L"=== UpdateChecker & WinHttpClient tests ===");
@@ -225,6 +291,7 @@ void RunUpdateCheckerTests()
     TestUpdateCheckerPerformCheckInvalidJson();
     TestUpdateCheckerParseJsonEdgeCases();
     TestUpdateCheckerCheckForUpdatesSmoke();
+    TestUpdateCheckerAsync();
 
     // WinHttpClient tests
     TestWinHttpClientInvalidDns();

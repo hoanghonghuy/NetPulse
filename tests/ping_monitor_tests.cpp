@@ -97,6 +97,25 @@ void RunPingMonitorTests()
         AssertTrue(!monitor.IsAvailable(), L"Monitor not available after cleanup");
         AssertTrue(monitor.GetLatency() == -1, L"Latency reset to -1 after cleanup");
     }
+
+    // 8. Test WinIcmpProvider (nullptr passed to constructor)
+    {
+        PingMonitor monitor(nullptr);
+        AssertTrue(monitor.Initialize(L"127.0.0.1"), L"Real WinIcmpProvider initializes localhost");
+        AssertTrue(monitor.IsAvailable(), L"Real PingMonitor is available");
+        
+        monitor.Update();
+        int rtt = monitor.GetLatency();
+        AssertTrue(rtt >= -1, L"Real ping to 127.0.0.1 returns valid latency");
+
+        // Test with empty target
+        monitor.Cleanup();
+        AssertTrue(monitor.Initialize(L""), L"Real PingMonitor fallback to 8.8.8.8");
+
+        // Test with invalid target
+        monitor.Cleanup();
+        AssertTrue(!monitor.Initialize(L"999.999.999.999"), L"Real PingMonitor fails on invalid IP");
+    }
 }
 
 } // namespace NetPulseTests

@@ -38,9 +38,7 @@ void UpdateChecker::CheckForUpdatesAsync(HWND hParent, bool silent)
         std::wstring downloadUrl;
 
         if (m_cancelFlag) return;
-
-        bool success = PerformCheck(latestVersion, downloadUrl);
-
+        bool success = PerformCheck(latestVersion, downloadUrl, m_pMockHttpClient);
         if (m_cancelFlag) return;
 
         if (success)
