@@ -1,4 +1,4 @@
-﻿// NOTE: This class manages its own GDI resources (Fonts, Brushes, Bitmaps) for performance and stability.
+// NOTE: This class manages its own GDI resources (Fonts, Brushes, Bitmaps) for performance and stability.
 // Refactoring to shared helpers is discouraged to avoid object lifetime issues.
 #include "NetPulse/FloatingWindow.h"
 #include "NetPulse/ThemeHelper.h"
@@ -45,6 +45,8 @@ FloatingWindow::FloatingWindow()
     , m_showPublicIP(true)     // Show public IP by default
     , m_isVpnActive(false)
     , m_isProxyActive(false)
+    , m_timerId(0)
+    , m_wasHiddenByFullscreen(false)
 {
 }
 
@@ -94,6 +96,9 @@ bool FloatingWindow::Create(HINSTANCE hInstance)
     // Set initial opacity
     SetLayeredWindowAttributes(m_hwnd, 0, m_opacity, LWA_ALPHA);
 
+    // Start topmost enforcement timer (150ms, same interval as TaskbarOverlay)
+    m_timerId = SetTimer(m_hwnd, TIMER_CHECK_TOPMOST, 150, nullptr);
+
     LogDebug(L"FloatingWindow::Create: Window created successfully");
     return true;
 }
@@ -102,6 +107,11 @@ void FloatingWindow::Destroy()
 {
     if (m_hwnd)
     {
+        if (m_timerId)
+        {
+            KillTimer(m_hwnd, TIMER_CHECK_TOPMOST);
+            m_timerId = 0;
+        }
         DestroyWindow(m_hwnd);
         m_hwnd = nullptr;
     }
@@ -312,6 +322,34 @@ LRESULT FloatingWindow::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
             HDC hdc = BeginPaint(m_hwnd, &ps);
             Paint(hdc);
             EndPaint(m_hwnd, &ps);
+        }
+        return 0;
+
+    case WM_TIMER:
+        if (wParam == TIMER_CHECK_TOPMOST)
+        {
+            bool isFullscreen = IsForegroundWindowFullscreen();
+
+            if (isFullscreen && IsWindowVisible(m_hwnd) && !m_wasHiddenByFullscreen)
+            {
+                // Hide while fullscreen app is running
+                ShowWindow(m_hwnd, SW_HIDE);
+                m_wasHiddenByFullscreen = true;
+            }
+            else if (!isFullscreen && m_wasHiddenByFullscreen)
+            {
+                // Restore when fullscreen app exits
+                ShowWindow(m_hwnd, SW_SHOWNOACTIVATE);
+                SetWindowPos(m_hwnd, HWND_TOPMOST, 0, 0, 0, 0,
+                             SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW);
+                m_wasHiddenByFullscreen = false;
+            }
+            else if (IsWindowVisible(m_hwnd) && !m_wasHiddenByFullscreen)
+            {
+                // Enforce topmost z-order
+                SetWindowPos(m_hwnd, HWND_TOPMOST, 0, 0, 0, 0,
+                             SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+            }
         }
         return 0;
 
@@ -934,6 +972,54 @@ void FloatingWindow::SetShowPublicIP(bool show)
     }
 }
 
+// ========== TOPMOST ENFORCEMENT ==========
+
+bool FloatingWindow::IsForegroundWindowFullscreen()
+{
+    HWND hForeground = GetForegroundWindow();
+    if (!hForeground)
+    {
+        return false;
+    }
+
+    // Exclude desktop and shell windows - they cover the entire screen
+    // but are not actual fullscreen applications
+    wchar_t className[64] = {};
+    GetClassNameW(hForeground, className, _countof(className));
+    if (_wcsicmp(className, L"Progman") == 0 ||        // Desktop (Program Manager)
+        _wcsicmp(className, L"WorkerW") == 0 ||        // Desktop worker window
+        _wcsicmp(className, L"Shell_TrayWnd") == 0 ||  // Taskbar
+        _wcsicmp(className, L"Shell_SecondaryTrayWnd") == 0) // Secondary taskbar
+    {
+        return false;
+    }
+
+    // Get foreground window rect
+    RECT windowRect;
+    if (!GetWindowRect(hForeground, &windowRect))
+    {
+        return false;
+    }
+
+    // Get monitor info for the foreground window
+    HMONITOR hMonitor = MonitorFromWindow(hForeground, MONITOR_DEFAULTTONEAREST);
+    if (!hMonitor)
+    {
+        return false;
+    }
+
+    MONITORINFO monitorInfo = {};
+    monitorInfo.cbSize = sizeof(MONITORINFO);
+    if (!GetMonitorInfo(hMonitor, &monitorInfo))
+    {
+        return false;
+    }
+
+    // Check if window covers the entire monitor
+    return (windowRect.left <= monitorInfo.rcMonitor.left &&
+            windowRect.top <= monitorInfo.rcMonitor.top &&
+            windowRect.right >= monitorInfo.rcMonitor.right &&
+            windowRect.bottom >= monitorInfo.rcMonitor.bottom);
+}
+
 } // namespace NetPulse
-
-

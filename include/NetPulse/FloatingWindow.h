@@ -1,4 +1,4 @@
-﻿#ifndef NETWORK_MONITOR_FLOATING_WINDOW_H
+#ifndef NETWORK_MONITOR_FLOATING_WINDOW_H
 #define NETWORK_MONITOR_FLOATING_WINDOW_H
 
 #include "NetPulse/Common.h"
@@ -187,6 +187,9 @@ private:
     void RecalculateWindowSize();
     void ApplySnapToEdge(RECT* pRect) const;
 
+    // Check if foreground window is fullscreen (game, video, etc.)
+    static bool IsForegroundWindowFullscreen();
+
 
     HWND m_hwnd;
     HINSTANCE m_hInstance;
@@ -229,6 +232,10 @@ private:
     bool m_isProxyActive;     // Current proxy status
     std::wstring m_publicIP;  // Current public IP
 
+    // Topmost enforcement
+    UINT_PTR m_timerId;                         // Timer ID for topmost check
+    bool m_wasHiddenByFullscreen;               // Was hidden due to fullscreen app
+
     // Window dimensions
     static constexpr int WINDOW_WIDTH = 190;
     static constexpr int WINDOW_WIDTH_MINI = 100;  // Compact width for mini mode
@@ -240,6 +247,7 @@ private:
 
     // Class name
     static constexpr const wchar_t* WINDOW_CLASS_NAME = L"NetworkMonitorFloatingWindow";
+    static constexpr UINT TIMER_CHECK_TOPMOST = 2001;  // Timer ID for topmost enforcement
     static bool s_classRegistered;
 };
 
