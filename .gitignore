@@ -46,3 +46,7 @@ build_verify/
 
 # Editor / IDE local
 .cursor/
+
+# Release archives
+NetPulse_Portable_*.zip
+
