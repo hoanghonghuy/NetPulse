@@ -159,7 +159,21 @@ Bản di động cho phép người dùng chạy ứng dụng trực tiếp từ
    *Lưu ý*: Lệnh này sẽ tự động đọc file `build\NetPulse.exe` và đóng gói thành tệp `NetPulse_Setup.exe` tại thư mục gốc của dự án.
 
 ### 3. Đính Kèm Vào GitHub Release
-- Truy cập kho lưu trữ GitHub của bạn, chọn mục **Releases** ở cột bên phải.
+
+Bạn có thể tải các tệp tin đóng gói này lên GitHub Release bằng một trong hai cách sau:
+
+#### Cách 1: Tải lên tự động bằng GitHub CLI (`gh` CLI) - Khuyên Dùng
+Nếu máy của bạn đã cài đặt `gh` và được cấu hình xác thực, bạn có thể chạy lệnh sau tại thư mục gốc của dự án để tải trực tiếp các tệp tin lên Release đã tạo bởi GitHub Actions:
+```powershell
+# Cấu hình Token tạm thời từ Git credential helper nếu gh chưa được đăng nhập (hoặc chạy: gh auth login)
+$env:GH_TOKEN = (echo "url=https://github.com" | git credential fill | Select-String "password=" | ForEach-Object { $_.Line.Split("=")[1] })
+
+# Thực hiện upload các file assets lên release vX.Y.Z (thay X.Y.Z bằng phiên bản tương ứng)
+gh release upload vX.Y.Z NetPulse_Setup.exe NetPulse_Portable_vX.Y.Z.zip --repo hoanghonghuy/NetPulse --clobber
+```
+
+#### Cách 2: Tải lên thủ công qua giao diện Web
+- Truy cập kho lưu trữ GitHub tại địa chỉ: https://github.com/hoanghonghuy/NetPulse/releases.
 - Tìm phiên bản `vX.Y.Z` vừa được tạo tự động bởi GitHub Actions, nhấn vào nút **Edit Release** (Chỉnh sửa bản phát hành).
 - Kéo và thả hai tệp tin sau vào phần đính kèm tài nguyên (*Assets*):
   1. `NetPulse_Portable_vX.Y.Z.zip` (Bản chạy di động).
