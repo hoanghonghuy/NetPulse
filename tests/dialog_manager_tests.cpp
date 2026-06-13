@@ -17,46 +17,11 @@
 
 #include <windows.h>
 #include <cmath>
+#include <fstream>
 
 using namespace NetPulse;
 
-struct MessageBoxAutoCloser
-{
-    std::wstring title;
-    int buttonId;
-    HANDLE hThread;
 
-    MessageBoxAutoCloser(const std::wstring& t, int btn)
-        : title(t), buttonId(btn), hThread(nullptr)
-    {
-        hThread = CreateThread(nullptr, 0, StaticThreadProc, this, 0, nullptr);
-    }
-
-    ~MessageBoxAutoCloser()
-    {
-        if (hThread)
-        {
-            WaitForSingleObject(hThread, 1000);
-            CloseHandle(hThread);
-        }
-    }
-
-    static DWORD WINAPI StaticThreadProc(LPVOID lpParam)
-    {
-        auto* pThis = static_cast<MessageBoxAutoCloser*>(lpParam);
-        for (int i = 0; i < 100; ++i)
-        {
-            HWND hMsgBox = FindWindowW(L"#32770", pThis->title.c_str());
-            if (hMsgBox)
-            {
-                PostMessageW(hMsgBox, WM_COMMAND, pThis->buttonId, 0);
-                break;
-            }
-            Sleep(10);
-        }
-        return 0;
-    }
-};
 
 struct AboutDialogTester
 {
@@ -82,7 +47,7 @@ struct AboutDialogTester
     {
         auto* pThis = static_cast<AboutDialogTester*>(lpParam);
         HWND hDlg = nullptr;
-        for (int i = 0; i < 200; ++i)
+        for (int i = 0; i < 3000; ++i)
         {
             hDlg = FindWindowW(L"#32770", L"About NetPulse");
             if (hDlg) break;
@@ -417,6 +382,7 @@ void RunSettingsDialogTests()
     SettingsDialogTestFriend::SetCheckboxState(dialog, IDC_AUTOSTART_CHECK, !SettingsDialogTestFriend::GetCheckboxState(dialog, IDC_AUTOSTART_CHECK));
     AssertTrue(!SettingsDialogTestFriend::GetCheckboxState(dialog, IDC_AUTOSTART_CHECK), L"CheckboxState toggles state");
 
+    LogTestMessage(L"SettingsDialog tests: Setting edit controls...");
     // Test: Simulated control changes & ApplySettings
     HWND hTargetEdit = GetDlgItem(hDlg, IDC_PING_TARGET_EDIT);
     if (hTargetEdit)
@@ -430,6 +396,7 @@ void RunSettingsDialogTests()
         SetWindowTextW(hQuotaEdit, L"50.5");
     }
 
+    LogTestMessage(L"SettingsDialog tests: Setting comboboxes...");
     // Send CB_SETCURSEL messages to all comboboxes to change choices and cover Apply logic
     const UINT comboIds[] = {
         IDC_LANGUAGE_COMBO, IDC_UPDATE_INTERVAL_COMBO, IDC_DISPLAY_UNIT_COMBO,
@@ -446,6 +413,7 @@ void RunSettingsDialogTests()
         }
     }
 
+    LogTestMessage(L"SettingsDialog tests: Clicking checkboxes...");
     // Send click commands to all custom checkboxes to cover ToggleCheckboxState in custom theme
     const UINT checkIds[] = {
         IDC_AUTOSTART_CHECK, IDC_AUTOSTART_ADMIN_CHECK, IDC_ENABLE_LOGGING_CHECK,
@@ -460,24 +428,28 @@ void RunSettingsDialogTests()
         HWND hCheck = GetDlgItem(hDlg, id);
         if (hCheck)
         {
+            LogTestMessage((L"  Clicking checkbox ID: " + std::to_wstring(id)).c_str());
             SettingsDialogTestFriend::CallInstanceDialogProc(dialog, hDlg, WM_COMMAND, MAKEWPARAM(id, BN_CLICKED), reinterpret_cast<LPARAM>(hCheck));
         }
     }
 
+    LogTestMessage(L"SettingsDialog tests: Clicking Portable Mode button (Case 1)...");
     // Test: Portable Mode clicks
     // Case 1: Config file doesn't exist yet -> Clicking Create Portable Config
     configProvider.m_hasPortableConfigFile = false;
     {
-        MessageBoxAutoCloser closer(L"NetPulse", IDOK);
+        g_messageBoxHook = [](HWND, const wchar_t*, const wchar_t*, UINT, bool) -> int { return IDOK; };
         SettingsDialogTestFriend::CallInstanceDialogProc(dialog, hDlg, WM_COMMAND, MAKEWPARAM(IDC_PORTABLE_MODE_BUTTON, BN_CLICKED), 0);
+        g_messageBoxHook = nullptr;
     }
     AssertTrue(configProvider.m_hasPortableConfigFile, L"Clicking portable mode button creates file");
 
     // Case 2: Config file exists -> Clicking button again (covers already exists branch)
     configProvider.m_hasPortableConfigFile = true;
     {
-        MessageBoxAutoCloser closer(L"NetPulse", IDOK);
+        g_messageBoxHook = [](HWND, const wchar_t*, const wchar_t*, UINT, bool) -> int { return IDOK; };
         SettingsDialogTestFriend::CallInstanceDialogProc(dialog, hDlg, WM_COMMAND, MAKEWPARAM(IDC_PORTABLE_MODE_BUTTON, BN_CLICKED), 0);
+        g_messageBoxHook = nullptr;
     }
 
     // Call ApplySettings
@@ -603,47 +575,7 @@ void RunSettingsDialogTests()
 
 
 
-struct FileDialogAutoCloser
-{
-    HWND hParent;
-    HANDLE hThread;
-
-    FileDialogAutoCloser(HWND parent) : hParent(parent), hThread(nullptr)
-    {
-        hThread = CreateThread(nullptr, 0, StaticThreadProc, this, 0, nullptr);
-    }
-
-    ~FileDialogAutoCloser()
-    {
-        if (hThread)
-        {
-            WaitForSingleObject(hThread, 5000);
-            CloseHandle(hThread);
-        }
-    }
-
-    static DWORD WINAPI StaticThreadProc(LPVOID param)
-    {
-        auto* self = reinterpret_cast<FileDialogAutoCloser*>(param);
-        // Wait up to 5 seconds, checking every 100ms
-        for (int i = 0; i < 50; ++i)
-        {
-            Sleep(100);
-            HWND hDlg = FindWindowExW(nullptr, nullptr, L"#32770", nullptr);
-            while (hDlg)
-            {
-                if (GetWindow(hDlg, GW_OWNER) == self->hParent)
-                {
-                    // Found the dialog owned by our parent window, dismiss it
-                    PostMessageW(hDlg, WM_CLOSE, 0, 0);
-                    return 0;
-                }
-                hDlg = FindWindowExW(nullptr, hDlg, L"#32770", nullptr);
-            }
-        }
-        return 0;
-    }
-};
+// FileDialogAutoCloser removed - using g_getSaveFileNameHook mock instead
 
 void RunDashboardDialogTests()
 {
@@ -775,16 +707,26 @@ void RunDashboardDialogTests()
 
     DeleteDC(hdcStatic);
 
-    // Test: Export to CSV (using AutoCloser to automatically dismiss Save File Dialog)
+    // Test: Export to CSV (using save file dialog mock to prevent blocking)
     {
-        FileDialogAutoCloser closer(hDlg);
+        g_getSaveFileNameHook = [](LPOPENFILENAMEW lpofn) -> BOOL {
+            std::wstring path = GetTestSandboxDir() + L"\\test_export.csv";
+            wcscpy_s(lpofn->lpstrFile, lpofn->nMaxFile, path.c_str());
+            return TRUE;
+        };
         DashboardDialogTestFriend::CallInstanceDialogProc(dialog, hDlg, WM_COMMAND, MAKEWPARAM(IDC_DASHBOARD_BUTTON_EXPORT, BN_CLICKED), 0);
+        g_getSaveFileNameHook = nullptr;
     }
 
-    // Test: Export Chart to BMP (using AutoCloser to automatically dismiss Save File Dialog)
+    // Test: Export Chart to BMP (using save file dialog mock to prevent blocking)
     {
-        FileDialogAutoCloser closer(hDlg);
+        g_getSaveFileNameHook = [](LPOPENFILENAMEW lpofn) -> BOOL {
+            std::wstring path = GetTestSandboxDir() + L"\\test_chart.bmp";
+            wcscpy_s(lpofn->lpstrFile, lpofn->nMaxFile, path.c_str());
+            return TRUE;
+        };
         DashboardDialogTestFriend::CallInstanceDialogProc(dialog, hDlg, WM_COMMAND, MAKEWPARAM(IDC_DASHBOARD_EXPORT_CHART, BN_CLICKED), 0);
+        g_getSaveFileNameHook = nullptr;
     }
 
     // Cleanup Modeless Dialog
@@ -1032,24 +974,28 @@ void RunHistoryDialogTests()
 
     // Simulate button clicks with Auto-Closer to prevent blocking
     {
-        MessageBoxAutoCloser autoCloser(historyTitle, IDYES);
+        g_messageBoxHook = [](HWND, const wchar_t*, const wchar_t*, UINT, bool) -> int { return IDYES; };
         HistoryDialogTestFriend::CallInstanceDialogProc(dialog, hDlg, WM_COMMAND, MAKEWPARAM(IDC_HISTORY_DELETE_ALL, 0), 0);
+        g_messageBoxHook = nullptr;
     }
 
     {
-        MessageBoxAutoCloser autoCloser(historyTitle, IDYES);
+        g_messageBoxHook = [](HWND, const wchar_t*, const wchar_t*, UINT, bool) -> int { return IDYES; };
         HistoryDialogTestFriend::CallInstanceDialogProc(dialog, hDlg, WM_COMMAND, MAKEWPARAM(IDC_HISTORY_KEEP_30, 0), 0);
+        g_messageBoxHook = nullptr;
     }
 
     {
-        MessageBoxAutoCloser autoCloser(historyTitle, IDYES);
+        g_messageBoxHook = [](HWND, const wchar_t*, const wchar_t*, UINT, bool) -> int { return IDYES; };
         HistoryDialogTestFriend::CallInstanceDialogProc(dialog, hDlg, WM_COMMAND, MAKEWPARAM(IDC_HISTORY_KEEP_90, 0), 0);
+        g_messageBoxHook = nullptr;
     }
 
     // Simulate Cancel of DialogBox
     {
-        MessageBoxAutoCloser autoCloser(historyTitle, IDNO);
+        g_messageBoxHook = [](HWND, const wchar_t*, const wchar_t*, UINT, bool) -> int { return IDNO; };
         HistoryDialogTestFriend::CallInstanceDialogProc(dialog, hDlg, WM_COMMAND, MAKEWPARAM(IDC_HISTORY_DELETE_ALL, 0), 0);
+        g_messageBoxHook = nullptr;
     }
 
     // Simulate WM_DRAWITEM

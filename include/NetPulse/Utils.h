@@ -1,8 +1,9 @@
-﻿#ifndef NETWORK_MONITOR_UTILS_H
+#ifndef NETWORK_MONITOR_UTILS_H
 #define NETWORK_MONITOR_UTILS_H
 
 #include "NetPulse/Common.h"
 #include <string>
+#include <commdlg.h>
 
 namespace NetPulse
 {
@@ -55,11 +56,20 @@ void LogDebug(const std::wstring& message);
 void LogError(const std::wstring& message);
 void SetDebugLoggingEnabled(bool enabled);
 void ShowErrorMessage(const std::wstring& message, const std::wstring& title = L"Error");
+
+typedef int (*MessageBoxHook)(HWND owner, const wchar_t* message, const wchar_t* title, UINT flags, bool darkTheme);
+extern MessageBoxHook g_messageBoxHook;
+
 int ShowDarkMessageBox(HWND owner,
                        const std::wstring& message,
                        const std::wstring& title,
                        UINT flags,
                        bool darkTheme);
+
+typedef BOOL (WINAPI *GetSaveFileNameHook)(LPOPENFILENAMEW lpofn);
+extern GetSaveFileNameHook g_getSaveFileNameHook;
+
+BOOL ShowSaveFileDialog(LPOPENFILENAMEW lpofn);
 
 // ============================================================================
 // UI UTILITIES

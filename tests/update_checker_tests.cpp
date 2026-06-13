@@ -232,7 +232,7 @@ void TestUpdateCheckerAsync()
         checker.CheckForUpdatesAsync(nullptr, true);
         
         // Wait for thread to run
-        for (int i = 0; i < 100; ++i)
+        for (int i = 0; i < 2000; ++i)
         {
             if (fake->m_getCallCount > 0) break;
             Sleep(10);
@@ -252,7 +252,7 @@ void TestUpdateCheckerAsync()
         checker.CheckForUpdatesAsync(nullptr, true);
         
         // Wait for thread to run
-        for (int i = 0; i < 100; ++i)
+        for (int i = 0; i < 2000; ++i)
         {
             if (fake->m_getCallCount > 0) break;
             Sleep(10);

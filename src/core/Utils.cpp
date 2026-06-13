@@ -13,6 +13,9 @@ namespace NetPulse
 
 static bool g_debugLoggingEnabled = false;
 
+MessageBoxHook g_messageBoxHook = nullptr;
+GetSaveFileNameHook g_getSaveFileNameHook = nullptr;
+
 // ============================================================================
 // STRING UTILITIES IMPLEMENTATION
 // ============================================================================
@@ -324,6 +327,11 @@ int ShowDarkMessageBox(HWND owner,
                        UINT flags,
                        bool darkTheme)
 {
+    if (g_messageBoxHook)
+    {
+        return g_messageBoxHook(owner, message.c_str(), title.c_str(), flags, darkTheme);
+    }
+
     if (!darkTheme)
     {
         return static_cast<int>(MessageBoxW(owner, message.c_str(), title.c_str(), flags));
@@ -355,6 +363,15 @@ void ShowErrorMessage(const std::wstring& message, const std::wstring& title)
     LogError(title + L": " + message);
     bool dark = ThemeHelper::IsSystemInDarkMode();
     ShowDarkMessageBox(nullptr, message, title, MB_OK | MB_ICONERROR, dark);
+}
+
+BOOL ShowSaveFileDialog(LPOPENFILENAMEW lpofn)
+{
+    if (g_getSaveFileNameHook)
+    {
+        return g_getSaveFileNameHook(lpofn);
+    }
+    return GetSaveFileNameW(lpofn);
 }
 
 namespace
