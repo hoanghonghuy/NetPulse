@@ -1,6 +1,9 @@
 # Changelog
 
-All notable changes to NetworkMonitor will be documented in this file.
+## [2.4.2] - 2026-06-13
+
+### Fixed
+- **Floating Window**: Thêm cơ chế duy trì trạng thái luôn nổi ở trên cùng (topmost) định kỳ 150ms và tự động ẩn khi phát hiện có ứng dụng/trò chơi đang chạy ở chế độ toàn màn hình (fullscreen/borderless) hoặc xem video toàn màn hình để tránh làm gián đoạn trải nghiệm người dùng.
 
 ## [2.4.1] - 2026-06-13
 
