@@ -249,7 +249,7 @@ BEGIN
     // Portable Mode strings
     IDS_PORTABLE_MODE_BUTTON             "Create Portable Config"
     IDS_PORTABLE_MODE_CHECK              "Use Portable Mode"
-    IDS_PORTABLE_MODE_SUCCESS            "Portable configuration created successfully.\\nSettings will now be saved to netpulse.ini"
+    IDS_PORTABLE_MODE_SUCCESS            "Portable configuration created successfully.\nSettings will now be saved to netpulse.ini"
     IDS_PORTABLE_MODE_ALREADY            "Already running in Portable Mode"
     IDS_PORTABLE_MODE_FAILED             "Failed to create portable configuration file."
 END
@@ -434,7 +434,7 @@ BEGIN
     // Portable Mode strings
     IDS_PORTABLE_MODE_BUTTON             "Tạo cấu hình di động"
     IDS_PORTABLE_MODE_CHECK              "Sử dụng chế độ di động"
-    IDS_PORTABLE_MODE_SUCCESS            "Tạo cấu hình di động thành công.\\nCài đặt sẽ được lưu vào netpulse.ini"
+    IDS_PORTABLE_MODE_SUCCESS            "Tạo cấu hình di động thành công.\nCài đặt sẽ được lưu vào netpulse.ini"
     IDS_PORTABLE_MODE_ALREADY            "Đã đang chạy ở chế độ di động"
     IDS_PORTABLE_MODE_FAILED             "Không thể tạo tập tin cấu hình di động."
 END
@@ -614,7 +614,7 @@ BEGIN
     // Portable Mode strings
     IDS_PORTABLE_MODE_BUTTON             "ポータブル設定を作成"
     IDS_PORTABLE_MODE_CHECK              "ポータブルモードを使用"
-    IDS_PORTABLE_MODE_SUCCESS            "ポータブル設定を作成しました。\\n設定はnetpulse.iniに保存されます"
+    IDS_PORTABLE_MODE_SUCCESS            "ポータブル設定を作成しました。\n設定はnetpulse.iniに保存されます"
     IDS_PORTABLE_MODE_ALREADY            "すでにポータブルモードで実行中です"
     IDS_PORTABLE_MODE_FAILED             "ポータブル設定ファイルの作成に失敗しました"
 END
@@ -794,7 +794,7 @@ BEGIN
     // Portable Mode strings
     IDS_PORTABLE_MODE_BUTTON             "포터블 설정 만들기"
     IDS_PORTABLE_MODE_CHECK              "포터블 모드 사용"
-    IDS_PORTABLE_MODE_SUCCESS            "포터블 설정이 생성되었습니다.\\n설정이 netpulse.ini에 저장됩니다"
+    IDS_PORTABLE_MODE_SUCCESS            "포터블 설정이 생성되었습니다.\n설정이 netpulse.ini에 저장됩니다"
     IDS_PORTABLE_MODE_ALREADY            "이미 포터블 모드로 실행 중입니다"
     IDS_PORTABLE_MODE_FAILED             "포터블 설정 파일 생성에 실패했습니다"
 END
@@ -974,7 +974,7 @@ BEGIN
     // Portable Mode strings
     IDS_PORTABLE_MODE_BUTTON             "创建便携配置"
     IDS_PORTABLE_MODE_CHECK              "使用便携模式"
-    IDS_PORTABLE_MODE_SUCCESS            "便携配置创建成功。\\n设置将保存到netpulse.ini"
+    IDS_PORTABLE_MODE_SUCCESS            "便携配置创建成功。\n设置将保存到netpulse.ini"
     IDS_PORTABLE_MODE_ALREADY            "已在便携模式下运行"
     IDS_PORTABLE_MODE_FAILED             "无法创建便携配置文件"
 END
