@@ -35,7 +35,7 @@ Trước khi bắt đầu quy trình phát hành, hãy đảm bảo mọi tính 
 2. Đảm bảo tất cả các test case đều vượt qua (Passed).
 
 ### Bước 2: Phân tích thay đổi và xác định số phiên bản (Semantic Versioning)
-Trước khi nâng số phiên bản, bạn cần phân tích các thay đổi so với phiên bản phát hành liền trước để quyết định nâng chữ số nào theo chuẩn **Semantic Versioning (SemVer)**: `MAJOR.MINOR.PATCH`:
+Trước khi nâng số phiên bản, cần phân tích các thay đổi so với phiên bản phát hành liền trước để quyết định nâng chữ số nào theo chuẩn **Semantic Versioning (SemVer)**: `MAJOR.MINOR.PATCH`:
 
 1. **Nâng số PATCH (`0.0.1`)** - *Ví dụ: từ 2.3.0 lên 2.3.1*:
    - Khi phiên bản mới chỉ chứa các sửa đổi nhỏ, sửa lỗi (*bug fixes*) tương thích ngược và không bổ sung tính năng mới lớn nào.
@@ -45,7 +45,7 @@ Trước khi nâng số phiên bản, bạn cần phân tích các thay đổi s
    - Khi có các thay đổi cấu trúc mang tính phá vỡ khả năng tương thích ngược (*breaking changes*) hoặc thiết kế lại toàn bộ hệ thống lõi.
 
 ### Bước 3: Cập nhật số phiên bản và lịch sử thay đổi (Changelog)
-Trước khi merge code, bạn cần cập nhật thông tin phiên bản mới `X.Y.Z` đã xác định từ bước 2 vào các tệp tin sau của dự án:
+Trước khi merge code, cần cập nhật thông tin phiên bản mới `X.Y.Z` đã xác định từ bước 2 vào các tệp tin sau của dự án:
 1. **`include/NetPulse/Common.h`** (Định nghĩa phiên bản trong mã nguồn):
    Cập nhật định nghĩa `APP_VERSION` ở dòng 41:
    ```cpp
@@ -137,7 +137,7 @@ Khi bạn push thẻ tag `vX.Y.Z`, GitHub Actions sẽ tự động kích hoạt
 
 ## Đóng Gói & Đính Kèm Bộ Cài Đặt & Bản Portable Thủ Công
 
-Do các tệp tin cài đặt (`NetPulse_Setup.exe`) và tệp tin nén di động (`.zip`) cần được chuẩn bị trực tiếp trên Windows để đảm bảo tính nguyên bản, bạn cần đóng gói thủ công và tải lên trang phát hành GitHub Release.
+Do các tệp tin cài đặt (`NetPulse_Setup.exe`) và tệp tin nén di động (`.zip`) cần được chuẩn bị trực tiếp trên Windows để đảm bảo tính nguyên bản, cần đóng gói thủ công và tải lên trang phát hành GitHub Release.
 
 ### 1. Tạo Bản Nén Di Động (Portable ZIP)
 Bản di động cho phép người dùng chạy ứng dụng trực tiếp từ bất kỳ thư mục nào (như USB hoặc Desktop) mà không cần cài đặt.
@@ -160,10 +160,10 @@ Bản di động cho phép người dùng chạy ứng dụng trực tiếp từ
 
 ### 3. Đính Kèm Vào GitHub Release
 
-Bạn có thể tải các tệp tin đóng gói này lên GitHub Release bằng một trong hai cách sau:
+Có thể tải các tệp tin đóng gói này lên GitHub Release bằng một trong hai cách sau:
 
 #### Cách 1: Tải lên tự động bằng GitHub CLI (`gh` CLI) - Khuyên Dùng
-Nếu máy của bạn đã cài đặt `gh` và được cấu hình xác thực, bạn có thể chạy lệnh sau tại thư mục gốc của dự án để tải trực tiếp các tệp tin lên Release đã tạo bởi GitHub Actions:
+Nếu máy đã cài đặt `gh` và được cấu hình xác thực, có thể chạy lệnh sau tại thư mục gốc của dự án để tải trực tiếp các tệp tin lên Release đã tạo bởi GitHub Actions:
 ```powershell
 # Cấu hình Token tạm thời từ Git credential helper nếu gh chưa được đăng nhập (hoặc chạy: gh auth login)
 $env:GH_TOKEN = (echo "url=https://github.com" | git credential fill | Select-String "password=" | ForEach-Object { $_.Line.Split("=")[1] })
