@@ -1,4 +1,4 @@
-﻿#include "NetPulse/DashboardDialog.h"
+#include "NetPulse/DashboardDialog.h"
 // NetworkMonitor.h removed - unused dependency
 #include "NetPulse/HistoryLogger.h"
 #include "NetPulse/HistoryDialog.h"
@@ -432,7 +432,7 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                     wcsftime(defaultName, 64, L"network_history_%Y%m%d.csv", &local);
                     wcscpy_s(filePath, defaultName);
                     
-                    if (GetSaveFileNameW(&ofn))
+                    if (ShowSaveFileDialog(&ofn))
                     {
                         // Export to CSV
                         HistoryLogger& logger = HistoryLogger::Instance();
@@ -479,7 +479,7 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
                     wcsftime(defaultName, 64, L"network_chart_%Y%m%d.bmp", &local);
                     wcscpy_s(filePath, defaultName);
                     
-                    if (GetSaveFileNameW(&ofn))
+                    if (ShowSaveFileDialog(&ofn))
                     {
                         // Get chart area dimensions
                         HWND hChart = GetDlgItem(hDlg, IDC_DASHBOARD_CHART);

@@ -6,6 +6,7 @@
 #include "TestUtils.h"
 
 #include <windows.h>
+#include <atomic>
 
 using namespace NetPulse;
 
@@ -49,12 +50,14 @@ struct MenuAutoCloser
 {
     HWND hOwner;
     HANDLE hThread;
-    MenuAutoCloser(HWND owner) : hOwner(owner), hThread(nullptr)
+    std::atomic<bool> stopFlag;
+    MenuAutoCloser(HWND owner) : hOwner(owner), hThread(nullptr), stopFlag(false)
     {
         hThread = CreateThread(nullptr, 0, StaticThreadProc, this, 0, nullptr);
     }
     ~MenuAutoCloser()
     {
+        stopFlag = true;
         if (hThread)
         {
             WaitForSingleObject(hThread, 5000);
@@ -64,8 +67,12 @@ struct MenuAutoCloser
     static DWORD WINAPI StaticThreadProc(LPVOID param)
     {
         auto* self = reinterpret_cast<MenuAutoCloser*>(param);
-        Sleep(150); // wait for menu to populate
-        PostMessageW(self->hOwner, WM_CANCELMODE, 0, 0);
+        for (int i = 0; i < 300 && !self->stopFlag; ++i)
+        {
+            Sleep(100);
+            if (self->stopFlag) break;
+            PostMessageW(self->hOwner, WM_CANCELMODE, 0, 0);
+        }
         return 0;
     }
 };

@@ -801,7 +801,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                             // File already exists
                             std::wstring msg = LoadStringResource(IDS_PORTABLE_MODE_ALREADY);
                             if (msg.empty()) msg = L"Portable config file already exists";
-                            MessageBoxW(hDlg, msg.c_str(), L"NetPulse", MB_OK | MB_ICONINFORMATION);
+                            ShowDarkMessageBox(hDlg, msg, L"NetPulse", MB_OK | MB_ICONINFORMATION, IsDarkThemeEnabled(m_configCopy));
                         }
                         else
                         {
@@ -810,7 +810,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                             {
                                 std::wstring msg = LoadStringResource(IDS_PORTABLE_MODE_SUCCESS);
                                 if (msg.empty()) msg = L"Portable configuration created successfully.\nSettings will now be saved to netpulse.ini";
-                                MessageBoxW(hDlg, msg.c_str(), L"NetPulse", MB_OK | MB_ICONINFORMATION);
+                                ShowDarkMessageBox(hDlg, msg, L"NetPulse", MB_OK | MB_ICONINFORMATION, IsDarkThemeEnabled(m_configCopy));
                                 
                                 // Disable the button since file now exists
                                 HWND hBtn = GetDlgItem(hDlg, IDC_PORTABLE_MODE_BUTTON);
@@ -834,7 +834,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                             {
                                 std::wstring msg = LoadStringResource(IDS_PORTABLE_MODE_FAILED);
                                 if (msg.empty()) msg = L"Failed to create portable configuration file.";
-                                MessageBoxW(hDlg, msg.c_str(), L"NetPulse", MB_OK | MB_ICONERROR);
+                                ShowDarkMessageBox(hDlg, msg, L"NetPulse", MB_OK | MB_ICONERROR, IsDarkThemeEnabled(m_configCopy));
                             }
                         }
                     }

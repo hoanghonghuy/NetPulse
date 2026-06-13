@@ -6,43 +6,7 @@
 
 using namespace NetPulse;
 
-struct MessageBoxAutoCloser
-{
-    std::wstring title;
-    int buttonId;
-    HANDLE hThread;
 
-    MessageBoxAutoCloser(const std::wstring& t, int btn)
-        : title(t), buttonId(btn), hThread(nullptr)
-    {
-        hThread = CreateThread(nullptr, 0, StaticThreadProc, this, 0, nullptr);
-    }
-
-    ~MessageBoxAutoCloser()
-    {
-        if (hThread)
-        {
-            WaitForSingleObject(hThread, 1000);
-            CloseHandle(hThread);
-        }
-    }
-
-    static DWORD WINAPI StaticThreadProc(LPVOID lpParam)
-    {
-        auto* pThis = static_cast<MessageBoxAutoCloser*>(lpParam);
-        for (int i = 0; i < 100; ++i)
-        {
-            HWND hMsgBox = FindWindowW(L"#32770", pThis->title.c_str());
-            if (hMsgBox)
-            {
-                PostMessageW(hMsgBox, WM_COMMAND, pThis->buttonId, 0);
-                break;
-            }
-            Sleep(10);
-        }
-        return 0;
-    }
-};
 
 namespace NetPulseTests
 {
@@ -133,8 +97,9 @@ void RunUtilsTests()
 
     // Test ShowErrorMessage (modal with AutoCloser)
     {
-        MessageBoxAutoCloser autoCloser(L"Test Error Title", IDOK);
+        g_messageBoxHook = [](HWND, const wchar_t*, const wchar_t*, UINT, bool) -> int { return IDOK; };
         ShowErrorMessage(L"Test Error Message", L"Test Error Title");
+        g_messageBoxHook = nullptr;
         AssertTrue(true, L"ShowErrorMessage executed without blocking");
     }
 }

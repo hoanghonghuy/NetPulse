@@ -231,10 +231,39 @@ int SpeedTester::MeasurePing(const std::wstring& host)
             continue;
         }
         
+        // Set to non-blocking mode to avoid OS-level connection hang (default 21 seconds on Windows)
+        unsigned long mode = 1;
+        ioctlsocket(sock, FIONBIO, &mode);
+        
         auto startTime = std::chrono::high_resolution_clock::now();
         int connectResult = connect(sock, addrResult->ai_addr, static_cast<int>(addrResult->ai_addrlen));
-        auto endTime = std::chrono::high_resolution_clock::now();
         
+        if (connectResult == SOCKET_ERROR)
+        {
+            int err = WSAGetLastError();
+            if (err == WSAEWOULDBLOCK || err == WSAEINPROGRESS)
+            {
+                fd_set writefds;
+                FD_ZERO(&writefds);
+                FD_SET(sock, &writefds);
+                
+                fd_set errfds;
+                FD_ZERO(&errfds);
+                FD_SET(sock, &errfds);
+                
+                timeval tv;
+                tv.tv_sec = 0;
+                tv.tv_usec = 200000; // 200ms timeout
+                
+                int selectResult = select(0, nullptr, &writefds, &errfds, &tv);
+                if (selectResult > 0 && FD_ISSET(sock, &writefds) && !FD_ISSET(sock, &errfds))
+                {
+                    connectResult = 0; // Success
+                }
+            }
+        }
+        
+        auto endTime = std::chrono::high_resolution_clock::now();
         closesocket(sock);
         
         if (connectResult == 0)
