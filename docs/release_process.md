@@ -9,12 +9,14 @@ Tài liệu này hướng dẫn chi tiết các bước thực hiện để phá
 ```mermaid
 graph TD
     A[Phát triển trên develop / feature] --> B[Chạy Unit Tests & E2E Tests cục bộ]
-    B --> C[Merge develop vào main]
+    B --> C[Phân tích thay đổi & Xác định số phiên bản SemVer]
     C --> D[Cập nhật số phiên bản & CHANGELOG.md]
-    D --> E[Gắn thẻ Tag vX.Y.Z & Push lên GitHub]
-    E --> F[GitHub Actions tự động chạy CI/CD]
-    F --> G[Tự động tạo GitHub Release với NetPulse.exe]
-    G --> H[Biên dịch thủ công NetPulse_Setup.exe & Đính kèm lên Release]
+    D --> E[Merge develop vào main]
+    E --> F[Gắn thẻ Tag vX.Y.Z & Push lên GitHub]
+    F --> G[GitHub Actions tự động chạy CI/CD]
+    G --> H[Tự động tạo GitHub Release với NetPulse.exe]
+    H --> I[Đóng gói bản Portable & Inno Setup thủ công]
+    I --> J[Tải ZIP/Setup lên trang Release Assets]
 ```
 
 ---
@@ -32,8 +34,18 @@ Trước khi bắt đầu quy trình phát hành, hãy đảm bảo mọi tính 
    ```
 2. Đảm bảo tất cả các test case đều vượt qua (Passed).
 
-### Bước 2: Cập nhật số phiên bản và lịch sử thay đổi (Changelog)
-Trước khi merge code, bạn cần cập nhật thông tin phiên bản mới `X.Y.Z` trong các tệp tin sau của dự án:
+### Bước 2: Phân tích thay đổi và xác định số phiên bản (Semantic Versioning)
+Trước khi nâng số phiên bản, bạn cần phân tích các thay đổi so với phiên bản phát hành liền trước để quyết định nâng chữ số nào theo chuẩn **Semantic Versioning (SemVer)**: `MAJOR.MINOR.PATCH`:
+
+1. **Nâng số PATCH (`0.0.1`)** - *Ví dụ: từ 2.3.0 lên 2.3.1*:
+   - Khi phiên bản mới chỉ chứa các sửa đổi nhỏ, sửa lỗi (*bug fixes*) tương thích ngược và không bổ sung tính năng mới lớn nào.
+2. **Nâng số MINOR (`0.1.0`)** - *Ví dụ: từ 2.3.0 lên 2.4.0*:
+   - Khi phiên bản mới chứa các tính năng lớn được thêm mới (như việc tích hợp bộ cài đặt Inno Setup hay cơ chế khóa an toàn Portable Mode) nhưng vẫn đảm bảo tính tương thích ngược hoàn toàn với phiên bản cũ.
+3. **Nâng số MAJOR (`1.0.0`)** - *Ví dụ: từ 2.3.0 lên 3.0.0*:
+   - Khi có các thay đổi cấu trúc mang tính phá vỡ khả năng tương thích ngược (*breaking changes*) hoặc thiết kế lại toàn bộ hệ thống lõi.
+
+### Bước 3: Cập nhật số phiên bản và lịch sử thay đổi (Changelog)
+Trước khi merge code, bạn cần cập nhật thông tin phiên bản mới `X.Y.Z` đã xác định từ bước 2 vào các tệp tin sau của dự án:
 1. **`include/NetPulse/Common.h`** (Định nghĩa phiên bản trong mã nguồn):
    Cập nhật định nghĩa `APP_VERSION` ở dòng 41:
    ```cpp
@@ -63,7 +75,7 @@ Trước khi merge code, bạn cần cập nhật thông tin phiên bản mới 
    #define MyAppVersion "X.Y.Z"
    ```
 6. **`CHANGELOG.md`**:
-   Thêm tiêu đề cho phiên bản mới và liệt kê các thay đổi dưới các mục: `### Added` (Thêm mới), `### Changed` (Thay đổi), `### Fixed` (Sửa lỗi).
+   Thêm tiêu đề cho phiên bản mới và liệt kê các thay đổi dưới các mục: `### Added` (Thêm mới), `### Changed` (Thay đổi), `### Fixed` (Sửa lỗi) để người dùng nắm rõ.
    *Ví dụ:*
    ```markdown
    ## [X.Y.Z] - YYYY-MM-DD
@@ -77,7 +89,7 @@ Trước khi merge code, bạn cần cập nhật thông tin phiên bản mới 
    git push origin develop
    ```
 
-### Bước 3: Merge từ nhánh `develop` vào `main`
+### Bước 4: Merge từ nhánh `develop` vào `main`
 Nhánh `main` là nhánh đại diện cho các mã nguồn đã phát hành chính thức ổn định.
 1. Chuyển sang nhánh `main` và lấy mã nguồn mới nhất:
    ```bash
@@ -89,15 +101,15 @@ Nhánh `main` là nhánh đại diện cho các mã nguồn đã phát hành ch�
    git merge develop --no-ff -m "Release vX.Y.Z"
    ```
 
-### Bước 4: Gắn thẻ phiên bản (Tagging)
+### Bước 5: Gắn thẻ phiên bản (Tagging)
 Gắn thẻ phiên bản (*tag*) trực tiếp trên commit merge của nhánh `main` để kích hoạt trigger tự động của GitHub Actions.
 1. Gắn thẻ tag định dạng `vX.Y.Z` (chữ "v" viết thường ở đầu):
    ```bash
    git tag -a vX.Y.Z -m "Release version X.Y.Z"
    ```
 2. *Lưu ý*: Luôn đảm bảo tên thẻ trùng khớp với phiên bản đã định nghĩa trong bộ cài đặt và CHANGELOG.
-
-### Bước 5: Push mã nguồn và thẻ lên GitHub
+ 
+### Bước 6: Push mã nguồn và thẻ lên GitHub
 Đẩy tất cả mã nguồn và thẻ tag lên kho lưu trữ từ xa (*GitHub repository*):
 ```bash
 git push origin main
