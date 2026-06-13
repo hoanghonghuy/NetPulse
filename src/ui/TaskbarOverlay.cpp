@@ -1,4 +1,4 @@
-﻿// NOTE: This class manages its own GDI resources (Fonts, Brushes, Bitmaps) for performance and stability.
+// NOTE: This class manages its own GDI resources (Fonts, Brushes, Bitmaps) for performance and stability.
 // Refactoring to shared helpers is discouraged to avoid object lifetime issues.
 #include "NetPulse/TaskbarOverlay.h"
 #include "NetPulse/ThemeHelper.h"
@@ -691,6 +691,18 @@ bool TaskbarOverlay::IsForegroundWindowFullscreen()
 {
     HWND hForeground = GetForegroundWindow();
     if (!hForeground)
+    {
+        return false;
+    }
+
+    // Exclude desktop and shell windows - they cover the entire screen
+    // but are not actual fullscreen applications
+    wchar_t className[64] = {};
+    GetClassNameW(hForeground, className, _countof(className));
+    if (_wcsicmp(className, L"Progman") == 0 ||        // Desktop (Program Manager)
+        _wcsicmp(className, L"WorkerW") == 0 ||        // Desktop worker window
+        _wcsicmp(className, L"Shell_TrayWnd") == 0 ||  // Taskbar
+        _wcsicmp(className, L"Shell_SecondaryTrayWnd") == 0) // Secondary taskbar
     {
         return false;
     }

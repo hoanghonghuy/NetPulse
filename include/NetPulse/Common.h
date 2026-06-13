@@ -38,7 +38,7 @@
 
 // Application Information
 #define APP_NAME L"NetPulse"
-#define APP_VERSION L"2.4.0"
+#define APP_VERSION L"2.4.1"
 #define APP_WINDOW_CLASS L"NetPulseWindowClass"
 #define APP_MUTEX_NAME L"NetPulse_SingleInstance"
 #define APP_MUTEX_NAME_TEST L"NetPulse_SingleInstance_Test"

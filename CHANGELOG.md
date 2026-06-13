@@ -2,6 +2,11 @@
 
 All notable changes to NetworkMonitor will be documented in this file.
 
+## [2.4.1] - 2026-06-13
+
+### Fixed
+- **Overlay Taskbar**: Sửa lỗi overlay bị ẩn khi người dùng tương tác, nhấn chuột phải vào màn hình Desktop (Progman/WorkerW) hoặc Taskbar chính/phụ.
+
 ## [2.4.0] - 2026-06-13
 
 ### Added
