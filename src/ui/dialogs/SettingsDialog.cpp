@@ -11,10 +11,32 @@
 #include <uxtheme.h>
 #include <ShlObj.h>
 #include <vector>
-
-
 namespace NetPulse
 {
+
+static bool IsRunningInProgramFiles()
+{
+    wchar_t exePath[MAX_PATH] = {0};
+    if (GetModuleFileNameW(nullptr, exePath, MAX_PATH))
+    {
+        wchar_t progFiles[MAX_PATH] = {0};
+        wchar_t progFilesX86[MAX_PATH] = {0};
+        SHGetFolderPathW(nullptr, CSIDL_PROGRAM_FILES, nullptr, 0, progFiles);
+        SHGetFolderPathW(nullptr, CSIDL_PROGRAM_FILESX86, nullptr, 0, progFilesX86);
+        
+        auto isUnderFolder = [](const std::wstring& path, const std::wstring& folder) -> bool {
+            if (folder.empty() || path.empty()) return false;
+            if (path.size() < folder.size()) return false;
+            if (_wcsnicmp(path.c_str(), folder.c_str(), folder.size()) != 0) return false;
+            if (path.size() == folder.size()) return true;
+            wchar_t nextChar = path[folder.size()];
+            return (nextChar == L'\\' || nextChar == L'/');
+        };
+        return isUnderFolder(exePath, progFiles) || isUnderFolder(exePath, progFilesX86);
+    }
+    return false;
+}
+
 
 // Tab Control subclass procedure for dark theme
 static WNDPROC s_originalTabProc = nullptr;
@@ -600,34 +622,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 int baseY = rcConnNotify.bottom + 15;
                 
                 // Detect if running from Program Files
-                bool inProgramFiles = false;
-                wchar_t exePath[MAX_PATH] = {0};
-                if (GetModuleFileNameW(nullptr, exePath, MAX_PATH))
-                {
-                    wchar_t progFiles[MAX_PATH] = {0};
-                    wchar_t progFilesX86[MAX_PATH] = {0};
-                    
-                    SHGetFolderPathW(nullptr, CSIDL_PROGRAM_FILES, nullptr, 0, progFiles);
-                    SHGetFolderPathW(nullptr, CSIDL_PROGRAM_FILESX86, nullptr, 0, progFilesX86);
-                    
-                    auto isUnderFolder = [](const std::wstring& path, const std::wstring& folder) -> bool {
-                        if (folder.empty() || path.empty())
-                            return false;
-                        if (path.size() < folder.size())
-                            return false;
-                        if (_wcsnicmp(path.c_str(), folder.c_str(), folder.size()) != 0)
-                            return false;
-                        if (path.size() == folder.size())
-                            return true;
-                        wchar_t nextChar = path[folder.size()];
-                        return (nextChar == L'\\' || nextChar == L'/');
-                    };
-                    
-                    if (isUnderFolder(exePath, progFiles) || isUnderFolder(exePath, progFilesX86))
-                    {
-                        inProgramFiles = true;
-                    }
-                }
+                bool inProgramFiles = IsRunningInProgramFiles();
 
                 // Create checkbox for "Use Portable Mode"
                 std::wstring checkLabel = LoadStringResource(IDS_PORTABLE_MODE_CHECK);
@@ -2306,7 +2301,15 @@ void SettingsDialog::SwitchTab(HWND hDlg, int tabIndex)
             HWND hCtrl = GetDlgItem(hDlg, ids[i]);
             if (hCtrl)
             {
-                ShowWindow(hCtrl, cmdShow);
+                if (show && IsRunningInProgramFiles() && 
+                    (ids[i] == IDC_PORTABLE_MODE_CHECK || ids[i] == IDC_PORTABLE_MODE_BUTTON))
+                {
+                    ShowWindow(hCtrl, SW_HIDE);
+                }
+                else
+                {
+                    ShowWindow(hCtrl, cmdShow);
+                }
             }
         }
     };
