@@ -6,6 +6,11 @@
 #include <windows.h>
 #include <vector>
 
+namespace NetPulseTests
+{
+struct ConnectionLogDialogTestFriend;
+}
+
 namespace NetPulse
 {
 
@@ -20,6 +25,8 @@ public:
 
     // Show the connection log dialog modally
     INT_PTR Show(HWND parentWindow, const AppConfig* config, ConnectionMonitor* connectionMonitor);
+
+    friend struct NetPulseTests::ConnectionLogDialogTestFriend;
 
 private:
     // Dialog procedure

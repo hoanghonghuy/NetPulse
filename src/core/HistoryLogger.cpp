@@ -1,9 +1,10 @@
-﻿#include "NetPulse/HistoryLogger.h"
+#include "NetPulse/HistoryLogger.h"
 #include "NetPulse/Utils.h"
 
 #include <cwchar>   // wcsrchr
 #include <ctime>
 #include <string>
+#include <ShlObj.h>
 #include "sqlite3.h"
 
 namespace NetPulse
@@ -16,49 +17,50 @@ HistoryLogger& HistoryLogger::Instance()
 }
 
 HistoryLogger::HistoryLogger()
-    : m_initialized(false)
-    , m_sqliteAvailable(false)
+    : m_sqliteAvailable(false)
     , m_db(nullptr)
 {
 }
 
 HistoryLogger::~HistoryLogger()
 {
+    std::lock_guard<std::mutex> lock(m_dbMutex);
     ShutdownSQLite();
 }
 
 void HistoryLogger::EnsureInitialized()
 {
-    if (m_initialized)
-    {
-        return;
-    }
-
-    m_initialized = true;
-    InitializeSQLite();
+    std::call_once(m_initFlag, [this] { InitializeSQLite(); });
 }
 
 void HistoryLogger::InitializeSQLite()
 {
     m_sqliteAvailable = false;
 
-    // Build database path next to the executable
-    wchar_t exePath[MAX_PATH] = {0};
-    if (!GetModuleFileNameW(nullptr, exePath, MAX_PATH))
+    // Build database path in %LOCALAPPDATA%/NetPulse (or test sandbox override)
+    wchar_t dirPath[MAX_PATH] = {0};
+    const wchar_t* testDataDir = _wgetenv(L"NETPULSE_TEST_DATA_DIR");
+    if (testDataDir && testDataDir[0] != L'\0')
     {
-        LogError(L"HistoryLogger::InitializeSQLite: GetModuleFileNameW failed: " + GetLastErrorString());
-        ShutdownSQLite();
-        return;
+        wcsncpy_s(dirPath, testDataDir, _TRUNCATE);
+        CreateDirectoryW(dirPath, nullptr);
     }
-
-    wchar_t* lastSlash = wcsrchr(exePath, L'\\');
-    if (lastSlash)
+    else
     {
-        *lastSlash = L'\0';
+        wchar_t appDataPath[MAX_PATH] = {0};
+        if (FAILED(SHGetFolderPathW(nullptr, CSIDL_LOCAL_APPDATA, nullptr, 0, appDataPath)))
+        {
+            LogError(L"HistoryLogger::InitializeSQLite: SHGetFolderPathW failed: " + GetLastErrorString());
+            ShutdownSQLite();
+            return;
+        }
+
+        swprintf_s(dirPath, L"%s\\NetPulse", appDataPath);
+        CreateDirectoryW(dirPath, nullptr);
     }
 
     wchar_t dbPath[MAX_PATH] = {0};
-    swprintf_s(dbPath, L"%s\\network_usage.db", exePath);
+    swprintf_s(dbPath, L"%s\\network_usage.db", dirPath);
 
     int openRc = sqlite3_open16(dbPath, &m_db);
     if (openRc != SQLITE_OK || !m_db)
@@ -86,6 +88,8 @@ void HistoryLogger::InitializeSQLite()
     if (createRc != SQLITE_OK)
     {
         LogError(L"HistoryLogger::InitializeSQLite: sqlite3_exec(create table) failed, rc=" + std::to_wstring(createRc));
+        ShutdownSQLite();
+        return;
     }
 
     m_sqliteAvailable = true;
@@ -106,6 +110,8 @@ void HistoryLogger::AppendSample(const std::wstring& interfaceName,
                                  unsigned long long bytesDown,
                                  unsigned long long bytesUp)
 {
+    std::lock_guard<std::mutex> lock(m_dbMutex);
+
     if (bytesDown == 0 && bytesUp == 0)
     {
         return;
@@ -161,6 +167,8 @@ bool HistoryLogger::InsertSampleSQLite(std::time_t ts,
 bool HistoryLogger::GetTotalsToday(unsigned long long& totalDown, unsigned long long& totalUp,
                                    const std::wstring* interfaceFilter)
 {
+    std::lock_guard<std::mutex> lock(m_dbMutex);
+
     totalDown = 0;
     totalUp = 0;
 
@@ -240,6 +248,8 @@ bool HistoryLogger::GetTotalsToday(unsigned long long& totalDown, unsigned long 
 bool HistoryLogger::GetTotalsThisMonth(unsigned long long& totalDown, unsigned long long& totalUp,
                                        const std::wstring* interfaceFilter)
 {
+    std::lock_guard<std::mutex> lock(m_dbMutex);
+
     totalDown = 0;
     totalUp = 0;
 
@@ -345,6 +355,8 @@ bool HistoryLogger::GetRecentSamples(int limit, std::vector<HistorySample>& outS
                                      const std::wstring* interfaceFilter,
                                      bool onlyToday)
 {
+    std::lock_guard<std::mutex> lock(m_dbMutex);
+
     outSamples.clear();
 
     if (limit <= 0)
@@ -493,6 +505,8 @@ void HistoryLogger::LogRecentSamplesDebug(int limit,
 
 bool HistoryLogger::GetDailyUsage(int year, int month, std::vector<DailyUsage>& outData)
 {
+    std::lock_guard<std::mutex> lock(m_dbMutex);
+
     outData.clear();
 
     EnsureInitialized();
@@ -579,6 +593,8 @@ bool HistoryLogger::GetDailyUsage(int year, int month, std::vector<DailyUsage>& 
 
 bool HistoryLogger::GetMonthlyUsage(int year, std::vector<MonthlyUsage>& outData)
 {
+    std::lock_guard<std::mutex> lock(m_dbMutex);
+
     outData.clear();
 
     EnsureInitialized();
@@ -660,6 +676,8 @@ bool HistoryLogger::GetMonthlyUsage(int year, std::vector<MonthlyUsage>& outData
 
 bool HistoryLogger::DeleteAll()
 {
+    std::lock_guard<std::mutex> lock(m_dbMutex);
+
     EnsureInitialized();
     if (!m_sqliteAvailable || !m_db)
     {
@@ -685,6 +703,8 @@ bool HistoryLogger::TrimToRecentDays(int days)
     {
         return DeleteAll();
     }
+
+    std::lock_guard<std::mutex> lock(m_dbMutex);
 
     EnsureInitialized();
     if (!m_sqliteAvailable || !m_db)
@@ -724,6 +744,8 @@ bool HistoryLogger::ExportToCSV(const std::wstring& filePath,
                                 const std::wstring* interfaceFilter,
                                 int daysBack)
 {
+    std::lock_guard<std::mutex> lock(m_dbMutex);
+
     EnsureInitialized();
     if (!m_sqliteAvailable || !m_db)
     {

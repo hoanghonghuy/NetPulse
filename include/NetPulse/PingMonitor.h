@@ -1,14 +1,18 @@
-﻿#ifndef NETWORK_MONITOR_PING_MONITOR_H
+#ifndef NETWORK_MONITOR_PING_MONITOR_H
 #define NETWORK_MONITOR_PING_MONITOR_H
 
 #include "NetPulse/Common.h"
 #include "NetPulse/Interfaces/IPingProvider.h"
+#include "NetPulse/Interfaces/IIcmpProvider.h"
 #include <winsock2.h>
 #include <iphlpapi.h>
 #include <icmpapi.h>
 #include <string>
+#include <memory>
 
+#ifdef _MSC_VER
 #pragma comment(lib, "iphlpapi.lib")
+#endif
 
 namespace NetPulse
 {
@@ -16,7 +20,7 @@ namespace NetPulse
 class PingMonitor : public IPingProvider
 {
 public:
-    PingMonitor();
+    explicit PingMonitor(IIcmpProvider* icmpProvider = nullptr);
     ~PingMonitor() override;
 
     // Initialize with target IP/domain (default: 8.8.8.8)
@@ -36,6 +40,9 @@ public:
     void SetTarget(const std::wstring& target) override;
 
 private:
+    std::unique_ptr<IIcmpProvider> m_defaultIcmpProvider;
+    IIcmpProvider* m_pIcmpProvider;
+
     HANDLE m_hIcmp;
     bool m_initialized;
     int m_latency;  // -1 = unavailable/timeout

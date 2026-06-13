@@ -1,5 +1,6 @@
 # Build outputs
 build/
+build-*/
 out/
 x64/
 Debug/
@@ -11,6 +12,11 @@ Release/
 *.ilk
 *.lib
 *.exp
+
+# Coverage artifacts (local LLVM instrumentation)
+*.profraw
+*.profdata
+coverage-profraw/
 
 # Visual Studio files
 .vs/
@@ -25,12 +31,18 @@ enc_temp_folder/
 # Temporary files
 *.log
 *.tmp
+build*.txt
 UpgradeLog*.htm
 
 # Local docs (not tracked)
-docs/
 notes/
 
 .agent/
+.roo-local/design/COVERAGE-BASELINE.md
 build_log*.txt
 temp_build/
+
+build_verify/
+
+# Editor / IDE local
+.cursor/

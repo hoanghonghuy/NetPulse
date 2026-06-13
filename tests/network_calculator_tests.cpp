@@ -48,6 +48,59 @@ void RunNetworkCalculatorTests()
     AssertTrue(agg.currentDownloadSpeed == s1.currentDownloadSpeed + s2.currentDownloadSpeed &&
                agg.currentUploadSpeed == s1.currentUploadSpeed + s2.currentUploadSpeed,
                L"NetworkCalculator aggregate sums speeds");
+
+    NetworkStats emptyAgg = NetworkCalculator::CalculateAggregate(std::vector<NetworkStats>());
+    AssertTrue(emptyAgg.currentDownloadSpeed == 0.0 && emptyAgg.currentUploadSpeed == 0.0,
+               L"NetworkCalculator aggregate empty list has zero speeds");
+
+    NetworkStats active;
+    active.isActive = true;
+    active.currentDownloadSpeed = 10.0;
+    active.currentUploadSpeed = 5.0;
+    active.peakDownloadSpeed = 10.0;
+    active.peakUploadSpeed = 5.0;
+
+    NetworkStats inactive = active;
+    inactive.isActive = false;
+
+    std::vector<NetworkStats> mixed;
+    mixed.push_back(active);
+    mixed.push_back(inactive);
+
+    NetworkStats mixedAgg = NetworkCalculator::CalculateAggregate(mixed);
+    AssertTrue(mixedAgg.currentDownloadSpeed == 10.0 && mixedAgg.currentUploadSpeed == 5.0,
+               L"NetworkCalculator aggregate ignores inactive interfaces");
+
+    NetworkStats rollover;
+    NetworkCalculator::UpdateStats(rollover, 1000ULL, 500ULL);
+    std::this_thread::sleep_for(std::chrono::milliseconds(150));
+    bool rolloverOk = NetworkCalculator::UpdateStats(rollover, 200ULL, 100ULL);
+    AssertTrue(rolloverOk, L"NetworkCalculator handles counter rollover");
+    AssertTrue(rollover.currentDownloadSpeed >= 0.0 && rollover.currentUploadSpeed >= 0.0,
+               L"NetworkCalculator rollover speeds are non-negative");
+
+    NetworkStats tooFast;
+    NetworkCalculator::UpdateStats(tooFast, 1000ULL, 500ULL);
+    bool tooSoon = NetworkCalculator::UpdateStats(tooFast, 1100ULL, 550ULL);
+    AssertTrue(!tooSoon, L"NetworkCalculator rejects updates with elapsed < 0.1s");
+
+    NetworkStats peakStats;
+    NetworkCalculator::UpdateStats(peakStats, 1000ULL, 500ULL);
+    std::this_thread::sleep_for(std::chrono::milliseconds(150));
+    NetworkCalculator::UpdateStats(peakStats, 2000ULL, 1000ULL);
+    double firstPeakDown = peakStats.peakDownloadSpeed;
+    std::this_thread::sleep_for(std::chrono::milliseconds(150));
+    NetworkCalculator::UpdateStats(peakStats, 2100ULL, 1050ULL);
+    AssertTrue(peakStats.peakDownloadSpeed >= firstPeakDown,
+               L"NetworkCalculator peak download speed is monotonic");
+
+    NetworkStats resetStats;
+    NetworkCalculator::UpdateStats(resetStats, 1000ULL, 500ULL);
+    std::this_thread::sleep_for(std::chrono::milliseconds(150));
+    NetworkCalculator::UpdateStats(resetStats, 2000ULL, 1000ULL);
+    NetworkCalculator::ResetStats(resetStats);
+    AssertTrue(resetStats.currentDownloadSpeed == 0.0 && resetStats.currentUploadSpeed == 0.0,
+               L"NetworkCalculator ResetStats clears current speeds");
 }
 
 } // namespace NetPulseTests

@@ -2,7 +2,7 @@
 #include "NetPulse/DialogThemeHelper.h"
 #include "NetPulse/ThemeHelper.h"
 #include "NetPulse/Utils.h"
-#include "../../resources/resource.h"
+#include "../../../resources/resource.h"
 #include <commctrl.h>
 #include <windowsx.h>
 
@@ -264,8 +264,9 @@ void ConnectionLogDialog::InitializeListView()
         LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER | LVS_EX_HEADERDRAGDROP | LVS_EX_GRIDLINES);
 
     // Add columns
-    LVCOLUMNW lvc = {0};
+    LVCOLUMNW lvc = {};
     lvc.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM | LVCF_FMT;
+    lvc.fmt = LVCFMT_LEFT;
 
     // Process Name
     lvc.iSubItem = 0;
@@ -353,7 +354,7 @@ void ConnectionLogDialog::PopulateList()
     {
         const auto& conn = m_connections[i];
         
-        LVITEMW lvi = {0};
+        LVITEMW lvi = {};
         lvi.mask = LVIF_TEXT;
         lvi.iItem = static_cast<int>(i);
         lvi.iSubItem = 0;

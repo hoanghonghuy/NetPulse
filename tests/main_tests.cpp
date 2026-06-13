@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // File: main_tests.cpp
 // Description: Test runner for NetworkMonitor
 // Author: NetworkMonitor Project (tests)
@@ -18,24 +18,53 @@ void RunTaskbarOverlayTests();
 void RunFloatingWindowTests();
 void RunVpnProxyDetectorTests();
 void RunSpeedTestTests();
+void RunDataUsageMonitorTests();
+void RunUpdateCoordinatorTests();
+void RunMenuHandlerTests();
+void RunLanguageManagerTests();
+void RunSpeedTestHistoryPersistenceTests();
+void RunDialogManagerTests();
+void RunConnectionMonitorTests();
+void RunUpdateCheckerTests();
+void RunEtwNetworkMonitorTests();
+void RunComponentRendererTests();
+void RunSystemMonitorTests();
+void RunPingMonitorTests();
+void RunHotkeyManagerTests();
+void RunThemeHelperTests();
 }
 
 using namespace NetPulseTests;
 
 int main()
 {
+    EnableTestSandbox();
     LogTestMessage(L"Running NetworkMonitor tests...");
 
     RunHistoryLoggerTests();
     RunNetworkMonitorTests();
     RunUtilsTests();
     RunNetworkCalculatorTests();
+    RunDataUsageMonitorTests();
+    RunUpdateCoordinatorTests();
+    RunMenuHandlerTests();
+    RunLanguageManagerTests();
+    RunSpeedTestHistoryPersistenceTests();
     RunConfigManagerTests();
+    RunDialogManagerTests();
+    RunConnectionMonitorTests();
+    RunUpdateCheckerTests();
     RunTrayIconTests();
     RunTaskbarOverlayTests();
     RunFloatingWindowTests();
+    RunThemeHelperTests();
     RunVpnProxyDetectorTests();
+    RunEtwNetworkMonitorTests();
     RunSpeedTestTests();
+    RunComponentRendererTests();
+    RunSystemMonitorTests();
+    RunPingMonitorTests();
+    RunHotkeyManagerTests();
 
     int failures = GetFailureCount();
     if (failures == 0)

@@ -19,6 +19,8 @@ UpdateCoordinator::UpdateCoordinator()
     , m_prevTotalBytesUp(0)
     , m_prevTotalsValid(false)
     , m_wasConnected(false)
+    , m_connectionStateInitialized(false)
+    , m_currentBillingMonthKey(0)
     , m_currentMonthUsageBytes(0)
     , m_pDataUsageMonitor(std::make_unique<DataUsageMonitor>())
 {
@@ -68,6 +70,12 @@ void UpdateCoordinator::OnNetworkUpdateTick()
     m_pNetworkMonitor->Update();
 
     NetworkStats stats = GetCurrentStats();
+    std::wstring loggingScope = GetStatsLoggingInterface();
+    if (loggingScope != m_lastLoggingScope)
+    {
+        m_lastLoggingScope = loggingScope;
+        m_prevTotalsValid = false;
+    }
 
     if (m_pConfig && m_pConfig->enableLogging)
     {
@@ -98,7 +106,7 @@ void UpdateCoordinator::OnNetworkUpdateTick()
 
             if ((deltaDown > 0 || deltaUp > 0) && m_logHistoryCallback)
             {
-                m_logHistoryCallback(deltaDown, deltaUp);
+                m_logHistoryCallback(deltaDown, deltaUp, loggingScope);
             }
 
             m_prevTotalBytesDown = totalDown;
@@ -123,8 +131,28 @@ void UpdateCoordinator::OnNetworkUpdateTick()
         m_pDataUsageMonitor->SetQuota(quotaBytes);
         m_pDataUsageMonitor->SetAlertThresholds({m_pConfig->dataAlertThreshold1, m_pConfig->dataAlertThreshold2});
 
-        // Get current month's usage from HistoryLogger
-        m_currentMonthUsageBytes = HistoryLogger::Instance().GetThisMonthTotalBytes();
+        // Reset alerts when billing month changes
+        std::time_t now = std::time(nullptr);
+        std::tm localTime = {};
+        if (localtime_s(&localTime, &now) == 0)
+        {
+            int monthKey = (localTime.tm_year + 1900) * 100 + (localTime.tm_mon + 1);
+            if (m_currentBillingMonthKey != 0 && monthKey != m_currentBillingMonthKey)
+            {
+                m_pDataUsageMonitor->ResetAlerts();
+            }
+            m_currentBillingMonthKey = monthKey;
+        }
+
+        // Get current month's usage from HistoryLogger (respect selected interface)
+        const std::wstring* usageFilter = nullptr;
+        std::wstring selectedIface;
+        if (!m_pConfig->selectedInterface.empty())
+        {
+            selectedIface = m_pConfig->selectedInterface;
+            usageFilter = &selectedIface;
+        }
+        m_currentMonthUsageBytes = HistoryLogger::Instance().GetThisMonthTotalBytes(usageFilter);
         
         // Update monitor and check for alerts
         if (m_pDataUsageMonitor->Update(m_currentMonthUsageBytes))
@@ -173,7 +201,7 @@ void UpdateCoordinator::OnPingTick()
     }
 }
 
-NetworkStats UpdateCoordinator::GetCurrentStats()
+NetworkStats UpdateCoordinator::GetCurrentStats() const
 {
     NetworkStats stats;
     if (!m_pNetworkMonitor || !m_pConfig)
@@ -202,6 +230,30 @@ NetworkStats UpdateCoordinator::GetCurrentStats()
     return stats;
 }
 
+std::wstring UpdateCoordinator::GetStatsLoggingInterface() const
+{
+    if (!m_pConfig || !m_pNetworkMonitor)
+    {
+        return L"";
+    }
+
+    if (!m_pConfig->selectedInterface.empty())
+    {
+        NetworkStats selectedStats;
+        if (m_pNetworkMonitor->GetInterfaceStats(m_pConfig->selectedInterface, selectedStats))
+        {
+            return m_pConfig->selectedInterface;
+        }
+    }
+
+    std::wstring allIfaces = LoadStringResource(IDS_ALL_INTERFACES);
+    if (allIfaces.empty())
+    {
+        allIfaces = L"All Interfaces";
+    }
+    return allIfaces;
+}
+
 void UpdateCoordinator::UpdateTrayIcon(const NetworkStats& stats)
 {
     if (m_pTrayIcon && m_pConfig)
@@ -213,7 +265,7 @@ void UpdateCoordinator::UpdateTrayIcon(const NetworkStats& stats)
 
 void UpdateCoordinator::UpdateTaskbarOverlay(const NetworkStats& stats)
 {
-    if (m_pOverlay && m_pConfig && m_pOverlay->IsVisible())
+    if (m_pOverlay && m_pConfig && m_pOverlay->IsUserWantsVisible())
     {
         m_pOverlay->UpdateSpeed(
             stats.currentDownloadSpeed,
@@ -224,6 +276,13 @@ void UpdateCoordinator::UpdateTaskbarOverlay(const NetworkStats& stats)
 
 void UpdateCoordinator::CheckConnectionStatus(bool hasActiveInterface)
 {
+    if (!m_connectionStateInitialized)
+    {
+        m_wasConnected = hasActiveInterface;
+        m_connectionStateInitialized = true;
+        return;
+    }
+
     if (!m_pConfig || !m_pConfig->enableConnectionNotification)
     {
         m_wasConnected = hasActiveInterface;
@@ -242,6 +301,10 @@ void UpdateCoordinator::CheckConnectionStatus(bool hasActiveInterface)
             m_pTrayIcon->ShowBalloonNotification(title, msg);
         }
         LogDebug(L"UpdateCoordinator::CheckConnectionStatus: Network disconnected");
+        if (m_connectionStatusCallback)
+        {
+            m_connectionStatusCallback(false);
+        }
     }
     else if (!m_wasConnected && hasActiveInterface)
     {
@@ -255,6 +318,10 @@ void UpdateCoordinator::CheckConnectionStatus(bool hasActiveInterface)
             m_pTrayIcon->ShowBalloonNotification(title, msg);
         }
         LogDebug(L"UpdateCoordinator::CheckConnectionStatus: Network connected");
+        if (m_connectionStatusCallback)
+        {
+            m_connectionStatusCallback(true);
+        }
     }
 
     m_wasConnected = hasActiveInterface;

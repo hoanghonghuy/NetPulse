@@ -1,148 +1,103 @@
-﻿#ifndef NETWORK_MONITOR_VPN_PROXY_DETECTOR_H
+#ifndef NETWORK_MONITOR_VPN_PROXY_DETECTOR_H
 #define NETWORK_MONITOR_VPN_PROXY_DETECTOR_H
 
 #include "NetPulse/Common.h"
 #include "NetPulse/Interfaces/IVpnProxyProvider.h"
 #include <winsock2.h>
 #include <iphlpapi.h>
-#include <winhttp.h>
 #include <string>
 #include <atomic>
+#include <memory>
 #include <mutex>
 #include <thread>
 #include <future>
 
+#ifdef _MSC_VER
 #pragma comment(lib, "iphlpapi.lib")
-#pragma comment(lib, "winhttp.lib")
+#endif
+
+namespace NetPulseTests
+{
+struct VpnProxyDetectorTestFriend;
+}
 
 namespace NetPulse
 {
 
+class IHttpClient;
+
+struct VpnAdapterCandidate
+{
+    DWORD ifType = 0;
+    std::wstring description;
+    std::wstring friendlyName;
+    bool isUp = true;
+};
+
 /**
  * VpnProxyDetector - Detects VPN connections and proxy settings
- * 
- * Features:
- * - Detects VPN by scanning network adapters for VPN-type interfaces
- * - Detects system proxy settings using WinHTTP
- * - Fetches public IP address from external API
  */
 class VpnProxyDetector : public IVpnProxyProvider
 {
 public:
-    VpnProxyDetector();
+    explicit VpnProxyDetector(std::shared_ptr<IHttpClient> httpClient = nullptr);
     ~VpnProxyDetector() override;
 
-    /**
-     * Initialize the detector
-     * @return true if initialized successfully
-     */
     bool Initialize();
-
-    /**
-     * Cleanup resources
-     */
     void Cleanup();
-
-    /**
-     * Update VPN/Proxy status and public IP
-     * Call this periodically (e.g., every 5 minutes for IP, every 30s for VPN)
-     */
     void Update() override;
 
-    /**
-     * Check if connected via VPN
-     */
     bool IsVpnActive() const override { return m_isVpnActive; }
-
-    /**
-     * Check if proxy is enabled
-     */
     bool IsProxyActive() const override { return m_isProxyActive; }
-
-    /**
-     * Get current public IP address
-     */
     std::wstring GetPublicIP() const override;
-
-    /**
-     * Check if detector is available
-     */
     bool IsAvailable() const override { return m_initialized; }
 
-    /**
-     * Get VPN adapter name if connected
-     */
     std::wstring GetVpnAdapterName() const;
-
-    /**
-     * Force refresh public IP now (ignores rate limiting)
-     */
     void RefreshPublicIP();
-
-    /**
-     * Set public IP update interval in milliseconds (default: 5 minutes)
-     */
     void SetPublicIPUpdateInterval(UINT intervalMs) { m_ipUpdateIntervalMs = intervalMs; }
 
-private:
-    /**
-     * Scan network adapters for VPN connections
-     * @return true if VPN adapter found
-     */
-    bool DetectVpnAdapters();
-
-    /**
-     * Check system proxy settings
-     * @return true if proxy is configured and enabled
-     */
-    bool DetectProxySettings();
-
-    /**
-     * Fetch public IP from external API
-     * @return Public IP string, or empty if failed
-     */
-    static std::wstring FetchPublicIP();
-
-    /**
-     * Check if adapter is a VPN adapter based on type and description
-     */
+    static bool IsVpnInterfaceType(DWORD adapterType);
     static bool IsVpnAdapter(DWORD adapterType, const std::wstring& description);
+    static bool ClassifyAdapterAsVpn(const VpnAdapterCandidate& candidate);
+    static bool EvaluateProxyConfig(bool hasManualProxy,
+                                    bool hasAutoConfigUrl,
+                                    bool autoDetect);
+    static std::wstring ParsePublicIPResponse(const std::string& response);
+    static std::wstring GetPublicIPApiHost();
+    static std::wstring GetPublicIPApiPath();
 
 private:
+    friend struct NetPulseTests::VpnProxyDetectorTestFriend;
+
+    bool DetectVpnAdapters();
+    bool DetectProxySettings();
+    std::wstring FetchPublicIP();
+    IHttpClient& GetHttpClient();
+
+    void StartAsyncIPFetch();
+    void CheckAsyncIPResult();
+
+    std::shared_ptr<IHttpClient> m_httpClient;
+    std::unique_ptr<class WinHttpClient> m_defaultHttpClient;
+
     bool m_initialized;
     std::atomic<bool> m_isVpnActive;
     std::atomic<bool> m_isProxyActive;
     std::wstring m_publicIP;
     std::wstring m_vpnAdapterName;
     mutable std::mutex m_mutex;
-    
-    // Rate limiting for public IP fetch
-    DWORD m_lastIPUpdateTime;
+
+    ULONGLONG m_lastIPUpdateTime;
     UINT m_ipUpdateIntervalMs;
-    
-    // VPN adapter keywords for detection
+
     static const wchar_t* VPN_KEYWORDS[];
     static const size_t VPN_KEYWORDS_COUNT;
 
-    // Default IP update interval: 5 minutes
     static constexpr UINT DEFAULT_IP_UPDATE_INTERVAL_MS = 5 * 60 * 1000;
-    
-    // HTTP timeout for IP fetch
     static constexpr DWORD HTTP_TIMEOUT_MS = 5000;
-    
-    // Async IP fetch tracking
+
     std::future<std::wstring> m_ipFetchFuture;
     std::atomic<bool> m_ipFetchInProgress;
-    
-    /**
-     * Start async IP fetch (non-blocking)
-     */
-    void StartAsyncIPFetch();
-    
-    /**
-     * Check and harvest async IP fetch result (non-blocking)
-     */
-    void CheckAsyncIPResult();
 };
 
 } // namespace NetPulse

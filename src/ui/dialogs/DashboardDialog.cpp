@@ -313,6 +313,17 @@ INT_PTR CALLBACK DashboardDialog::InstanceDialogProc(HWND hDlg, UINT message, WP
             return TRUE;
         }
 
+        case WM_UPDATE_STATS:
+        {
+            UpdateDashboardData(hDlg);
+            HWND hChart = GetDlgItem(hDlg, IDC_DASHBOARD_CHART);
+            if (hChart)
+            {
+                InvalidateRect(hChart, nullptr, TRUE);
+            }
+            return TRUE;
+        }
+
         case WM_COMMAND:
         {
             switch (LOWORD(wParam))

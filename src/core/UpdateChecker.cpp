@@ -1,15 +1,89 @@
 #include "NetPulse/UpdateChecker.h"
+#include "NetPulse/Common.h"
 #include "NetPulse/Utils.h"
+#include "NetPulse/Interfaces/IHttpClient.h"
+#include "NetPulse/WinHttpClient.h"
 #include <shellapi.h>
-#include <winhttp.h>
 #include <thread>
-#include <vector>
 #include <sstream>
 #include <regex>
+#include <vector>
+#include <chrono>
 
 namespace NetPulse
 {
 
+UpdateChecker::~UpdateChecker()
+{
+    CancelAndWait();
+}
+
+void UpdateChecker::CancelAndWait()
+{
+    m_cancelFlag = true;
+    if (m_checkFuture.valid())
+    {
+        m_checkFuture.wait_for(std::chrono::seconds(5));
+    }
+}
+
+void UpdateChecker::CheckForUpdatesAsync(HWND hParent, bool silent)
+{
+    CancelAndWait();
+    m_cancelFlag = false;
+
+    m_checkFuture = std::async(std::launch::async, [this, hParent, silent]()
+    {
+        std::wstring latestVersion;
+        std::wstring downloadUrl;
+
+        if (m_cancelFlag) return;
+        bool success = PerformCheck(latestVersion, downloadUrl, m_pMockHttpClient);
+        if (m_cancelFlag) return;
+
+        if (success)
+        {
+            std::wstring cleanLatest = StripVersionPrefix(latestVersion);
+            std::wstring cleanCurrent = StripVersionPrefix(APP_VERSION);
+
+            if (CompareVersions(cleanLatest, cleanCurrent) > 0)
+            {
+                std::wstringstream msg;
+                msg << L"A new version of NetPulse is available!\n\n"
+                    << L"Current Version: " << APP_VERSION << L"\n"
+                    << L"Latest Version: " << latestVersion << L"\n\n"
+                    << L"Do you want to visit the download page?";
+
+                if (m_cancelFlag) return;
+
+                int result = ShowDarkMessageBox(hParent, msg.str(), L"Update Available", MB_YESNO | MB_ICONINFORMATION, true);
+                
+                if (m_cancelFlag) return;
+
+                if (result == IDYES)
+                {
+                    ShellExecuteW(nullptr, L"open", downloadUrl.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                }
+            }
+            else if (!silent)
+            {
+                std::wstringstream msg;
+                msg << L"You are using the latest version of NetPulse.\n"
+                    << L"Version: " << APP_VERSION;
+
+                if (m_cancelFlag) return;
+                ShowDarkMessageBox(hParent, msg.str(), L"Check for Updates", MB_OK | MB_ICONINFORMATION, true);
+            }
+        }
+        else if (!silent)
+        {
+            if (m_cancelFlag) return;
+            ShowDarkMessageBox(hParent, L"Failed to check for updates.\nPlease check your internet connection.", L"Error", MB_OK | MB_ICONERROR, true);
+        }
+    });
+}
+
+// DEPRECATED: Keep for backward compatibility / E2E tests
 void UpdateChecker::CheckForUpdates(HWND hParent, bool silent)
 {
     std::thread([hParent, silent]()
@@ -17,30 +91,15 @@ void UpdateChecker::CheckForUpdates(HWND hParent, bool silent)
         std::wstring latestVersion;
         std::wstring downloadUrl;
 
-        // Visual feedback for manual check
-        // Note: For a truly polished experience, we might want a "Checking..." dialog,
-        // but for now we just show results when ready.
-
         bool success = PerformCheck(latestVersion, downloadUrl);
-
-        // Switch back to UI thread flow essentially by using MessageBox which is modal 
-        // but here we are in a thread. 
-        // IMPORTANT: MessageBox should be called on the UI thread or it blocks this thread.
-        // Since this thread effectively just waits for the check, it's fine to block it with MessageBox.
-        // However, we should ensure the parent window handle is valid.
 
         if (success)
         {
-            // Clean up version strings for comparison (remove 'v' prefix if present)
-            std::wstring cleanLatest = latestVersion;
-            if (!cleanLatest.empty() && cleanLatest[0] == L'v') cleanLatest = cleanLatest.substr(1);
-
-            std::wstring cleanCurrent = APP_VERSION;
-            if (!cleanCurrent.empty() && cleanCurrent[0] == L'v') cleanCurrent = cleanCurrent.substr(1);
+            std::wstring cleanLatest = StripVersionPrefix(latestVersion);
+            std::wstring cleanCurrent = StripVersionPrefix(APP_VERSION);
 
             if (CompareVersions(cleanLatest, cleanCurrent) > 0)
             {
-                // Update Available
                 std::wstringstream msg;
                 msg << L"A new version of NetPulse is available!\n\n"
                     << L"Current Version: " << APP_VERSION << L"\n"
@@ -55,7 +114,6 @@ void UpdateChecker::CheckForUpdates(HWND hParent, bool silent)
             }
             else if (!silent)
             {
-                // Up to date
                 std::wstringstream msg;
                 msg << L"You are using the latest version of NetPulse.\n"
                     << L"Version: " << APP_VERSION;
@@ -64,125 +122,110 @@ void UpdateChecker::CheckForUpdates(HWND hParent, bool silent)
         }
         else if (!silent)
         {
-            // Error
             ShowDarkMessageBox(hParent, L"Failed to check for updates.\nPlease check your internet connection.", L"Error", MB_OK | MB_ICONERROR, true);
         }
-        
     }).detach();
 }
 
-bool UpdateChecker::PerformCheck(std::wstring& outLatestVersion, std::wstring& outUrl)
+std::wstring UpdateChecker::GetGitHubReleaseApiPath()
 {
-    HINTERNET hSession = NULL;
-    HINTERNET hConnect = NULL;
-    HINTERNET hRequest = NULL;
-    bool result = false;
+    std::wstring releasePath = L"/repos/";
+    releasePath += APP_GITHUB_REPO;
+    releasePath += L"/releases/latest";
+    return releasePath;
+}
 
-    // 1. Initialize WinHTTP
-    hSession = WinHttpOpen(L"NetPulse Update Checker",  
-                           WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-                           WINHTTP_NO_PROXY_NAME, 
-                           WINHTTP_NO_PROXY_BYPASS, 0);
-
-    if (hSession)
+std::wstring UpdateChecker::StripVersionPrefix(const std::wstring& version)
+{
+    if (!version.empty() && version[0] == L'v')
     {
-        // 2. Connect to GitHub API
-        hConnect = WinHttpConnect(hSession, L"api.github.com", INTERNET_DEFAULT_HTTPS_PORT, 0);
+        return version.substr(1);
+    }
+    return version;
+}
+
+bool UpdateChecker::ParseGitHubReleaseResponse(const std::string& responseData,
+                                               std::wstring& outLatestVersion,
+                                               std::wstring& outUrl)
+{
+    outLatestVersion.clear();
+    outUrl.clear();
+
+    std::regex tagRegex("\"tag_name\"\\s*:\\s*\"([^\"]+)\"");
+    std::smatch match;
+    if (!std::regex_search(responseData, match, tagRegex))
+    {
+        return false;
     }
 
-    if (hConnect)
+    std::string tagUtf8 = match[1].str();
+
+    std::regex urlRegex("\"html_url\"\\s*:\\s*\"([^\"]+)\"");
+    if (!std::regex_search(responseData, match, urlRegex))
     {
-        // 3. Create Request
-        hRequest = WinHttpOpenRequest(hConnect, L"GET", L"/repos/hoanghonghuy/NetworkMonitor/releases/latest",
-                                      NULL, WINHTTP_NO_REFERER, 
-                                      WINHTTP_DEFAULT_ACCEPT_TYPES, 
-                                      WINHTTP_FLAG_SECURE);
+        return false;
     }
 
-    if (hRequest)
+    std::string urlUtf8 = match[1].str();
+
+    int sizeNeeded = MultiByteToWideChar(CP_UTF8, 0, tagUtf8.c_str(), static_cast<int>(tagUtf8.length()), nullptr, 0);
+    if (sizeNeeded <= 0)
     {
-        // 4. Send Request
-        bool bResults = WinHttpSendRequest(hRequest,
-                                           WINHTTP_NO_ADDITIONAL_HEADERS, 0,
-                                           WINHTTP_NO_REQUEST_DATA, 0, 
-                                           0, 0);
-
-        if (bResults)
-        {
-            bResults = WinHttpReceiveResponse(hRequest, NULL);
-        }
-
-        if (bResults)
-        {
-            // 5. Read Data
-            std::string responseData;
-            DWORD dwSize = 0;
-            DWORD dwDownloaded = 0;
-
-            do
-            {
-                dwSize = 0;
-                if (!WinHttpQueryDataAvailable(hRequest, &dwSize)) break;
-
-                if (dwSize == 0) break;
-
-                std::vector<char> buffer(dwSize + 1); // +1 for null terminator safety
-                if (WinHttpReadData(hRequest, buffer.data(), dwSize, &dwDownloaded))
-                {
-                    responseData.append(buffer.data(), dwDownloaded);
-                }
-            } while (dwSize > 0);
-
-            // 6. Simple JSON Parsing (String Search)
-            // Look for "tag_name": "vX.X.X"
-            std::regex tagRegex("\"tag_name\"\\s*:\\s*\"([^\"]+)\"");
-            std::smatch m;
-            if (std::regex_search(responseData, m, tagRegex))
-            {
-                std::string tagUtf8 = m[1].str();
-                
-                // Look for html_url to release page
-                std::regex urlRegex("\"html_url\"\\s*:\\s*\"([^\"]+)\""); 
-                // Note: The first html_url in the payload is usually the release page
-                if (std::regex_search(responseData, m, urlRegex))
-                {
-                   std::string urlUtf8 = m[1].str();
-                   
-                   // Convert to wstring
-                   int size_needed = MultiByteToWideChar(CP_UTF8, 0, tagUtf8.c_str(), (int)tagUtf8.length(), NULL, 0);
-                   std::wstring tagW(size_needed, 0);
-                   MultiByteToWideChar(CP_UTF8, 0, tagUtf8.c_str(), (int)tagUtf8.length(), &tagW[0], size_needed);
-                   outLatestVersion = tagW;
-
-                   size_needed = MultiByteToWideChar(CP_UTF8, 0, urlUtf8.c_str(), (int)urlUtf8.length(), NULL, 0);
-                   std::wstring urlW(size_needed, 0);
-                   MultiByteToWideChar(CP_UTF8, 0, urlUtf8.c_str(), (int)urlUtf8.length(), &urlW[0], size_needed);
-                   outUrl = urlW;
-
-                   result = true;
-                }
-            }
-        }
+        return false;
     }
 
-    if (hRequest) WinHttpCloseHandle(hRequest);
-    if (hConnect) WinHttpCloseHandle(hConnect);
-    if (hSession) WinHttpCloseHandle(hSession);
+    std::wstring tagW(static_cast<size_t>(sizeNeeded), L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, tagUtf8.c_str(), static_cast<int>(tagUtf8.length()), &tagW[0], sizeNeeded);
+    outLatestVersion = tagW;
 
-    return result;
+    sizeNeeded = MultiByteToWideChar(CP_UTF8, 0, urlUtf8.c_str(), static_cast<int>(urlUtf8.length()), nullptr, 0);
+    if (sizeNeeded <= 0)
+    {
+        return false;
+    }
+
+    std::wstring urlW(static_cast<size_t>(sizeNeeded), L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, urlUtf8.c_str(), static_cast<int>(urlUtf8.length()), &urlW[0], sizeNeeded);
+    outUrl = urlW;
+
+    return true;
+}
+
+bool UpdateChecker::PerformCheck(std::wstring& outLatestVersion,
+                                 std::wstring& outUrl,
+                                 IHttpClient* httpClient)
+{
+    std::unique_ptr<WinHttpClient> defaultClient;
+    IHttpClient* client = httpClient;
+    if (!client)
+    {
+        defaultClient = std::make_unique<WinHttpClient>(L"NetPulse Update Checker");
+        client = defaultClient.get();
+    }
+
+    std::string responseData;
+    if (!client->HttpGet(L"api.github.com", GetGitHubReleaseApiPath(), responseData))
+    {
+        return false;
+    }
+
+    return ParseGitHubReleaseResponse(responseData, outLatestVersion, outUrl);
 }
 
 int UpdateChecker::CompareVersions(const std::wstring& v1, const std::wstring& v2)
 {
-    // Split by '.'
     auto split = [](const std::wstring& s) {
         std::vector<int> parts;
         std::wstringstream ss(s);
         std::wstring item;
-        while (std::getline(ss, item, L'.')) {
-            try {
+        while (std::getline(ss, item, L'.'))
+        {
+            try
+            {
                 parts.push_back(std::stoi(item));
-            } catch (...) {
+            }
+            catch (...)
+            {
                 parts.push_back(0);
             }
         }
@@ -200,8 +243,8 @@ int UpdateChecker::CompareVersions(const std::wstring& v1, const std::wstring& v
         i++;
     }
 
-    if (i < parts1.size()) return 1; // v1 is longer (e.g. 1.0.1 > 1.0)
-    if (i < parts2.size()) return -1; // v2 is longer
+    if (i < parts1.size()) return 1;
+    if (i < parts2.size()) return -1;
 
     return 0;
 }

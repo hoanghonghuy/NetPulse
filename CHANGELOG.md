@@ -2,6 +2,13 @@
 
 All notable changes to NetworkMonitor will be documented in this file.
 
+## [2.4.0] - 2026-06-13
+
+### Added
+- **Bộ Cài Đặt (Inno Setup)**: Thiết kế bộ cài đặt hệ thống `NetPulse_Setup.exe` tự động cấu hình và tạo Scheduled Task quyền quản trị cao nhất lúc đăng nhập để tự chạy không hiển thị UAC prompt.
+- **Tính Năng Bảo Vệ Portable Mode**: Ẩn hoàn toàn tùy chọn chế độ di động và tạo file INI khi ứng dụng đang chạy từ thư mục hệ thống `Program Files` để tránh lỗi ghi đè dữ liệu hoặc Access Denied.
+- **Tài Liệu Quy Trình Phát Hành**: Bổ sung hướng dẫn chi tiết quy trình gộp nhánh, đóng gói bản nén di động ZIP và tạo Release.
+
 ## [2.3.0] - 2025-12-22
 
 ### Added

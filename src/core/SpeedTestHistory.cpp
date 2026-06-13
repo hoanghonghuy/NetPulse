@@ -1,27 +1,38 @@
-﻿#include "NetPulse/SpeedTestHistory.h"
+#include "NetPulse/SpeedTestHistory.h"
 #include <Windows.h>
 #include <ShlObj.h>
 #include <fstream>
+#include <filesystem>
 #include <sstream>
 #include <algorithm>
 #include <string>
+#include <stdexcept>
+#include "NetPulse/Utils.h"
 
 namespace NetPulse
 {
 
 SpeedTestHistory::SpeedTestHistory()
 {
-    // Get %APPDATA%/NetPulse path
-    wchar_t appDataPath[MAX_PATH];
-    if (SUCCEEDED(SHGetFolderPathW(nullptr, CSIDL_APPDATA, nullptr, 0, appDataPath)))
+    const wchar_t* testDataDir = _wgetenv(L"NETPULSE_TEST_DATA_DIR");
+    if (testDataDir && testDataDir[0] != L'\0')
     {
-        m_filePath = appDataPath;
-        m_filePath += L"\\NetPulse";
-        
-        // Create directory if not exists
+        m_filePath = testDataDir;
         CreateDirectoryW(m_filePath.c_str(), nullptr);
-        
         m_filePath += L"\\speed_test_history.json";
+    }
+    else
+    {
+        wchar_t appDataPath[MAX_PATH];
+        if (SUCCEEDED(SHGetFolderPathW(nullptr, CSIDL_APPDATA, nullptr, 0, appDataPath)))
+        {
+            m_filePath = appDataPath;
+            m_filePath += L"\\NetPulse";
+
+            CreateDirectoryW(m_filePath.c_str(), nullptr);
+
+            m_filePath += L"\\speed_test_history.json";
+        }
     }
     
     LoadFromFile();
@@ -71,7 +82,7 @@ void SpeedTestHistory::LoadFromFile()
 {
     if (m_filePath.empty()) return;
     
-    std::ifstream file(m_filePath);
+    std::ifstream file{std::filesystem::path(m_filePath)};
     if (!file.is_open()) return;
     
     std::stringstream buffer;
@@ -90,60 +101,63 @@ void SpeedTestHistory::LoadFromFile()
         if (endPos == std::string::npos) break;
         
         std::string entry = content.substr(pos, endPos - pos + 1);
-        SpeedTestResult result;
-        
-        // Parse download
-        size_t downloadPos = entry.find("\"download\":");
-        if (downloadPos != std::string::npos)
+
+        try
         {
-            result.downloadMbps = std::stod(entry.substr(downloadPos + 11));
-        }
-        
-        // Parse upload
-        size_t uploadPos = entry.find("\"upload\":");
-        if (uploadPos != std::string::npos)
-        {
-            result.uploadMbps = std::stod(entry.substr(uploadPos + 9));
-        }
-        
-        // Parse ping
-        size_t pingPos = entry.find("\"ping\":");
-        if (pingPos != std::string::npos)
-        {
-            result.pingMs = std::stoi(entry.substr(pingPos + 7));
-        }
-        
-        // Parse server
-        size_t serverPos = entry.find("\"server\":\"");
-        if (serverPos != std::string::npos)
-        {
-            size_t serverEnd = entry.find('\"', serverPos + 10);
-            if (serverEnd != std::string::npos)
+            SpeedTestResult result;
+
+            size_t downloadPos = entry.find("\"download\":");
+            if (downloadPos != std::string::npos)
             {
-                std::string serverStr = entry.substr(serverPos + 10, serverEnd - serverPos - 10);
-                // Convert std::string to std::wstring for serverName
-                result.serverName.clear();
-                for (char c : serverStr) {
-                    result.serverName += static_cast<wchar_t>(static_cast<unsigned char>(c));
+                result.downloadMbps = std::stod(entry.substr(downloadPos + 11));
+            }
+
+            size_t uploadPos = entry.find("\"upload\":");
+            if (uploadPos != std::string::npos)
+            {
+                result.uploadMbps = std::stod(entry.substr(uploadPos + 9));
+            }
+
+            size_t pingPos = entry.find("\"ping\":");
+            if (pingPos != std::string::npos)
+            {
+                result.pingMs = std::stoi(entry.substr(pingPos + 7));
+            }
+
+            size_t serverPos = entry.find("\"server\":\"");
+            if (serverPos != std::string::npos)
+            {
+                size_t serverEnd = entry.find('\"', serverPos + 10);
+                if (serverEnd != std::string::npos)
+                {
+                    std::string serverStr = entry.substr(serverPos + 10, serverEnd - serverPos - 10);
+                    result.serverName.clear();
+                    for (char c : serverStr)
+                    {
+                        result.serverName += static_cast<wchar_t>(static_cast<unsigned char>(c));
+                    }
                 }
             }
+
+            size_t tsPos = entry.find("\"timestamp\":");
+            if (tsPos != std::string::npos)
+            {
+                result.timestamp = std::stoll(entry.substr(tsPos + 12));
+            }
+
+            size_t successPos = entry.find("\"success\":");
+            if (successPos != std::string::npos)
+            {
+                result.success = (entry.find("true", successPos) == successPos + 10);
+            }
+
+            m_history.push_back(result);
         }
-        
-        // Parse timestamp
-        size_t tsPos = entry.find("\"timestamp\":");
-        if (tsPos != std::string::npos)
+        catch (const std::exception&)
         {
-            result.timestamp = std::stoll(entry.substr(tsPos + 12));
+            LogDebug(L"SpeedTestHistory::LoadFromFile: skipped invalid history entry");
         }
-        
-        // Parse success
-        size_t successPos = entry.find("\"success\":");
-        if (successPos != std::string::npos)
-        {
-            result.success = (entry.find("true", successPos) == successPos + 10);
-        }
-        
-        m_history.push_back(result);
+
         pos = endPos + 1;
     }
 }
@@ -152,7 +166,7 @@ void SpeedTestHistory::SaveToFile() const
 {
     if (m_filePath.empty()) return;
     
-    std::ofstream file(m_filePath);
+    std::ofstream file{std::filesystem::path(m_filePath)};
     if (!file.is_open()) return;
     
     file << "[\n";

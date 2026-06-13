@@ -1,4 +1,4 @@
-﻿#ifndef NETPULSE_COMMON_H
+#ifndef NETPULSE_COMMON_H
 #define NETPULSE_COMMON_H
 
 // ============================================================================
@@ -38,11 +38,13 @@
 
 // Application Information
 #define APP_NAME L"NetPulse"
-#define APP_VERSION L"2.3.0"
+#define APP_VERSION L"2.4.0"
 #define APP_WINDOW_CLASS L"NetPulseWindowClass"
 #define APP_MUTEX_NAME L"NetPulse_SingleInstance"
+#define APP_MUTEX_NAME_TEST L"NetPulse_SingleInstance_Test"
 #define APP_AUTHOR L"NetPulse Project"
 #define APP_GITHUB_LINK L"https://github.com/hoanghonghuy/NetPulse"
+#define APP_GITHUB_REPO L"hoanghonghuy/NetPulse"
 
 // Update Intervals (milliseconds)
 constexpr UINT UPDATE_INTERVAL_FAST = 1000;      // 1 second
@@ -76,6 +78,7 @@ constexpr int MAX_HISTORY_AUTO_TRIM_DAYS = 365;
 #define TIMER_UPDATE_NETWORK 3001
 #define TIMER_PING 3002
 #define TIMER_VPN_UPDATE 3003  // Phase 3: VPN/Proxy detection
+#define TIMER_TRAY_ANIMATION 9001  // Tray icon pulse animation
 
 // Hotkey IDs
 #define HOTKEY_TOGGLE_OVERLAY 4001
@@ -172,6 +175,7 @@ struct AppConfig
     bool autoStartAsAdmin;           // Auto-start as Administrator (via Task Scheduler)
     bool enableLogging;              // Enable history logging
     bool debugLogging;               // Enable debug logging to file
+    /// @deprecated Use themeMode instead. Kept for backward compatibility with registry/INI.
     bool darkTheme;
     ThemeMode themeMode;             // Theme selection mode
     int historyAutoTrimDays;
@@ -293,8 +297,7 @@ struct AppConfig
                overlayDownloadColor == other.overlayDownloadColor &&
                overlayUploadColor == other.overlayUploadColor &&
                enableDataUsageAlerts == other.enableDataUsageAlerts &&
-               // Use epsilon for float comparison if needed, but direct match is fine for settings
-               dataQuotaGB == other.dataQuotaGB && 
+               std::abs(dataQuotaGB - other.dataQuotaGB) < 1e-9 && 
                dataAlertThreshold1 == other.dataAlertThreshold1 &&
                dataAlertThreshold2 == other.dataAlertThreshold2 &&
                showFloatingWindow == other.showFloatingWindow &&

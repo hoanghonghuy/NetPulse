@@ -1,10 +1,11 @@
-﻿#ifndef NETWORK_MONITOR_HISTORYLOGGER_H
+#ifndef NETWORK_MONITOR_HISTORYLOGGER_H
 #define NETWORK_MONITOR_HISTORYLOGGER_H
 
 #include "NetPulse/Common.h"
 #include <string>
 #include <vector>
 #include <ctime>
+#include <mutex>
 
 struct sqlite3;
 
@@ -37,6 +38,12 @@ struct MonthlyUsage
 class HistoryLogger
 {
 public:
+    /**
+     * Singleton instance. 
+     * WARNING: Do NOT access from detached threads that may outlive main().
+     * The singleton is destroyed during static finalization — access after
+     * destruction is undefined behavior.
+     */
     static HistoryLogger& Instance();
 
     /**
@@ -119,7 +126,8 @@ private:
                                const std::wstring* interfaceFilter,
                                const std::vector<HistorySample>& outSamples);
 
-    bool m_initialized;
+    std::once_flag m_initFlag;
+    mutable std::mutex m_dbMutex;
     bool m_sqliteAvailable;
 
     sqlite3* m_db;

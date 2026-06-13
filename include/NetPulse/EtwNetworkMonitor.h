@@ -1,4 +1,4 @@
-﻿#ifndef NETWORK_MONITOR_ETW_NETWORK_MONITOR_H
+#ifndef NETWORK_MONITOR_ETW_NETWORK_MONITOR_H
 #define NETWORK_MONITOR_ETW_NETWORK_MONITOR_H
 
 #include "NetPulse/Common.h"
@@ -12,7 +12,17 @@
 #include <thread>
 #include <atomic>
 
+#ifdef _MSC_VER
 #pragma comment(lib, "advapi32.lib")
+#endif
+
+#include "NetPulse/Interfaces/IEtwSession.h"
+#include <memory>
+
+namespace NetPulseTests
+{
+struct EtwNetworkMonitorTestFriend;
+}
 
 namespace NetPulse
 {
@@ -62,7 +72,7 @@ struct ProcessTrafficStats
 class EtwNetworkMonitor
 {
 public:
-    EtwNetworkMonitor();
+    explicit EtwNetworkMonitor(IEtwSession* etwSession = nullptr);
     ~EtwNetworkMonitor();
 
     /**
@@ -101,12 +111,24 @@ public:
      */
     std::wstring GetProcessName(DWORD pid) const;
 
+    static constexpr USHORT EVENT_ID_TCP_SEND = 10;
+    static constexpr USHORT EVENT_ID_TCP_RECV = 11;
+    static constexpr USHORT EVENT_ID_UDP_SEND = 12;
+    static constexpr USHORT EVENT_ID_UDP_RECV = 13;
+
+    void ApplyTrafficEventForTest(USHORT eventId, DWORD pid, ULONG byteCount);
+
 private:
+    friend struct NetPulseTests::EtwNetworkMonitorTestFriend;
+
+    void RecordTrafficEvent(USHORT eventId, DWORD pid, ULONG byteCount);
     static void WINAPI EventRecordCallback(PEVENT_RECORD pEventRecord);
     void ProcessEvent(PEVENT_RECORD pEventRecord);
     void ProcessThreadProc();
 
     // Session management
+    std::unique_ptr<IEtwSession> m_defaultEtwSession;
+    IEtwSession* m_pEtwSession;
     TRACEHANDLE m_sessionHandle;
     TRACEHANDLE m_traceHandle;
     std::thread m_processThread;

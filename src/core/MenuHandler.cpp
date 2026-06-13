@@ -110,13 +110,17 @@ void MenuHandler::HandleCommand(UINT menuId)
 
         case IDM_AUTOSTART:
             m_pConfig->autoStart = !m_pConfig->autoStart;
+            if (m_pConfigProvider)
+            {
+                m_pConfigProvider->SetAutoStart(m_pConfig->autoStart, m_pConfig->autoStartAsAdmin);
+            }
             if (m_saveConfigCallback) m_saveConfigCallback();
             break;
 
         case IDM_SHOW_TASKBAR_OVERLAY:
             if (m_pOverlay)
             {
-                bool isVisible = m_pOverlay->IsVisible();
+                bool isVisible = m_pOverlay->IsUserWantsVisible();
                 m_pOverlay->Show(!isVisible);
             }
             break;

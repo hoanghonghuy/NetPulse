@@ -46,7 +46,9 @@ NetPulse is a lightweight C++ Win32 application for monitoring network traffic o
 4. Build solution (`Ctrl+Shift+B`).
 5. Run `NetPulse.exe` from the output directory.
 
-### CMake
+### CMake (recommended)
+
+Build settings (definitions, warnings, link libraries) are centralized in `cmake/NetPulseDefaults.cmake`. When changing compiler or linker options, update that file and keep `NetPulse.vcxproj` in sync for Visual Studio users.
 
 1. Clone and prepare build directory:
    ```bash
@@ -59,6 +61,58 @@ NetPulse is a lightweight C++ Win32 application for monitoring network traffic o
    cmake .. -G "Visual Studio 17 2022" -A x64
    cmake --build . --config Release
    ```
+
+## Running Tests
+
+Build and run the unit test suite with CMake:
+
+```bash
+cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DBUILD_TESTS=ON
+cmake --build build --config Debug
+ctest -C Debug --output-on-failure --verbose
+```
+
+The test target is `NetPulseTests` and uses the same defaults as the main app (including embedded `app.rc` resources).
+
+Tests use a temporary sandbox directory and a separate registry key (`Software\NetworkMonitor\Test`) so they do not modify your normal history or settings.
+
+Run only tests with a specific CTest label (same binary, grouped for CI filtering):
+
+```bash
+ctest -C Debug -L unit --output-on-failure
+```
+
+E2E smoke tests run in a separate target (sandbox registry/data, no user profile):
+
+```bash
+ctest -C Debug -L e2e --output-on-failure
+```
+
+Subprocess harness for `NetPulse.exe` (timeout + log capture):
+
+```powershell
+.\scripts\run-e2e.ps1 -Scenario launch-exit -TimeoutSec 30
+```
+
+CLI flags: `--test-mode`, `--sandbox-dir=...`, `--test-scenario=launch-exit|config-default`.
+
+### Code coverage
+
+Coverage is measured from `NetPulseTests` (E2E target `NetPulseE2ETests` is excluded). CI job `Coverage (Debug)` runs OpenCppCoverage, uploads HTML + Cobertura XML, and enforces a **39% line-rate** gate (baseline LLVM local: ~39.55%).
+
+**MSVC / OpenCppCoverage (recommended on Windows):**
+
+```powershell
+.\scripts\run-coverage.ps1 -Backend opencpp -Config Debug
+```
+
+**LLVM MinGW (local dev):**
+
+```powershell
+.\scripts\run-coverage.ps1 -Backend llvm
+```
+
+Reports exclude `third_party/**` (including `sqlite3.c`) and `tests/**`. Baseline notes live in `.roo-local/design/COVERAGE-BASELINE.md`.
 
 ## Usage
 

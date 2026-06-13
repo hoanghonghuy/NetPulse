@@ -10,7 +10,7 @@
 #include "NetPulse/ThemeHelper.h"
 #include "NetPulse/DialogThemeHelper.h"
 #include "NetPulse/Utils.h"
-#include "../resources/resource.h"
+#include "../../../resources/resource.h"
 
 #include <CommCtrl.h>
 #include <windowsx.h>
@@ -323,12 +323,14 @@ void SpeedTestDialog::InitializeHistoryList(HWND /*hDlg*/)
     if (upHeader.empty()) upHeader = L"Upload";
     col.pszText = const_cast<LPWSTR>(upHeader.c_str());
     col.cx = 80;
+    col.fmt = LVCFMT_RIGHT;
     ListView_InsertColumn(m_hHistoryList, 2, &col);
     
     std::wstring pingHeader = LoadStringResource(IDS_FLOATING_SHOW_PING);
     if (pingHeader.empty()) pingHeader = L"Ping";
     col.pszText = const_cast<LPWSTR>(pingHeader.c_str());
     col.cx = 60;
+    col.fmt = LVCFMT_RIGHT;
     ListView_InsertColumn(m_hHistoryList, 3, &col);
 }
 
@@ -405,11 +407,19 @@ void SpeedTestDialog::StartSpeedTest()
     HWND hDlg = m_hDlg;
     
     m_speedTester->SetResultCallback([hDlg](const SpeedTestResult& result) {
-        PostMessageW(hDlg, WM_SPEED_TEST_RESULT, 0, 
+        if (!IsWindow(hDlg))
+        {
+            return;
+        }
+        PostMessageW(hDlg, WM_SPEED_TEST_RESULT, 0,
             reinterpret_cast<LPARAM>(new SpeedTestResult(result)));
     });
-    
+
     m_speedTester->StartTest([hDlg](int progress, const std::wstring& /*status*/) {
+        if (!IsWindow(hDlg))
+        {
+            return;
+        }
         PostMessageW(hDlg, WM_SPEED_TEST_PROGRESS, static_cast<WPARAM>(progress), 0);
     });
 }
@@ -528,12 +538,15 @@ void SpeedTestDialog::OnCommand(HWND hDlg, WPARAM wParam)
 
 void SpeedTestDialog::OnClose(HWND hDlg)
 {
-    // Cancel any running test
-    if (m_speedTester && m_isTestRunning)
+    if (m_speedTester)
     {
-        m_speedTester->CancelTest();
+        m_speedTester->ClearResultCallback();
+        if (m_isTestRunning)
+        {
+            m_speedTester->CancelTest();
+        }
     }
-    
+
     // Clear external handle storage
     if (m_pExternalHandle)
     {

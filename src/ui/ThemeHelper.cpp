@@ -1007,7 +1007,7 @@ void ThemeHelper::ApplyDarkThemeToControl(HWND hwnd, bool enable)
         SetWindowTheme(hwnd, L"CFD", NULL);
 
         // Get the dropdown list handle and apply dark theme to it
-        COMBOBOXINFO cbi = {0};
+        COMBOBOXINFO cbi = {};
         cbi.cbSize = sizeof(COMBOBOXINFO);
         if (GetComboBoxInfo(hwnd, &cbi))
         {

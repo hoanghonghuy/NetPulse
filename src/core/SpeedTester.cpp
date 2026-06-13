@@ -1,6 +1,5 @@
-﻿#include "NetPulse/SpeedTester.h"
+#include "NetPulse/SpeedTester.h"
 
-// NOMINMAX to prevent Windows min/max macro conflicts with std::min/max
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
@@ -8,43 +7,76 @@
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 #include <Windows.h>
-#include <winhttp.h>
 #include <chrono>
 #include <vector>
-#include <vector>
-#include <random>
 #include <string>
-#include <algorithm>
+#include "NetPulse/Interfaces/IHttpClient.h"
+#include "NetPulse/WinHttpClient.h"
 #include "NetPulse/Utils.h"
 #include "../../resources/resource.h"
 
-#pragma comment(lib, "winhttp.lib")
 #pragma comment(lib, "ws2_32.lib")
 
 namespace NetPulse
 {
 
-SpeedTester::SpeedTester()
+static std::wstring Utf8ToWide(const std::string& utf8)
+{
+    if (utf8.empty())
+    {
+        return std::wstring();
+    }
+
+    int wideLen = MultiByteToWideChar(CP_UTF8, 0, utf8.data(),
+                                       static_cast<int>(utf8.size()), nullptr, 0);
+    if (wideLen <= 0)
+    {
+        return std::wstring();
+    }
+
+    std::wstring result(static_cast<size_t>(wideLen), L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, utf8.data(),
+                        static_cast<int>(utf8.size()), &result[0], wideLen);
+    return result;
+}
+
+SpeedTester::SpeedTester(std::shared_ptr<IHttpClient> httpClient)
+    : m_httpClient(std::move(httpClient))
 {
 }
 
 SpeedTester::~SpeedTester()
 {
     CancelTest();
+    m_resultCallback = nullptr;
     if (m_testThread.joinable())
     {
         m_testThread.join();
     }
 }
 
+IHttpClient& SpeedTester::GetHttpClient()
+{
+    if (m_httpClient)
+    {
+        return *m_httpClient;
+    }
+
+    if (!m_defaultHttpClient)
+    {
+        m_defaultHttpClient = std::make_unique<WinHttpClient>(L"NetPulse/1.0");
+    }
+
+    return *m_defaultHttpClient;
+}
+
 void SpeedTester::StartTest(std::function<void(int progress, const std::wstring& status)> progressCallback)
 {
     if (m_running.load())
     {
-        return; // Already running
+        return;
     }
     
-    // Wait for any previous thread to finish
     if (m_testThread.joinable())
     {
         m_testThread.join();
@@ -85,63 +117,72 @@ void SpeedTester::RunTest(std::function<void(int progress, const std::wstring& s
     result.timestamp = std::time(nullptr);
     result.serverName = L"Cloudflare";
     
+    WSADATA wsaData;
+    bool wsaInit = (WSAStartup(MAKEWORD(2, 2), &wsaData) == 0);
+    
     try
     {
-        // Phase 1: Ping (0-10%)
-        if (progressCallback) progressCallback(0, L"Measuring latency...");
-        
-        if (m_cancelled.load())
+        do
         {
-            result.success = false;
-            result.errorMessage = L"Test cancelled";
-            goto done;
-        }
-        
-        result.pingMs = MeasurePing(L"speed.cloudflare.com");
-        if (progressCallback) progressCallback(10, L"Latency: " + std::to_wstring(result.pingMs) + L" ms");
-        
-        // Phase 2: Download (10-60%)
-        if (m_cancelled.load())
-        {
-            result.success = false;
-            result.errorMessage = L"Test cancelled";
-            goto done;
-        }
-        
-        std::wstring downloadStatus = LoadStringResource(IDS_SPEED_TEST_DOWNLOAD);
-        if (downloadStatus.empty()) downloadStatus = L"Testing download speed...";
-        if (progressCallback) progressCallback(10, downloadStatus);
-        
-        result.downloadMbps = MeasureDownloadSpeed([&progressCallback, downloadStatus](int p, const std::wstring& s) {
-            if (progressCallback) progressCallback(10 + (p * 50 / 100), s);
-        });
-        
-        // Phase 3: Upload (60-100%)
-        if (m_cancelled.load())
-        {
-            result.success = false;
-            result.errorMessage = L"Test cancelled";
-            goto done;
-        }
-        
-        std::wstring uploadStatus = LoadStringResource(IDS_SPEED_TEST_UPLOAD);
-        if (uploadStatus.empty()) uploadStatus = L"Testing upload speed...";
-        if (progressCallback) progressCallback(60, uploadStatus);
-        
-        result.uploadMbps = MeasureUploadSpeed([&progressCallback, uploadStatus](int p, const std::wstring& s) {
-            if (progressCallback) progressCallback(60 + (p * 40 / 100), s);
-        });
-        
-        result.success = true;
-        std::wstring completeStatus = LoadStringResource(IDS_SPEED_TEST_COMPLETE);
-        if (completeStatus.empty()) completeStatus = L"Test complete";
-        if (progressCallback) progressCallback(100, completeStatus);
+            if (progressCallback) progressCallback(0, L"Measuring latency...");
+            
+            if (m_cancelled.load())
+            {
+                result.success = false;
+                result.errorMessage = L"Test cancelled";
+                break;
+            }
+            
+            result.pingMs = MeasurePing(L"speed.cloudflare.com");
+            if (progressCallback) progressCallback(10, L"Latency: " + std::to_wstring(result.pingMs) + L" ms");
+            
+            if (m_cancelled.load())
+            {
+                result.success = false;
+                result.errorMessage = L"Test cancelled";
+                break;
+            }
+            
+            std::wstring downloadStatus = LoadStringResource(IDS_SPEED_TEST_DOWNLOAD);
+            if (downloadStatus.empty()) downloadStatus = L"Testing download speed...";
+            if (progressCallback) progressCallback(10, downloadStatus);
+            
+            result.downloadMbps = MeasureDownloadSpeed([&progressCallback, downloadStatus](int p, const std::wstring& s) {
+                if (progressCallback) progressCallback(10 + (p * 50 / 100), s);
+            });
+
+            if (m_cancelled.load())
+            {
+                result.success = false;
+                result.errorMessage = L"Test cancelled";
+                break;
+            }
+            
+            std::wstring uploadStatus = LoadStringResource(IDS_SPEED_TEST_UPLOAD);
+            if (uploadStatus.empty()) uploadStatus = L"Testing upload speed...";
+            if (progressCallback) progressCallback(60, uploadStatus);
+            
+            result.uploadMbps = MeasureUploadSpeed([&progressCallback, uploadStatus](int p, const std::wstring& s) {
+                if (progressCallback) progressCallback(60 + (p * 40 / 100), s);
+            });
+
+            if (m_cancelled.load())
+            {
+                result.success = false;
+                result.errorMessage = L"Test cancelled";
+                break;
+            }
+            
+            result.success = true;
+            std::wstring completeStatus = LoadStringResource(IDS_SPEED_TEST_COMPLETE);
+            if (completeStatus.empty()) completeStatus = L"Test complete";
+            if (progressCallback) progressCallback(100, completeStatus);
+        } while (false);
     }
     catch (const std::exception& e)
     {
         result.success = false;
-        std::string msg = e.what();
-        result.errorMessage = std::wstring(msg.begin(), msg.end());
+        result.errorMessage = Utf8ToWide(e.what());
     }
     catch (...)
     {
@@ -149,7 +190,11 @@ void SpeedTester::RunTest(std::function<void(int progress, const std::wstring& s
         result.errorMessage = L"Unknown error occurred";
     }
     
-done:
+    if (wsaInit)
+    {
+        WSACleanup();
+    }
+    
     {
         std::lock_guard<std::mutex> lock(m_resultMutex);
         m_lastResult = result;
@@ -165,21 +210,13 @@ done:
 
 int SpeedTester::MeasurePing(const std::wstring& host)
 {
-    // Use TCP connection timing instead of ICMP (avoids complex IcmpSendEcho API)
-    WSADATA wsaData;
-    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
-    {
-        return -1;
-    }
-    
     ADDRINFOW hints = {};
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     
-    PADDRINFOW result = nullptr;
-    if (GetAddrInfoW(host.c_str(), L"443", &hints, &result) != 0)
+    PADDRINFOW addrResult = nullptr;
+    if (GetAddrInfoW(host.c_str(), L"443", &hints, &addrResult) != 0)
     {
-        WSACleanup();
         return -1;
     }
     
@@ -194,11 +231,8 @@ int SpeedTester::MeasurePing(const std::wstring& host)
             continue;
         }
         
-        // Measure TCP connect time
         auto startTime = std::chrono::high_resolution_clock::now();
-        
-        int connectResult = connect(sock, result->ai_addr, static_cast<int>(result->ai_addrlen));
-        
+        int connectResult = connect(sock, addrResult->ai_addr, static_cast<int>(addrResult->ai_addrlen));
         auto endTime = std::chrono::high_resolution_clock::now();
         
         closesocket(sock);
@@ -211,8 +245,7 @@ int SpeedTester::MeasurePing(const std::wstring& host)
         }
     }
     
-    FreeAddrInfoW(result);
-    WSACleanup();
+    FreeAddrInfoW(addrResult);
     
     return successCount > 0 ? (totalMs / successCount) : -1;
 }
@@ -221,7 +254,6 @@ double SpeedTester::MeasureDownloadSpeed(std::function<void(int progress, const 
 {
     double speedMbps = 0.0;
     
-    // Use Cloudflare speed test endpoint
     std::wstring host = L"speed.cloudflare.com";
     std::wstring path = L"/__down?bytes=" + std::to_wstring(DOWNLOAD_SIZE);
     
@@ -233,7 +265,7 @@ double SpeedTester::MeasureDownloadSpeed(std::function<void(int progress, const 
             auto now = std::chrono::steady_clock::now();
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastUpdate).count();
             
-            if (elapsed >= 200) // Update every 200ms
+            if (elapsed >= 200)
             {
                 int progress = static_cast<int>((bytesReceived * 100) / DOWNLOAD_SIZE);
                 double instantSpeed = ((bytesReceived - lastBytes) * 8.0) / (elapsed / 1000.0) / 1000000.0;
@@ -259,9 +291,8 @@ double SpeedTester::MeasureUploadSpeed(std::function<void(int progress, const st
 {
     double speedMbps = 0.0;
     
-    // Use httpbin.org for upload test (accepts POST data)
-    std::wstring host = L"httpbin.org";
-    std::wstring path = L"/post";
+    std::wstring host = L"speed.cloudflare.com";
+    std::wstring path = L"/__up";
     
     auto lastUpdate = std::chrono::steady_clock::now();
     size_t lastBytes = 0;
@@ -297,169 +328,15 @@ bool SpeedTester::HttpDownload(const std::wstring& host, const std::wstring& pat
                                 size_t expectedBytes, double& speedMbps,
                                 std::function<void(size_t bytesReceived)> progressCallback)
 {
-    (void)expectedBytes; // Unused parameter
-    HINTERNET hSession = WinHttpOpen(L"NetPulse/1.0",
-                                      WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-                                      WINHTTP_NO_PROXY_NAME,
-                                      WINHTTP_NO_PROXY_BYPASS, 0);
-    if (!hSession) return false;
-    
-    HINTERNET hConnect = WinHttpConnect(hSession, host.c_str(),
-                                         INTERNET_DEFAULT_HTTPS_PORT, 0);
-    if (!hConnect)
-    {
-        WinHttpCloseHandle(hSession);
-        return false;
-    }
-    
-    HINTERNET hRequest = WinHttpOpenRequest(hConnect, L"GET", path.c_str(),
-                                             nullptr, WINHTTP_NO_REFERER,
-                                             WINHTTP_DEFAULT_ACCEPT_TYPES,
-                                             WINHTTP_FLAG_SECURE);
-    if (!hRequest)
-    {
-        WinHttpCloseHandle(hConnect);
-        WinHttpCloseHandle(hSession);
-        return false;
-    }
-    
-    // Send request
-    if (!WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
-                            WINHTTP_NO_REQUEST_DATA, 0, 0, 0))
-    {
-        WinHttpCloseHandle(hRequest);
-        WinHttpCloseHandle(hConnect);
-        WinHttpCloseHandle(hSession);
-        return false;
-    }
-    
-    if (!WinHttpReceiveResponse(hRequest, nullptr))
-    {
-        WinHttpCloseHandle(hRequest);
-        WinHttpCloseHandle(hConnect);
-        WinHttpCloseHandle(hSession);
-        return false;
-    }
-    
-    // Read data and measure time
-    auto startTime = std::chrono::high_resolution_clock::now();
-    size_t totalBytesRead = 0;
-    DWORD bytesAvailable = 0;
-    
-    std::vector<BYTE> buffer(65536); // 64KB buffer
-    
-    while (WinHttpQueryDataAvailable(hRequest, &bytesAvailable) && bytesAvailable > 0)
-    {
-        if (m_cancelled.load()) break;
-        
-        DWORD bytesToRead = (std::min)(bytesAvailable, static_cast<DWORD>(buffer.size()));
-        DWORD bytesRead = 0;
-        
-        if (WinHttpReadData(hRequest, buffer.data(), bytesToRead, &bytesRead))
-        {
-            totalBytesRead += bytesRead;
-            if (progressCallback) progressCallback(totalBytesRead);
-        }
-        else
-        {
-            break;
-        }
-    }
-    
-    auto endTime = std::chrono::high_resolution_clock::now();
-    double durationSec = std::chrono::duration<double>(endTime - startTime).count();
-    
-    if (durationSec > 0 && totalBytesRead > 0)
-    {
-        speedMbps = (totalBytesRead * 8.0) / (durationSec * 1000000.0);
-    }
-    
-    WinHttpCloseHandle(hRequest);
-    WinHttpCloseHandle(hConnect);
-    WinHttpCloseHandle(hSession);
-    
-    return !m_cancelled.load() && totalBytesRead > 0;
+    (void)expectedBytes;
+    return GetHttpClient().HttpDownload(host, path, speedMbps, progressCallback, &m_cancelled);
 }
 
 bool SpeedTester::HttpUpload(const std::wstring& host, const std::wstring& path,
                               size_t dataSize, double& speedMbps,
                               std::function<void(size_t bytesSent)> progressCallback)
 {
-    HINTERNET hSession = WinHttpOpen(L"NetPulse/1.0",
-                                      WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-                                      WINHTTP_NO_PROXY_NAME,
-                                      WINHTTP_NO_PROXY_BYPASS, 0);
-    if (!hSession) return false;
-    
-    HINTERNET hConnect = WinHttpConnect(hSession, host.c_str(),
-                                         INTERNET_DEFAULT_HTTPS_PORT, 0);
-    if (!hConnect)
-    {
-        WinHttpCloseHandle(hSession);
-        return false;
-    }
-    
-    HINTERNET hRequest = WinHttpOpenRequest(hConnect, L"POST", path.c_str(),
-                                             nullptr, WINHTTP_NO_REFERER,
-                                             WINHTTP_DEFAULT_ACCEPT_TYPES,
-                                             WINHTTP_FLAG_SECURE);
-    if (!hRequest)
-    {
-        WinHttpCloseHandle(hConnect);
-        WinHttpCloseHandle(hSession);
-        return false;
-    }
-    
-    // Generate random data for upload
-    std::vector<BYTE> uploadData(dataSize);
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dis(0, 255);
-    for (size_t i = 0; i < dataSize; i++)
-    {
-        uploadData[i] = static_cast<BYTE>(dis(gen));
-    }
-    
-    // Set content type
-    const wchar_t* headers = L"Content-Type: application/octet-stream\r\n";
-    
-    auto startTime = std::chrono::high_resolution_clock::now();
-    
-    // Send request with data
-    if (!WinHttpSendRequest(hRequest, headers, static_cast<DWORD>(-1),
-                            uploadData.data(), static_cast<DWORD>(dataSize),
-                            static_cast<DWORD>(dataSize), 0))
-    {
-        WinHttpCloseHandle(hRequest);
-        WinHttpCloseHandle(hConnect);
-        WinHttpCloseHandle(hSession);
-        return false;
-    }
-    
-    // Progress callback (approximate - WinHTTP doesn't provide byte-level progress)
-    if (progressCallback) progressCallback(dataSize);
-    
-    if (!WinHttpReceiveResponse(hRequest, nullptr))
-    {
-        WinHttpCloseHandle(hRequest);
-        WinHttpCloseHandle(hConnect);
-        WinHttpCloseHandle(hSession);
-        return false;
-    }
-    
-    auto endTime = std::chrono::high_resolution_clock::now();
-    double durationSec = std::chrono::duration<double>(endTime - startTime).count();
-    
-    if (durationSec > 0)
-    {
-        speedMbps = (dataSize * 8.0) / (durationSec * 1000000.0);
-    }
-    
-    WinHttpCloseHandle(hRequest);
-    WinHttpCloseHandle(hConnect);
-    WinHttpCloseHandle(hSession);
-    
-    return !m_cancelled.load();
+    return GetHttpClient().HttpUpload(host, path, dataSize, speedMbps, progressCallback, &m_cancelled);
 }
 
 } // namespace NetPulse

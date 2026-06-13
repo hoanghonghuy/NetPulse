@@ -1,4 +1,4 @@
-﻿#ifndef NETWORK_MONITOR_DASHBOARD_DIALOG_H
+#ifndef NETWORK_MONITOR_DASHBOARD_DIALOG_H
 #define NETWORK_MONITOR_DASHBOARD_DIALOG_H
 
 #include "NetPulse/Common.h"
@@ -6,6 +6,11 @@
 #include "NetPulse/ChartRenderer.h"
 #include <vector>
 #include <memory>
+
+namespace NetPulseTests
+{
+struct DashboardDialogTestFriend;
+}
 
 namespace NetPulse
 {
@@ -28,6 +33,8 @@ public:
 
     // Show the dashboard dialog modally
     bool Show(HWND parentWindow, const AppConfig* config);
+
+    friend struct NetPulseTests::DashboardDialogTestFriend;
 
 private:
     // Dialog procedure

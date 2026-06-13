@@ -6,6 +6,11 @@
 #include "NetPulse/Interfaces/INetworkStatsProvider.h"
 #include <functional>
 
+namespace NetPulseTests
+{
+struct DialogManagerTestFriend;
+}
+
 namespace NetPulse
 {
 
@@ -22,6 +27,8 @@ class ConnectionMonitor;
  */
 class DialogManager
 {
+    friend struct NetPulseTests::DialogManagerTestFriend;
+
 public:
     // Callbacks for application-level actions
     using ConfigReloadCallback = std::function<bool()>;
@@ -88,6 +95,8 @@ public:
     void ShowConnectionLog();
 
 private:
+    void HandleSettingsApplied(AppConfig& oldConfig);
+
     HWND m_parentWindow;
     AppConfig* m_pConfig;
     IConfigProvider* m_pConfigProvider;

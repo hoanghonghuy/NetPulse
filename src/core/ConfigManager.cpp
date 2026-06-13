@@ -1,13 +1,150 @@
-﻿#include "NetPulse/ConfigManager.h"
+#include "NetPulse/ConfigManager.h"
 #include "NetPulse/Utils.h"
 #include "NetPulse/ThemeHelper.h"
 #include <shellapi.h>
+#include <vector>
 
 namespace NetPulse
 {
 
-ConfigManager::ConfigManager()
+class WinAutoStartManager : public IAutoStartManager
 {
+public:
+    bool ConfigureRegistry(bool enable, const std::wstring& exePath) override
+    {
+        HKEY hKey = nullptr;
+        LONG result = RegOpenKeyExW(HKEY_CURRENT_USER, ConfigManager::AUTOSTART_PATH, 0, KEY_WRITE, &hKey);
+        if (result != ERROR_SUCCESS)
+        {
+            return false;
+        }
+
+        bool success = false;
+        if (enable)
+        {
+            result = RegSetValueExW(hKey, APP_NAME, 0, REG_SZ,
+                                    reinterpret_cast<const BYTE*>(exePath.c_str()),
+                                    static_cast<DWORD>((exePath.length() + 1) * sizeof(wchar_t)));
+            success = (result == ERROR_SUCCESS);
+        }
+        else
+        {
+            result = RegDeleteValueW(hKey, APP_NAME);
+            success = (result == ERROR_SUCCESS || result == ERROR_FILE_NOT_FOUND);
+        }
+        RegCloseKey(hKey);
+        return success;
+    }
+
+    bool ConfigureScheduledTask(bool enable, const std::wstring& exePath) override
+    {
+        static const wchar_t* TASK_NAME = L"NetPulseAutoStart";
+        wchar_t cmdParams[1024] = {0};
+
+        if (enable)
+        {
+            swprintf_s(cmdParams, L"/Create /TN \"%ls\" /TR \"\\\"%ls\\\"\" /SC ONLOGON /RL HIGHEST /F",
+                       TASK_NAME, exePath.c_str());
+
+            SHELLEXECUTEINFOW sei = { sizeof(sei) };
+            sei.lpVerb = L"runas";  // Request UAC elevation
+            sei.lpFile = L"schtasks.exe";
+            sei.lpParameters = cmdParams;
+            sei.nShow = SW_HIDE;
+            sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+
+            if (ShellExecuteExW(&sei))
+            {
+                WaitForSingleObject(sei.hProcess, 10000);  // Wait up to 10s
+                DWORD exitCode = 0;
+                GetExitCodeProcess(sei.hProcess, &exitCode);
+                CloseHandle(sei.hProcess);
+                return (exitCode == 0);
+            }
+            return false;
+        }
+        else
+        {
+            swprintf_s(cmdParams, L"/Delete /TN \"%ls\" /F", TASK_NAME);
+
+            SHELLEXECUTEINFOW sei = { sizeof(sei) };
+            sei.lpVerb = L"runas";  // Need admin to delete elevated task
+            sei.lpFile = L"schtasks.exe";
+            sei.lpParameters = cmdParams;
+            sei.nShow = SW_HIDE;
+            sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+
+            if (ShellExecuteExW(&sei))
+            {
+                WaitForSingleObject(sei.hProcess, 5000);
+                DWORD exitCode = 0;
+                GetExitCodeProcess(sei.hProcess, &exitCode);
+                CloseHandle(sei.hProcess);
+                return (exitCode == 0 || exitCode == 1);
+            }
+            else
+            {
+                DWORD err = GetLastError();
+                return (err != ERROR_CANCELLED);
+            }
+        }
+    }
+
+    bool IsRegistryEnabled() override
+    {
+        HKEY hKey = nullptr;
+        LONG result = RegOpenKeyExW(HKEY_CURRENT_USER, ConfigManager::AUTOSTART_PATH, 0, KEY_READ, &hKey);
+        if (result != ERROR_SUCCESS)
+        {
+            return false;
+        }
+
+        wchar_t value[MAX_PATH] = {0};
+        DWORD valueSize = sizeof(value);
+        DWORD type = REG_SZ;
+
+        result = RegQueryValueExW(hKey, APP_NAME, nullptr, &type, 
+                                  reinterpret_cast<BYTE*>(value), &valueSize);
+        RegCloseKey(hKey);
+        return (result == ERROR_SUCCESS);
+    }
+
+    bool IsScheduledTaskEnabled() override
+    {
+        static const wchar_t* TASK_NAME = L"NetPulseAutoStart";
+        wchar_t cmdParams[256] = {0};
+        swprintf_s(cmdParams, L"/Query /TN \"%ls\"", TASK_NAME);
+
+        SHELLEXECUTEINFOW sei = { sizeof(sei) };
+        sei.lpVerb = nullptr;
+        sei.lpFile = L"schtasks.exe";
+        sei.lpParameters = cmdParams;
+        sei.nShow = SW_HIDE;
+        sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+
+        if (ShellExecuteExW(&sei))
+        {
+            WaitForSingleObject(sei.hProcess, 3000);
+            DWORD exitCode = 0;
+            GetExitCodeProcess(sei.hProcess, &exitCode);
+            CloseHandle(sei.hProcess);
+            return (exitCode == 0);
+        }
+        return false;
+    }
+};
+
+ConfigManager::ConfigManager(IAutoStartManager* autoStartMgr)
+{
+    if (autoStartMgr)
+    {
+        m_pAutoStartManager = autoStartMgr;
+    }
+    else
+    {
+        m_defaultAutoStartManager = std::make_unique<WinAutoStartManager>();
+        m_pAutoStartManager = m_defaultAutoStartManager.get();
+    }
     DetectPortableMode();
 }
 
@@ -285,104 +422,27 @@ bool ConfigManager::SetAutoStart(bool enable, bool asAdmin)
 {
     LogDebug(L"SetAutoStart called: enable=" + std::to_wstring(enable) + L", asAdmin=" + std::to_wstring(asAdmin));
     
-    static const wchar_t* TASK_NAME = L"NetPulseAutoStart";
+    wchar_t exePath[MAX_PATH] = {0};
+    GetModuleFileNameW(nullptr, exePath, MAX_PATH);
+    std::wstring exePathStr(exePath);
+
     bool regSuccess = true;
     bool taskSuccess = true;
 
-    // === REGISTRY: Standard auto-start (non-admin) ===
-    HKEY hKey = nullptr;
-    LONG result = RegOpenKeyExW(HKEY_CURRENT_USER, AUTOSTART_PATH, 0, KEY_WRITE, &hKey);
-    if (result == ERROR_SUCCESS)
+    if (enable && !asAdmin)
     {
-        if (enable && !asAdmin)
-        {
-            // Enable via Registry
-            wchar_t exePath[MAX_PATH] = {0};
-            GetModuleFileNameW(nullptr, exePath, MAX_PATH);
-            result = RegSetValueExW(hKey, APP_NAME, 0, REG_SZ,
-                                    reinterpret_cast<const BYTE*>(exePath),
-                                    static_cast<DWORD>((wcslen(exePath) + 1) * sizeof(wchar_t)));
-            regSuccess = (result == ERROR_SUCCESS);
-        }
-        else
-        {
-            // Remove from Registry (either disabled or using Admin mode)
-            result = RegDeleteValueW(hKey, APP_NAME);
-            regSuccess = (result == ERROR_SUCCESS || result == ERROR_FILE_NOT_FOUND);
-        }
-        RegCloseKey(hKey);
+        regSuccess = m_pAutoStartManager->ConfigureRegistry(true, exePathStr);
+        taskSuccess = m_pAutoStartManager->ConfigureScheduledTask(false, exePathStr);
+    }
+    else if (enable && asAdmin)
+    {
+        regSuccess = m_pAutoStartManager->ConfigureRegistry(false, exePathStr);
+        taskSuccess = m_pAutoStartManager->ConfigureScheduledTask(true, exePathStr);
     }
     else
     {
-        regSuccess = false;
-    }
-
-    // === TASK SCHEDULER: Admin auto-start ===
-    wchar_t exePath[MAX_PATH] = {0};
-    GetModuleFileNameW(nullptr, exePath, MAX_PATH);
-    wchar_t cmdParams[1024] = {0};
-
-    if (enable && asAdmin)
-    {
-        // Create scheduled task with highest privileges
-        swprintf_s(cmdParams, L"/Create /TN \"%ls\" /TR \"\\\"%ls\\\"\" /SC ONLOGON /RL HIGHEST /F",
-                   TASK_NAME, exePath);
-
-        SHELLEXECUTEINFOW sei = { sizeof(sei) };
-        sei.lpVerb = L"runas";  // Request UAC elevation
-        sei.lpFile = L"schtasks.exe";
-        sei.lpParameters = cmdParams;
-        sei.nShow = SW_HIDE;
-        sei.fMask = SEE_MASK_NOCLOSEPROCESS;
-
-        if (ShellExecuteExW(&sei))
-        {
-            WaitForSingleObject(sei.hProcess, 10000);  // Wait up to 10s
-            DWORD exitCode = 0;
-            GetExitCodeProcess(sei.hProcess, &exitCode);
-            CloseHandle(sei.hProcess);
-            taskSuccess = (exitCode == 0);
-        }
-        else
-        {
-            taskSuccess = false;
-        }
-    }
-    else
-    {
-        // Delete scheduled task (if exists) - need admin to delete admin task
-        swprintf_s(cmdParams, L"/Delete /TN \"%ls\" /F", TASK_NAME);
-
-        SHELLEXECUTEINFOW sei = { sizeof(sei) };
-        sei.lpVerb = L"runas";  // Need admin to delete elevated task
-        sei.lpFile = L"schtasks.exe";
-        sei.lpParameters = cmdParams;
-        sei.nShow = SW_HIDE;
-        sei.fMask = SEE_MASK_NOCLOSEPROCESS;
-
-        if (ShellExecuteExW(&sei))
-        {
-            WaitForSingleObject(sei.hProcess, 5000);
-            DWORD exitCode = 0;
-            GetExitCodeProcess(sei.hProcess, &exitCode);
-            CloseHandle(sei.hProcess);
-            
-            wchar_t dbgDelete[128];
-            swprintf_s(dbgDelete, L"[DEBUG] Task delete exitCode=%lu\n", exitCode);
-            LogDebug(L"Task delete exit code: " + std::to_wstring(exitCode));
-            
-            // Exit code 1 means task not found - that's OK
-            taskSuccess = (exitCode == 0 || exitCode == 1);
-        }
-        else
-        {
-            // ShellExecuteEx failed - try without elevation (task might not exist)
-            DWORD err = GetLastError();
-            LogError(L"Task delete ShellExecuteEx failed, error=" + std::to_wstring(err));
-            
-            // Error 1223 means user cancelled UAC - not a success
-            taskSuccess = (err != ERROR_CANCELLED);
-        }
+        regSuccess = m_pAutoStartManager->ConfigureRegistry(false, exePathStr);
+        taskSuccess = m_pAutoStartManager->ConfigureScheduledTask(false, exePathStr);
     }
 
     if (regSuccess && taskSuccess)
@@ -399,63 +459,34 @@ bool ConfigManager::SetAutoStart(bool enable, bool asAdmin)
 
 bool ConfigManager::IsAutoStartEnabled()
 {
-    // First check Registry (standard auto-start)
-    HKEY hKey = nullptr;
-    LONG result = RegOpenKeyExW(HKEY_CURRENT_USER, AUTOSTART_PATH, 0, KEY_READ, &hKey);
-    
-    if (result == ERROR_SUCCESS)
+    if (m_pAutoStartManager->IsRegistryEnabled())
     {
-        wchar_t value[MAX_PATH] = {0};
-        DWORD valueSize = sizeof(value);
-        DWORD type = REG_SZ;
-
-        result = RegQueryValueExW(hKey, APP_NAME, nullptr, &type, 
-                                  reinterpret_cast<BYTE*>(value), &valueSize);
-        RegCloseKey(hKey);
-        
-        if (result == ERROR_SUCCESS)
-        {
-            LogDebug(L"IsAutoStartEnabled: TRUE (found in registry)");
-            return true;  // Found in registry
-        }
+        LogDebug(L"IsAutoStartEnabled: TRUE (found in registry)");
+        return true;
+    }
+    if (m_pAutoStartManager->IsScheduledTaskEnabled())
+    {
+        LogDebug(L"IsAutoStartEnabled: TRUE (found in task scheduler)");
+        return true;
     }
 
-    // Check Task Scheduler for admin auto-start
-    static const wchar_t* TASK_NAME = L"NetPulseAutoStart";
-    wchar_t cmdParams[256] = {0};
-    swprintf_s(cmdParams, L"/Query /TN \"%ls\"", TASK_NAME);
-
-    SHELLEXECUTEINFOW sei = { sizeof(sei) };
-    sei.lpVerb = nullptr;
-    sei.lpFile = L"schtasks.exe";
-    sei.lpParameters = cmdParams;
-    sei.nShow = SW_HIDE;
-    sei.fMask = SEE_MASK_NOCLOSEPROCESS;
-
-    if (ShellExecuteExW(&sei))
-    {
-        WaitForSingleObject(sei.hProcess, 3000);
-        DWORD exitCode = 0;
-        GetExitCodeProcess(sei.hProcess, &exitCode);
-        CloseHandle(sei.hProcess);
-        
-        if (exitCode == 0)
-        {
-            LogDebug(L"IsAutoStartEnabled: TRUE (found in task scheduler)");
-            return true;  // Found in Task Scheduler
-        }
-    }
-
-    OutputDebugStringW(L"[DEBUG] IsAutoStartEnabled: FALSE (not found)\n");
+    LogDebug(L"IsAutoStartEnabled: FALSE (not found)");
     return false;
 }
 
 bool ConfigManager::OpenSettingsKey(HKEY& hKey)
 {
+    const wchar_t* registryPath = REGISTRY_PATH;
+    const wchar_t* testRegistryPath = _wgetenv(L"NETPULSE_TEST_REGISTRY_PATH");
+    if (testRegistryPath && testRegistryPath[0] != L'\0')
+    {
+        registryPath = testRegistryPath;
+    }
+
     DWORD disposition = 0;
     LONG result = RegCreateKeyExW(
         HKEY_CURRENT_USER,
-        REGISTRY_PATH,
+        registryPath,
         0,
         nullptr,
         REG_OPTION_NON_VOLATILE,
@@ -495,19 +526,25 @@ bool ConfigManager::WriteDWORD(HKEY hKey, const wchar_t* valueName, DWORD value)
 
 std::wstring ConfigManager::ReadString(HKEY hKey, const wchar_t* valueName, const std::wstring& defaultValue)
 {
-    wchar_t buffer[256] = {0};
-    DWORD bufferSize = sizeof(buffer);
     DWORD type = REG_SZ;
+    DWORD bufferSize = 0;
 
-    LONG result = RegQueryValueExW(hKey, valueName, nullptr, &type, 
-                                    reinterpret_cast<BYTE*>(buffer), &bufferSize);
+    LONG result = RegQueryValueExW(hKey, valueName, nullptr, &type, nullptr, &bufferSize);
+    if (result != ERROR_SUCCESS || type != REG_SZ || bufferSize < sizeof(wchar_t))
+    {
+        return defaultValue;
+    }
+
+    std::vector<wchar_t> buffer(bufferSize / sizeof(wchar_t), L'\0');
+    result = RegQueryValueExW(hKey, valueName, nullptr, &type,
+                              reinterpret_cast<BYTE*>(buffer.data()), &bufferSize);
 
     if (result != ERROR_SUCCESS || type != REG_SZ)
     {
         return defaultValue;
     }
 
-    return std::wstring(buffer);
+    return std::wstring(buffer.data());
 }
 
 bool ConfigManager::WriteString(HKEY hKey, const wchar_t* valueName, const std::wstring& value)
@@ -572,7 +609,7 @@ bool ConfigManager::LoadConfigFromFile(AppConfig& config)
     config.darkTheme = ReadIniDWORD(INI_SECTION, L"DarkTheme", defaultDark ? 1 : 0) != 0;
 
     DWORD rawThemeMode = ReadIniDWORD(INI_SECTION, L"ThemeMode", static_cast<DWORD>(ThemeMode::SystemDefault));
-    if (rawThemeMode > static_cast<DWORD>(ThemeMode::Dark))
+    if (rawThemeMode > static_cast<DWORD>(ThemeMode::RosePink))
     {
         bool systemDark = ThemeHelper::IsSystemInDarkMode();
         if (config.darkTheme == systemDark)
@@ -771,42 +808,25 @@ bool ConfigManager::EnablePortableMode(const AppConfig& currentConfig)
 
 bool ConfigManager::SetPortableMode(bool enable)
 {
-    // Store preference in Registry
     HKEY hKey = nullptr;
-    DWORD disposition = 0;
-    LONG result = RegCreateKeyExW(
-        HKEY_CURRENT_USER,
-        REGISTRY_PATH,
-        0,
-        nullptr,
-        REG_OPTION_NON_VOLATILE,
-        KEY_WRITE,
-        nullptr,
-        &hKey,
-        &disposition
-    );
-
-    if (result != ERROR_SUCCESS)
+    if (!OpenSettingsKey(hKey))
     {
         LogError(L"ConfigManager::SetPortableMode: Failed to open registry key");
         return false;
     }
 
-    DWORD value = enable ? 1 : 0;
-    result = RegSetValueExW(hKey, L"UsePortableMode", 0, REG_DWORD,
-                            reinterpret_cast<const BYTE*>(&value), sizeof(DWORD));
+    bool writeOk = WriteDWORD(hKey, L"UsePortableMode", enable ? 1u : 0u);
     RegCloseKey(hKey);
 
-    if (result != ERROR_SUCCESS)
+    if (!writeOk)
     {
         LogError(L"ConfigManager::SetPortableMode: Failed to write UsePortableMode to registry");
         return false;
     }
 
-    // Update internal state: only enable if file also exists
     m_isPortable = enable && m_portableFileExists;
 
-    LogDebug(L"ConfigManager::SetPortableMode: Portable mode " + 
+    LogDebug(L"ConfigManager::SetPortableMode: Portable mode " +
              std::wstring(enable ? L"ENABLED" : L"DISABLED") +
              L", active=" + std::to_wstring(m_isPortable));
     return true;

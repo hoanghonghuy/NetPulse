@@ -1,4 +1,4 @@
-﻿#ifndef NETWORK_MONITOR_APPLICATION_H
+#ifndef NETWORK_MONITOR_APPLICATION_H
 #define NETWORK_MONITOR_APPLICATION_H
 
 #include "NetPulse/Common.h"
@@ -19,8 +19,15 @@
 #include <windows.h>
 #include <memory>
 
+namespace NetPulseTests
+{
+struct ApplicationTestFriend;
+}
+
 namespace NetPulse
 {
+
+class UpdateChecker;
 
 class Application
 {
@@ -66,7 +73,11 @@ public:
     // Hotkey handling
     void OnHotkey(int hotkeyId);
 
+    FloatingWindow* GetFloatingWindow() { return m_pFloatingWindow.get(); }
+    DialogManager* GetDialogManager() { return m_pDialogManager.get(); }
+
 private:
+    friend struct NetPulseTests::ApplicationTestFriend;
     // Window procedure (static for Windows API)
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
     LRESULT CALLBACK InstanceWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -91,6 +102,7 @@ private:
     std::unique_ptr<SystemMonitor> m_pSystemMonitor;
     std::unique_ptr<VpnProxyDetector> m_pVpnDetector;  // Phase 3: VPN/Proxy detection
     std::unique_ptr<ConnectionMonitor> m_pConnectionMonitor;  // Phase 4: Connection watchdog
+    std::unique_ptr<UpdateChecker> m_pUpdateChecker;
 
     // Application state
     AppConfig m_config;

@@ -7,6 +7,7 @@
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
+#include <ws2tcpip.h>
 
 #pragma comment(lib, "iphlpapi.lib")
 #pragma comment(lib, "psapi.lib")
@@ -113,78 +114,111 @@ void PerAppMonitor::Refresh()
 
 void PerAppMonitor::EnumerateTcpConnections()
 {
-    // First call to get required buffer size
     DWORD size = 0;
-    DWORD result = GetExtendedTcpTable(nullptr, &size, FALSE, AF_INET, TCP_TABLE_OWNER_PID_ALL, 0);
-    
-    if (result != ERROR_INSUFFICIENT_BUFFER)
+    GetExtendedTcpTable(nullptr, &size, FALSE, AF_INET, TCP_TABLE_OWNER_PID_ALL, 0);
+    if (size > 0)
     {
-        return;
+        std::vector<BYTE> buffer(size);
+        if (GetExtendedTcpTable(buffer.data(), &size, FALSE, AF_INET, TCP_TABLE_OWNER_PID_ALL, 0) == NO_ERROR)
+        {
+            auto* pTcpTable = reinterpret_cast<PMIB_TCPTABLE_OWNER_PID>(buffer.data());
+            for (DWORD i = 0; i < pTcpTable->dwNumEntries; i++)
+            {
+                const MIB_TCPROW_OWNER_PID& row = pTcpTable->table[i];
+
+                ConnectionInfo conn;
+                conn.processId = row.dwOwningPid;
+                conn.localAddress = IpAddressToString(row.dwLocalAddr);
+                conn.localPort = ntohs(static_cast<USHORT>(row.dwLocalPort));
+                conn.remoteAddress = IpAddressToString(row.dwRemoteAddr);
+                conn.remotePort = ntohs(static_cast<USHORT>(row.dwRemotePort));
+                conn.protocol = L"TCP";
+                conn.state = GetTcpStateString(row.dwState);
+
+                m_connections.push_back(conn);
+            }
+        }
     }
-    
-    std::vector<BYTE> buffer(size);
-    PMIB_TCPTABLE_OWNER_PID pTcpTable = reinterpret_cast<PMIB_TCPTABLE_OWNER_PID>(buffer.data());
-    
-    result = GetExtendedTcpTable(pTcpTable, &size, FALSE, AF_INET, TCP_TABLE_OWNER_PID_ALL, 0);
-    if (result != NO_ERROR)
+
+    size = 0;
+    GetExtendedTcpTable(nullptr, &size, FALSE, AF_INET6, TCP_TABLE_OWNER_PID_ALL, 0);
+    if (size > 0)
     {
-        return;
-    }
-    
-    for (DWORD i = 0; i < pTcpTable->dwNumEntries; i++)
-    {
-        const MIB_TCPROW_OWNER_PID& row = pTcpTable->table[i];
-        
-        // Skip listening sockets in some cases (optional)
-        // if (row.dwState == MIB_TCP_STATE_LISTEN) continue;
-        
-        ConnectionInfo conn;
-        conn.processId = row.dwOwningPid;
-        conn.localAddress = IpAddressToString(row.dwLocalAddr);
-        conn.localPort = ntohs(static_cast<USHORT>(row.dwLocalPort));
-        conn.remoteAddress = IpAddressToString(row.dwRemoteAddr);
-        conn.remotePort = ntohs(static_cast<USHORT>(row.dwRemotePort));
-        conn.protocol = L"TCP";
-        conn.state = GetTcpStateString(row.dwState);
-        
-        m_connections.push_back(conn);
+        std::vector<BYTE> buffer6(size);
+        if (GetExtendedTcpTable(buffer6.data(), &size, FALSE, AF_INET6, TCP_TABLE_OWNER_PID_ALL, 0) == NO_ERROR)
+        {
+            auto* pTcp6Table = reinterpret_cast<PMIB_TCP6TABLE_OWNER_PID>(buffer6.data());
+            for (DWORD i = 0; i < pTcp6Table->dwNumEntries; i++)
+            {
+                const MIB_TCP6ROW_OWNER_PID& row = pTcp6Table->table[i];
+
+                ConnectionInfo conn;
+                conn.processId = row.dwOwningPid;
+                conn.localAddress = Ip6AddressToString(row.ucLocalAddr);
+                conn.localPort = ntohs(static_cast<USHORT>(row.dwLocalPort));
+                conn.remoteAddress = Ip6AddressToString(row.ucRemoteAddr);
+                conn.remotePort = ntohs(static_cast<USHORT>(row.dwRemotePort));
+                conn.protocol = L"TCP6";
+                conn.state = GetTcpStateString(row.dwState);
+
+                m_connections.push_back(conn);
+            }
+        }
     }
 }
 
 void PerAppMonitor::EnumerateUdpConnections()
 {
-    // First call to get required buffer size
     DWORD size = 0;
-    DWORD result = GetExtendedUdpTable(nullptr, &size, FALSE, AF_INET, UDP_TABLE_OWNER_PID, 0);
-    
-    if (result != ERROR_INSUFFICIENT_BUFFER)
+    GetExtendedUdpTable(nullptr, &size, FALSE, AF_INET, UDP_TABLE_OWNER_PID, 0);
+    if (size > 0)
     {
-        return;
+        std::vector<BYTE> buffer(size);
+        if (GetExtendedUdpTable(buffer.data(), &size, FALSE, AF_INET, UDP_TABLE_OWNER_PID, 0) == NO_ERROR)
+        {
+            auto* pUdpTable = reinterpret_cast<PMIB_UDPTABLE_OWNER_PID>(buffer.data());
+            for (DWORD i = 0; i < pUdpTable->dwNumEntries; i++)
+            {
+                const MIB_UDPROW_OWNER_PID& row = pUdpTable->table[i];
+
+                ConnectionInfo conn;
+                conn.processId = row.dwOwningPid;
+                conn.localAddress = IpAddressToString(row.dwLocalAddr);
+                conn.localPort = ntohs(static_cast<USHORT>(row.dwLocalPort));
+                conn.remoteAddress = L"*";
+                conn.remotePort = 0;
+                conn.protocol = L"UDP";
+                conn.state = L"";
+
+                m_connections.push_back(conn);
+            }
+        }
     }
-    
-    std::vector<BYTE> buffer(size);
-    PMIB_UDPTABLE_OWNER_PID pUdpTable = reinterpret_cast<PMIB_UDPTABLE_OWNER_PID>(buffer.data());
-    
-    result = GetExtendedUdpTable(pUdpTable, &size, FALSE, AF_INET, UDP_TABLE_OWNER_PID, 0);
-    if (result != NO_ERROR)
+
+    size = 0;
+    GetExtendedUdpTable(nullptr, &size, FALSE, AF_INET6, UDP_TABLE_OWNER_PID, 0);
+    if (size > 0)
     {
-        return;
-    }
-    
-    for (DWORD i = 0; i < pUdpTable->dwNumEntries; i++)
-    {
-        const MIB_UDPROW_OWNER_PID& row = pUdpTable->table[i];
-        
-        ConnectionInfo conn;
-        conn.processId = row.dwOwningPid;
-        conn.localAddress = IpAddressToString(row.dwLocalAddr);
-        conn.localPort = ntohs(static_cast<USHORT>(row.dwLocalPort));
-        conn.remoteAddress = L"*";
-        conn.remotePort = 0;
-        conn.protocol = L"UDP";
-        conn.state = L"";
-        
-        m_connections.push_back(conn);
+        std::vector<BYTE> buffer6(size);
+        if (GetExtendedUdpTable(buffer6.data(), &size, FALSE, AF_INET6, UDP_TABLE_OWNER_PID, 0) == NO_ERROR)
+        {
+            auto* pUdp6Table = reinterpret_cast<PMIB_UDP6TABLE_OWNER_PID>(buffer6.data());
+            for (DWORD i = 0; i < pUdp6Table->dwNumEntries; i++)
+            {
+                const MIB_UDP6ROW_OWNER_PID& row = pUdp6Table->table[i];
+
+                ConnectionInfo conn;
+                conn.processId = row.dwOwningPid;
+                conn.localAddress = Ip6AddressToString(row.ucLocalAddr);
+                conn.localPort = ntohs(static_cast<USHORT>(row.dwLocalPort));
+                conn.remoteAddress = L"*";
+                conn.remotePort = 0;
+                conn.protocol = L"UDP6";
+                conn.state = L"";
+
+                m_connections.push_back(conn);
+            }
+        }
     }
 }
 
@@ -197,11 +231,11 @@ void PerAppMonitor::AggregateByProcess()
         auto& usage = usageMap[conn.processId];
         usage.processId = conn.processId;
         
-        if (conn.protocol == L"TCP")
+        if (conn.protocol == L"TCP" || conn.protocol == L"TCP6")
         {
             usage.tcpConnections++;
         }
-        else if (conn.protocol == L"UDP")
+        else if (conn.protocol == L"UDP" || conn.protocol == L"UDP6")
         {
             usage.udpConnections++;
         }
@@ -261,6 +295,15 @@ void PerAppMonitor::AggregateByProcess()
             }
             return (a.tcpConnections + a.udpConnections) > (b.tcpConnections + b.udpConnections);
         });
+}
+
+std::wstring PerAppMonitor::Ip6AddressToString(const UCHAR addr[16])
+{
+    wchar_t buffer[INET6_ADDRSTRLEN] = {0};
+    IN6_ADDR in6;
+    memcpy(&in6, addr, 16);
+    InetNtopW(AF_INET6, &in6, buffer, INET6_ADDRSTRLEN);
+    return buffer;
 }
 
 std::wstring PerAppMonitor::IpAddressToString(DWORD ip)

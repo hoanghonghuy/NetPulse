@@ -1,4 +1,4 @@
-﻿#include "NetPulse/Common.h"
+#include "NetPulse/Common.h"
 #include "NetPulse/DialogManager.h"
 #include "NetPulse/NetworkMonitor.h"
 #include "NetPulse/SettingsDialog.h"
@@ -119,84 +119,9 @@ void DialogManager::ShowSettings()
         // Set external handle storage for tracking
         dlg.SetDialogHandleStorage(&m_hSettingsDialog);
 
-        // Set up callback for Apply button
         dlg.SetSettingsChangedCallback([this, &oldConfig]()
         {
-            // Reload config
-            if (m_configReloadCallback && m_configReloadCallback())
-            {
-                SetDebugLoggingEnabled(m_pConfig->debugLogging);
-                ThemeHelper::AllowDarkModeForApp(m_pConfig->darkTheme);
-
-                // Apply timer changes
-                if (m_pConfig->updateInterval != oldConfig.updateInterval)
-                {
-                    if (m_timerUpdateCallback)
-                    {
-                        m_timerUpdateCallback(m_pConfig->updateInterval);
-                    }
-                }
-
-                if (m_pConfig->historyAutoTrimDays != oldConfig.historyAutoTrimDays && 
-                    m_pConfig->historyAutoTrimDays > 0)
-                {
-                    HistoryLogger::Instance().TrimToRecentDays(m_pConfig->historyAutoTrimDays);
-                }
-
-                if (m_pConfig->language != oldConfig.language)
-                {
-                    if (m_languageApplyCallback)
-                    {
-                        m_languageApplyCallback();
-                    }
-                }
-
-                // Update oldConfig for next comparison
-                oldConfig = *m_pConfig;
-
-                // Apply overlay style changes
-                if (m_pUpdateCoordinator)
-                {
-                    m_pUpdateCoordinator->ApplyOverlayStyleFromConfig();
-                }
-
-                // Apply all other settings (FloatingWindow, Hotkey, Ping, TrayIcon)
-                if (m_applyAllSettingsCallback)
-                {
-                    m_applyAllSettingsCallback();
-                }
-
-                // Refresh UI of open dialogs
-                bool useDarkTitleBar = IsDarkThemeEnabled(*m_pConfig);
-                bool useCustomTheme = IsCustomThemeEnabled(*m_pConfig);
-                
-                if (m_hDashboardDialog && IsWindow(m_hDashboardDialog))
-                {
-                    ThemeHelper::ApplyDarkTitleBar(m_hDashboardDialog, useDarkTitleBar);
-                    DialogThemeHelper::ApplyToDialog(m_hDashboardDialog, useCustomTheme);
-                    InvalidateRect(m_hDashboardDialog, nullptr, TRUE);
-                    // Send dummy update to force control refresh if possible
-                    SendMessage(m_hDashboardDialog, WM_UPDATE_STATS, 0, 0); 
-                }
-                if (m_hHistoryDialog && IsWindow(m_hHistoryDialog))
-                {
-                    ThemeHelper::ApplyDarkTitleBar(m_hHistoryDialog, useDarkTitleBar);
-                    DialogThemeHelper::ApplyToDialog(m_hHistoryDialog, useCustomTheme);
-                    InvalidateRect(m_hHistoryDialog, nullptr, TRUE);
-                }
-                if (m_hConnectionLogDialog && IsWindow(m_hConnectionLogDialog))
-                {
-                    ThemeHelper::ApplyDarkTitleBar(m_hConnectionLogDialog, useDarkTitleBar);
-                    DialogThemeHelper::ApplyToDialog(m_hConnectionLogDialog, useCustomTheme);
-                    InvalidateRect(m_hConnectionLogDialog, nullptr, TRUE);
-                }
-
-                // Refresh UI logic update
-                if (m_pUpdateCoordinator)
-                {
-                    m_pUpdateCoordinator->OnNetworkUpdateTick();
-                }
-            }
+            HandleSettingsApplied(oldConfig);
         });
 
         dialogResult = dlg.Show(m_parentWindow, m_pConfigProvider, m_pNetworkMonitor);
@@ -234,6 +159,79 @@ void DialogManager::ShowSettings()
     }
 
     m_hSettingsDialog = nullptr;
+}
+
+void DialogManager::HandleSettingsApplied(AppConfig& oldConfig)
+{
+    if (!m_configReloadCallback || !m_configReloadCallback())
+    {
+        return;
+    }
+
+    SetDebugLoggingEnabled(m_pConfig->debugLogging);
+    ThemeHelper::AllowDarkModeForApp(m_pConfig->darkTheme);
+
+    if (m_pConfig->updateInterval != oldConfig.updateInterval)
+    {
+        if (m_timerUpdateCallback)
+        {
+            m_timerUpdateCallback(m_pConfig->updateInterval);
+        }
+    }
+
+    if (m_pConfig->historyAutoTrimDays != oldConfig.historyAutoTrimDays &&
+        m_pConfig->historyAutoTrimDays > 0)
+    {
+        HistoryLogger::Instance().TrimToRecentDays(m_pConfig->historyAutoTrimDays);
+    }
+
+    if (m_pConfig->language != oldConfig.language)
+    {
+        if (m_languageApplyCallback)
+        {
+            m_languageApplyCallback();
+        }
+    }
+
+    oldConfig = *m_pConfig;
+
+    if (m_pUpdateCoordinator)
+    {
+        m_pUpdateCoordinator->ApplyOverlayStyleFromConfig();
+    }
+
+    if (m_applyAllSettingsCallback)
+    {
+        m_applyAllSettingsCallback();
+    }
+
+    bool useDarkTitleBar = IsDarkThemeEnabled(*m_pConfig);
+    bool useCustomTheme = IsCustomThemeEnabled(*m_pConfig);
+
+    if (m_hDashboardDialog && IsWindow(m_hDashboardDialog))
+    {
+        ThemeHelper::ApplyDarkTitleBar(m_hDashboardDialog, useDarkTitleBar);
+        DialogThemeHelper::ApplyToDialog(m_hDashboardDialog, useCustomTheme);
+        InvalidateRect(m_hDashboardDialog, nullptr, TRUE);
+        SendMessage(m_hDashboardDialog, WM_UPDATE_STATS, 0, 0);
+    }
+    if (m_hHistoryDialog && IsWindow(m_hHistoryDialog))
+    {
+        ThemeHelper::ApplyDarkTitleBar(m_hHistoryDialog, useDarkTitleBar);
+        DialogThemeHelper::ApplyToDialog(m_hHistoryDialog, useCustomTheme);
+        InvalidateRect(m_hHistoryDialog, nullptr, TRUE);
+    }
+    if (m_hConnectionLogDialog && IsWindow(m_hConnectionLogDialog))
+    {
+        ThemeHelper::ApplyDarkTitleBar(m_hConnectionLogDialog, useDarkTitleBar);
+        DialogThemeHelper::ApplyToDialog(m_hConnectionLogDialog, useCustomTheme);
+        InvalidateRect(m_hConnectionLogDialog, nullptr, TRUE);
+    }
+
+    if (m_pUpdateCoordinator)
+    {
+        m_pUpdateCoordinator->OnNetworkUpdateTick();
+    }
 }
 
 void DialogManager::ShowDashboard()
@@ -325,15 +323,22 @@ void DialogManager::ShowSpeedTest()
 // Helper for About Dialog
 static INT_PTR CALLBACK AboutDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    static AppConfig* s_pConfig = nullptr;
+    AppConfig* pConfig = nullptr;
+    
+    if (message == WM_INITDIALOG)
+    {
+        pConfig = reinterpret_cast<AppConfig*>(lParam);
+        SetWindowLongPtrW(hDlg, DWLP_USER, reinterpret_cast<LONG_PTR>(pConfig));
+    }
+    else
+    {
+        pConfig = reinterpret_cast<AppConfig*>(GetWindowLongPtrW(hDlg, DWLP_USER));
+    }
     
     switch (message)
     {
     case WM_INITDIALOG:
         {
-            // Store config pointer passed via lParam
-            s_pConfig = reinterpret_cast<AppConfig*>(lParam);
-            
             // Center the dialog relative to parent (or desktop if no parent/hidden)
             HWND hParent = GetParent(hDlg);
             RECT rcOwner, rcDlg, rc;
@@ -370,9 +375,9 @@ static INT_PTR CALLBACK AboutDialogProc(HWND hDlg, UINT message, WPARAM wParam, 
                 SWP_NOSIZE);
 
             // Apply theme LAST, matching SpeedTestDialog logic
-            if (s_pConfig && IsCustomThemeEnabled(*s_pConfig))
+            if (pConfig && IsCustomThemeEnabled(*pConfig))
             {
-                bool useDarkTitleBar = IsDarkThemeEnabled(*s_pConfig);
+                bool useDarkTitleBar = IsDarkThemeEnabled(*pConfig);
                 ThemeHelper::ApplyDarkTitleBar(hDlg, useDarkTitleBar);
                 
                 // Make OK button owner-draw for dark theme
@@ -398,7 +403,7 @@ static INT_PTR CALLBACK AboutDialogProc(HWND hDlg, UINT message, WPARAM wParam, 
         }
 
     case WM_DRAWITEM:
-        if (s_pConfig && IsCustomThemeEnabled(*s_pConfig))
+        if (pConfig && IsCustomThemeEnabled(*pConfig))
         {
             DRAWITEMSTRUCT* pDrawItem = reinterpret_cast<DRAWITEMSTRUCT*>(lParam);
             if (pDrawItem->CtlType == ODT_BUTTON && pDrawItem->CtlID == IDOK)
@@ -433,7 +438,7 @@ static INT_PTR CALLBACK AboutDialogProc(HWND hDlg, UINT message, WPARAM wParam, 
         
     case WM_CTLCOLORDLG:
     case WM_CTLCOLORSTATIC:
-        if (s_pConfig && IsCustomThemeEnabled(*s_pConfig))
+        if (pConfig && IsCustomThemeEnabled(*pConfig))
         {
             HDC hdc = (HDC)wParam;
             const auto& colors = ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme());

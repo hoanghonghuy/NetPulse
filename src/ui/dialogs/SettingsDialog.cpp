@@ -1,17 +1,42 @@
-﻿#include "NetPulse/SettingsDialog.h"
+#include "NetPulse/SettingsDialog.h"
 #include "NetPulse/Interfaces/IConfigProvider.h"
 #include "NetPulse/Interfaces/INetworkStatsProvider.h"
 #include "NetPulse/DialogThemeHelper.h"
 #include "NetPulse/Utils.h"
 #include "NetPulse/ThemeHelper.h"
 #include "../../../resources/resource.h"
+#include <cmath>
 #include <windowsx.h>
 #include <commctrl.h>
 #include <uxtheme.h>
+#include <ShlObj.h>
 #include <vector>
-
 namespace NetPulse
 {
+
+static bool IsRunningInProgramFiles()
+{
+    wchar_t exePath[MAX_PATH] = {0};
+    if (GetModuleFileNameW(nullptr, exePath, MAX_PATH))
+    {
+        wchar_t progFiles[MAX_PATH] = {0};
+        wchar_t progFilesX86[MAX_PATH] = {0};
+        SHGetFolderPathW(nullptr, CSIDL_PROGRAM_FILES, nullptr, 0, progFiles);
+        SHGetFolderPathW(nullptr, CSIDL_PROGRAM_FILESX86, nullptr, 0, progFilesX86);
+        
+        auto isUnderFolder = [](const std::wstring& path, const std::wstring& folder) -> bool {
+            if (folder.empty() || path.empty()) return false;
+            if (path.size() < folder.size()) return false;
+            if (_wcsnicmp(path.c_str(), folder.c_str(), folder.size()) != 0) return false;
+            if (path.size() == folder.size()) return true;
+            wchar_t nextChar = path[folder.size()];
+            return (nextChar == L'\\' || nextChar == L'/');
+        };
+        return isUnderFolder(exePath, progFiles) || isUnderFolder(exePath, progFilesX86);
+    }
+    return false;
+}
+
 
 // Tab Control subclass procedure for dark theme
 static WNDPROC s_originalTabProc = nullptr;
@@ -55,7 +80,7 @@ static LRESULT CALLBACK DarkTabProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
         FillRect(hdc, &bottomBorder, borderBrush);
         
         // Top - segments skipping active tab
-        RECT selRect = {0};
+        RECT selRect = {};
         if (sel >= 0 && sel < tabCount)
         {
             TabCtrl_GetItemRect(hwnd, sel, &selRect);
@@ -162,7 +187,7 @@ static LRESULT CALLBACK DarkComboBoxProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
         LRESULT result = CallWindowProcW(oldProc, hwnd, msg, wParam, lParam);
 
         // Now draw over with theme colors
-        COMBOBOXINFO cbi = {0};
+        COMBOBOXINFO cbi = {};
         cbi.cbSize = sizeof(COMBOBOXINFO);
         if (GetComboBoxInfo(hwnd, &cbi))
         {
@@ -586,7 +611,7 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
             {
                 // Position them below Connection Notify checkbox in General tab
                 HWND hConnNotify = GetDlgItem(hDlg, IDC_CONNECTION_NOTIFY_CHECK);
-                RECT rcConnNotify = {0};
+                RECT rcConnNotify = {};
                 if (hConnNotify)
                 {
                     GetWindowRect(hConnNotify, &rcConnNotify);
@@ -596,14 +621,40 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 HFONT hFont = reinterpret_cast<HFONT>(SendMessageW(hDlg, WM_GETFONT, 0, 0));
                 int baseY = rcConnNotify.bottom + 15;
                 
+                // Detect if running from Program Files
+                bool inProgramFiles = IsRunningInProgramFiles();
+
                 // Create checkbox for "Use Portable Mode"
                 std::wstring checkLabel = LoadStringResource(IDS_PORTABLE_MODE_CHECK);
                 if (checkLabel.empty()) checkLabel = L"Use Portable Mode";
                 
+                if (inProgramFiles)
+                {
+                    std::wstring suffix = L" (N/A in Program Files)";
+                    if (m_configCopy.language == AppLanguage::Vietnamese)
+                    {
+                        suffix = L" (Không khả dụng trong Program Files)";
+                    }
+                    else if (m_configCopy.language == AppLanguage::Japanese)
+                    {
+                        // L" (Program Files内では無効)" có nghĩa là "(Không khả dụng trong Program Files)" trong tiếng Nhật.
+                        suffix = L" (Program Files内では無効)";
+                    }
+                    else if (m_configCopy.language == AppLanguage::Korean)
+                    {
+                        suffix = L" (Program Files에서 사용 불가)";
+                    }
+                    else if (m_configCopy.language == AppLanguage::ChineseSimplified)
+                    {
+                        suffix = L" (在 Program Files 中不可用)";
+                    }
+                    checkLabel += suffix;
+                }
+                
                 HWND hPortableCheck = CreateWindowExW(
                     0, L"BUTTON", checkLabel.c_str(),
                     WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
-                    rcConnNotify.left, baseY, 160, 20,
+                    rcConnNotify.left, baseY, inProgramFiles ? 320 : 160, 20,
                     hDlg, reinterpret_cast<HMENU>(static_cast<INT_PTR>(IDC_PORTABLE_MODE_CHECK)),
                     GetModuleHandleW(nullptr), nullptr
                 );
@@ -639,15 +690,32 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                     // Checkbox: enabled only if file exists, checked if portable mode active
                     if (hPortableCheck)
                     {
-                        EnableWindow(hPortableCheck, fileExists);
-                        Button_SetCheck(hPortableCheck, isPortable ? BST_CHECKED : BST_UNCHECKED);
-                        SetCheckboxState(IDC_PORTABLE_MODE_CHECK, isPortable);
+                        if (inProgramFiles)
+                        {
+                            EnableWindow(hPortableCheck, FALSE);
+                            Button_SetCheck(hPortableCheck, BST_UNCHECKED);
+                            SetCheckboxState(IDC_PORTABLE_MODE_CHECK, false);
+                        }
+                        else
+                        {
+                            EnableWindow(hPortableCheck, fileExists);
+                            Button_SetCheck(hPortableCheck, isPortable ? BST_CHECKED : BST_UNCHECKED);
+                            SetCheckboxState(IDC_PORTABLE_MODE_CHECK, isPortable);
+                        }
                     }
                     
-                    // Button: disabled if file already exists
+                    // Button: disabled if file already exists or running from Program Files
                     if (hPortableBtn)
                     {
-                        EnableWindow(hPortableBtn, !fileExists);
+                        if (inProgramFiles)
+                        {
+                            EnableWindow(hPortableBtn, FALSE);
+                            ShowWindow(hPortableBtn, SW_HIDE);
+                        }
+                        else
+                        {
+                            EnableWindow(hPortableBtn, !fileExists);
+                        }
                     }
                 }
             }
@@ -2233,7 +2301,15 @@ void SettingsDialog::SwitchTab(HWND hDlg, int tabIndex)
             HWND hCtrl = GetDlgItem(hDlg, ids[i]);
             if (hCtrl)
             {
-                ShowWindow(hCtrl, cmdShow);
+                if (show && IsRunningInProgramFiles() && 
+                    (ids[i] == IDC_PORTABLE_MODE_CHECK || ids[i] == IDC_PORTABLE_MODE_BUTTON))
+                {
+                    ShowWindow(hCtrl, SW_HIDE);
+                }
+                else
+                {
+                    ShowWindow(hCtrl, cmdShow);
+                }
             }
         }
     };

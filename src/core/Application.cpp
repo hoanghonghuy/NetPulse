@@ -1,4 +1,5 @@
-﻿#include "NetPulse/Application.h"
+#include "NetPulse/Application.h"
+#include "NetPulse/ApplicationRuntime.h"
 #include "NetPulse/Utils.h"
 #include "NetPulse/HistoryLogger.h"
 #include "NetPulse/SettingsDialog.h"
@@ -68,6 +69,7 @@ bool Application::Initialize(HINSTANCE hInstance)
 
     // Create and initialize components
     m_pConfigManager = std::make_unique<ConfigManager>();
+    m_pUpdateChecker = std::make_unique<UpdateChecker>();
     if (!LoadConfig())
     {
         // Use default config if load fails
@@ -110,25 +112,34 @@ bool Application::Initialize(HINSTANCE hInstance)
 
     // Create and initialize tray icon
     m_pTrayIcon = std::make_unique<TrayIcon>();
+    m_pTrayIcon->SetConfigSource(&m_config);
     if (!m_pTrayIcon->Initialize(m_hwnd))
     {
-        ShowErrorMessage(LoadStringResource(IDS_ERR_INIT_TRAY_ICON));
-        return false;
+        if (ApplicationRuntime::IsTestMode())
+        {
+            LogDebug(L"Application::Initialize: TrayIcon init failed in test mode, continuing without tray");
+            m_pTrayIcon.reset();
+        }
+        else
+        {
+            ShowErrorMessage(LoadStringResource(IDS_ERR_INIT_TRAY_ICON));
+            return false;
+        }
     }
 
-    // Set tray icon callbacks and configuration source
-    m_pTrayIcon->SetMenuCallback([this](UINT menuId) { OnMenuCommand(menuId); });
-    m_pTrayIcon->SetConfigSource(&m_config);
-    m_pTrayIcon->SetOverlayVisibilityProvider([this]() -> bool {
-        return m_pTaskbarOverlay != nullptr && m_pTaskbarOverlay->IsVisible();
-    });
-    m_pTrayIcon->SetFloatingWindowVisibilityProvider([this]() -> bool {
-        return m_pFloatingWindow != nullptr && m_pFloatingWindow->IsVisible();
-    });
-    m_pTrayIcon->SetDoubleClickCallback([this]() {
-        // Double-click opens Dashboard
-        OnMenuCommand(IDM_DASHBOARD);
-    });
+    if (m_pTrayIcon)
+    {
+        m_pTrayIcon->SetMenuCallback([this](UINT menuId) { OnMenuCommand(menuId); });
+        m_pTrayIcon->SetOverlayVisibilityProvider([this]() -> bool {
+            return m_pTaskbarOverlay != nullptr && m_pTaskbarOverlay->IsUserWantsVisible();
+        });
+        m_pTrayIcon->SetFloatingWindowVisibilityProvider([this]() -> bool {
+            return m_pFloatingWindow != nullptr && m_pFloatingWindow->IsVisible();
+        });
+        m_pTrayIcon->SetDoubleClickCallback([this]() {
+            OnMenuCommand(IDM_DASHBOARD);
+        });
+    }
 
     // Create and initialize taskbar overlay (enabled, same behavior as legacy main.cpp)
     m_pTaskbarOverlay = std::make_unique<TaskbarOverlay>();
@@ -210,17 +221,7 @@ bool Application::Initialize(HINSTANCE hInstance)
         m_pTaskbarOverlay.get(),
         m_pPingMonitor.get()
     );
-    m_pUpdateCoordinator->SetLogHistoryCallback([this](unsigned long long bytesDown, unsigned long long bytesUp) {
-        // Get interface name for logging
-        std::wstring ifaceName = m_config.selectedInterface;
-        if (ifaceName.empty())
-        {
-            ifaceName = LoadStringResource(IDS_ALL_INTERFACES);
-            if (ifaceName.empty())
-            {
-                ifaceName = L"All Interfaces";
-            }
-        }
+    m_pUpdateCoordinator->SetLogHistoryCallback([this](unsigned long long bytesDown, unsigned long long bytesUp, const std::wstring& ifaceName) {
         HistoryLogger::Instance().AppendSample(ifaceName, bytesDown, bytesUp);
     });
 
@@ -320,13 +321,7 @@ bool Application::Initialize(HINSTANCE hInstance)
         m_pFloatingWindow->SetShowDataToday(m_config.floatingShowDataToday);
         m_pFloatingWindow->SetShowSparkline(m_config.floatingShowSparkline);
         m_pFloatingWindow->SetSparklineTimeRange(m_config.sparklineTimeRange);
-        
-        // Set callback to save sparkline time range when changed via context menu
-        m_pFloatingWindow->SetConfigChangeCallback([this](int timeRange) {
-            m_config.sparklineTimeRange = timeRange;
-            m_pConfigManager->SaveConfig(m_config);
-        });
-        
+
         // Set position if saved
         // Set position if saved, but verify it's on screen (DPI changes can push it off)
         int screenW = GetSystemMetrics(SM_CXSCREEN);
@@ -424,39 +419,72 @@ void Application::Cleanup()
 
     LogDebug(L"Application::Cleanup: starting");
 
-    // Cleanup hotkey manager (auto-unregisters all hotkeys)
-    m_pHotkeyManager.reset();
+    // ===== BƯỚC 0: Kill ALL timers NGAY ĐẦU =====
+    // Đảm bảo không có WM_TIMER nào fire trong quá trình dọn dẹp
+    KillTimer(m_hwnd, TIMER_UPDATE_NETWORK);
+    KillTimer(m_hwnd, TIMER_PING);
+    KillTimer(m_hwnd, TIMER_VPN_UPDATE);
+    KillTimer(m_hwnd, TIMER_TRAY_ANIMATION);
 
-    // Stop ping monitor
+    // ===== BƯỚC 1: Dừng thread nền và đóng dialogs trước =====
+    // Hủy DialogManager trước để đóng tất cả cửa sổ hội thoại (About, Settings, v.v.)
+    // giúp tránh truy cập vào các component bị hủy sau đó.
+    if (m_pDialogManager)
+    {
+        m_pDialogManager.reset();
+    }
+
+    // UpdateChecker (có background future/thread)
+    if (m_pUpdateChecker)
+    {
+        m_pUpdateChecker->CancelAndWait();
+        m_pUpdateChecker.reset();
+    }
+
+    // VPN detector (có async future)
+    if (m_pVpnDetector)
+    {
+        m_pVpnDetector->Cleanup();
+        m_pVpnDetector.reset();
+    }
+
+    // ConnectionMonitor (có background thread)
+    if (m_pConnectionMonitor)
+    {
+        m_pConnectionMonitor->Stop();
+        m_pConnectionMonitor.reset();
+    }
+
+    // PingMonitor
     if (m_pPingMonitor)
     {
-        KillTimer(m_hwnd, TIMER_PING);
         m_pPingMonitor->Cleanup();
         m_pPingMonitor.reset();
     }
 
-    // Stop network monitoring
+    // NetworkMonitor
     if (m_pNetworkMonitor)
     {
         m_pNetworkMonitor->Stop();
         m_pNetworkMonitor.reset();
     }
 
-    // Cleanup taskbar overlay
+    // ===== BƯỚC 2: Dọn dẹp giao diện UI (không còn thread nào chạy) =====
+    m_pHotkeyManager.reset();
+
     if (m_pTaskbarOverlay)
     {
         m_pTaskbarOverlay->Cleanup();
         m_pTaskbarOverlay.reset();
     }
 
-    // Cleanup tray icon
     if (m_pTrayIcon)
     {
         m_pTrayIcon->Cleanup();
         m_pTrayIcon.reset();
     }
 
-    // Cleanup floating window (save position before destroying)
+    // Lưu vị trí cửa sổ Floating trước khi hủy
     if (m_pFloatingWindow)
     {
         if (m_pFloatingWindow->IsVisible())
@@ -465,38 +493,28 @@ void Application::Cleanup()
             m_pFloatingWindow->GetPosition(x, y);
             m_config.floatingWindowX = x;
             m_config.floatingWindowY = y;
-            SaveConfig();
+            if (!SaveConfig())
+            {
+                LogError(L"Failed to save floating window position during cleanup");
+            }
         }
         m_pFloatingWindow->Destroy();
         m_pFloatingWindow.reset();
     }
 
-    // Cleanup system monitor
     if (m_pSystemMonitor)
     {
         m_pSystemMonitor->Shutdown();
         m_pSystemMonitor.reset();
     }
 
-    // Cleanup VPN detector (Phase 3)
-    if (m_pVpnDetector)
-    {
-        KillTimer(m_hwnd, TIMER_VPN_UPDATE);
-        m_pVpnDetector->Cleanup();
-        m_pVpnDetector.reset();
-    }
+    m_pMenuHandler.reset();
+    m_pUpdateCoordinator.reset();
+    m_pLanguageManager.reset();
 
-    // Cleanup ConnectionMonitor (Phase 4)
-    if (m_pConnectionMonitor)
-    {
-        m_pConnectionMonitor->Stop();
-        m_pConnectionMonitor.reset();
-    }
-
-    // Cleanup config manager
+    // ===== BƯỚC 3: Dọn dẹp managers & window =====
     m_pConfigManager.reset();
 
-    // Destroy main window
     if (m_hwnd)
     {
         DestroyWindow(m_hwnd);
@@ -660,10 +678,10 @@ LRESULT CALLBACK Application::InstanceWindowProc(HWND hwnd, UINT message, WPARAM
                         m_pFloatingWindow->UpdateRAM(m_pSystemMonitor->GetRAMPercent());
                     }
                     
-                    // Update network speed from network monitor
-                    if (m_pNetworkMonitor)
+                    // Update network speed using same stats scope as tray/overlay
+                    if (m_pUpdateCoordinator)
                     {
-                        NetworkStats stats = m_pNetworkMonitor->GetAggregatedStats();
+                        NetworkStats stats = m_pUpdateCoordinator->GetCurrentStats();
                         m_pFloatingWindow->UpdateSpeed(
                             stats.currentDownloadSpeed,
                             stats.currentUploadSpeed,
@@ -711,7 +729,7 @@ LRESULT CALLBACK Application::InstanceWindowProc(HWND hwnd, UINT message, WPARAM
                     }
                 }
             }
-            else if (wParam == 9001) // TrayIcon ANIMATION_TIMER_ID
+            else if (wParam == TIMER_TRAY_ANIMATION)
             {
                 if (m_pTrayIcon)
                 {
@@ -752,6 +770,8 @@ LRESULT CALLBACK Application::InstanceWindowProc(HWND hwnd, UINT message, WPARAM
             // Kill timers
             KillTimer(hwnd, TIMER_UPDATE_NETWORK);
             KillTimer(hwnd, TIMER_PING);
+            KillTimer(hwnd, TIMER_VPN_UPDATE);
+            KillTimer(hwnd, TIMER_TRAY_ANIMATION);
             
             // Post quit message
             PostQuitMessage(0);
@@ -787,7 +807,7 @@ LRESULT CALLBACK Application::InstanceWindowProc(HWND hwnd, UINT message, WPARAM
 
 bool Application::RegisterWindowClass()
 {
-    WNDCLASSEXW wc = {0};
+    WNDCLASSEXW wc = {};
     wc.cbSize = sizeof(WNDCLASSEXW);
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = m_hInstance;
@@ -798,8 +818,12 @@ bool Application::RegisterWindowClass()
 
     if (!RegisterClassExW(&wc))
     {
-        ShowErrorMessage(LoadStringResource(IDS_ERR_REGISTER_WINDOW_CLASS));
-        return false;
+        const DWORD error = GetLastError();
+        if (error != ERROR_CLASS_ALREADY_EXISTS)
+        {
+            ShowErrorMessage(LoadStringResource(IDS_ERR_REGISTER_WINDOW_CLASS));
+            return false;
+        }
     }
 
     return true;
@@ -848,7 +872,7 @@ void Application::OnHotkey(int hotkeyId)
     {
         if (m_pTaskbarOverlay)
         {
-            bool isVisible = m_pTaskbarOverlay->IsVisible();
+            bool isVisible = m_pTaskbarOverlay->IsUserWantsVisible();
             m_pTaskbarOverlay->Show(!isVisible);
             LogDebug(L"Application::OnHotkey: Toggled overlay visibility");
         }
@@ -858,7 +882,10 @@ void Application::OnHotkey(int hotkeyId)
 
 void Application::CheckForUpdates()
 {
-    UpdateChecker::CheckForUpdates(nullptr, false);
+    if (m_pUpdateChecker)
+    {
+        m_pUpdateChecker->CheckForUpdatesAsync(nullptr, false);
+    }
 }
 
 } // namespace NetPulse

@@ -121,6 +121,7 @@ private:
     void EnumerateUdpConnections();
     void AggregateByProcess();
     static std::wstring IpAddressToString(DWORD ip);
+    static std::wstring Ip6AddressToString(const UCHAR addr[16]);
     static std::wstring GetTcpStateString(DWORD state);
 
     bool m_initialized;

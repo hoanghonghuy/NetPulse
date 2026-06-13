@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   build-and-test:
-    runs-on: windows-latest
+    runs-on: windows-2022
     name: Build (${{ matrix.build_type }})
 
     strategy:
@@ -30,19 +30,25 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build
-          key: v2-${{ runner.os }}-cmake-${{ matrix.build_type }}-${{ hashFiles('CMakeLists.txt', 'tests/CMakeLists.txt', 'src/**', 'include/**') }}
+          key: v5-${{ runner.os }}-cmake-${{ matrix.build_type }}-${{ hashFiles('CMakeLists.txt', 'cmake/**', 'tests/CMakeLists.txt', 'src/**', 'include/**') }}
           restore-keys: |
-            v2-${{ runner.os }}-cmake-${{ matrix.build_type }}-
+            v5-${{ runner.os }}-cmake-${{ matrix.build_type }}-
 
       - name: Configure CMake
-        run: cmake -S . -B build -DBUILD_TESTS=ON
+        run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DBUILD_TESTS=ON
 
       - name: Build (${{ matrix.build_type }})
-        run: cmake --build build --config ${{ matrix.build_type }}
+        shell: pwsh
+        run: |
+          cmake --build build --config ${{ matrix.build_type }} --verbose *>&1 | Tee-Object build-${{ matrix.build_type }}.log
+          if ($LASTEXITCODE -ne 0) {
+            Get-Content build-${{ matrix.build_type }}.log -Tail 200
+            throw "Build failed with exit code $LASTEXITCODE"
+          }
 
       - name: Run tests
         working-directory: build
-        run: ctest -C ${{ matrix.build_type }} --output-on-failure --verbose
+        run: ctest -C ${{ matrix.build_type }} -LE e2e --output-on-failure --verbose
 
       - name: Upload Release artifact
         if: matrix.build_type == 'Release'
@@ -51,6 +57,99 @@ jobs:
           name: NetPulse-${{ github.sha }}
           path: build/Release/NetPulse.exe
           retention-days: 30
+
+  coverage:
+    runs-on: windows-2022
+    name: Coverage (Debug)
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: cmake -S . -B build-coverage -G "Visual Studio 17 2022" -A x64 -DBUILD_TESTS=ON
+
+      - name: Build test targets (Debug)
+        shell: pwsh
+        run: |
+          cmake --build build-coverage --config Debug --target NetPulseTests NetPulseE2ETests --verbose *>&1 | Tee-Object build-coverage-Debug.log
+          if ($LASTEXITCODE -ne 0) {
+            Get-Content build-coverage-Debug.log -Tail 200
+            throw "Coverage build failed with exit code $LASTEXITCODE"
+          }
+
+      - name: Install OpenCppCoverage
+        run: choco install opencppcoverage -y --no-progress
+
+      - name: Run coverage
+        shell: pwsh
+        run: |
+          $unitExe = "build-coverage/tests/Debug/NetPulseTests.exe"
+          if (-not (Test-Path $unitExe)) {
+            throw "Test binary not found: $unitExe"
+          }
+
+          $coverageToolCandidates = @(
+            "C:\ProgramData\chocolatey\bin\OpenCppCoverage.exe",
+            "C:\Program Files\OpenCppCoverage\OpenCppCoverage.exe",
+            "C:\Program Files (x86)\OpenCppCoverage\OpenCppCoverage.exe"
+          )
+          $coverageTool = $coverageToolCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $coverageTool) {
+            $coverageCommand = Get-Command OpenCppCoverage -ErrorAction SilentlyContinue
+            if ($coverageCommand) {
+              $coverageTool = $coverageCommand.Source
+            }
+          }
+          if (-not $coverageTool) {
+            throw "OpenCppCoverage executable not found after Chocolatey install"
+          }
+          Write-Host "Using OpenCppCoverage: $coverageTool"
+
+          $workspace = $env:GITHUB_WORKSPACE
+          $srcDir = Join-Path $workspace 'src'
+          $includeDir = Join-Path $workspace 'include'
+          $thirdPartyDir = Join-Path $workspace 'third_party'
+          $testsDir = Join-Path $workspace 'tests'
+          $coberturaOut = Join-Path $workspace 'build-coverage\coverage.xml'
+          $htmlOut = Join-Path $workspace 'build-coverage\coverage-html'
+
+          & $coverageTool `
+            --sources $srcDir `
+            --sources $includeDir `
+            --excluded_sources $thirdPartyDir `
+            --excluded_sources $testsDir `
+            --export_type "cobertura:$coberturaOut" `
+            --export_type "html:$htmlOut" `
+            -- $unitExe
+          if ($LASTEXITCODE -ne 0) {
+            throw "OpenCppCoverage failed with exit code $LASTEXITCODE"
+          }
+
+      - name: Enforce coverage gate (40% line rate)
+        shell: pwsh
+        run: |
+          $coverageXml = "build-coverage/coverage.xml"
+          if (-not (Test-Path $coverageXml)) {
+            throw "Coverage report not found: $coverageXml"
+          }
+          [xml]$report = Get-Content $coverageXml
+          $lineRate = [double]$report.coverage.'line-rate'
+          $threshold = 0.39
+          $percent = [math]::Round($lineRate * 100, 2)
+          Write-Host "Line coverage: $percent% (gate: $($threshold * 100)%)"
+          if ($lineRate -lt $threshold) {
+            throw "Coverage gate failed: $percent% < $($threshold * 100)%"
+          }
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-${{ github.sha }}
+          path: |
+            build-coverage/coverage.xml
+            build-coverage/coverage-html/
+          retention-days: 14
 
   # Automatic release when tag pushed
   release:

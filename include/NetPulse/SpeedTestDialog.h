@@ -1,10 +1,15 @@
-﻿#ifndef NETWORK_MONITOR_SPEED_TEST_DIALOG_H
+#ifndef NETWORK_MONITOR_SPEED_TEST_DIALOG_H
 #define NETWORK_MONITOR_SPEED_TEST_DIALOG_H
 
 #include <Windows.h>
 #include <memory>
 #include <functional>
 #include <string>
+
+namespace NetPulseTests
+{
+struct SpeedTestDialogTestFriend;
+}
 
 namespace NetPulse
 {
@@ -37,6 +42,8 @@ public:
      * @param pConfig Application configuration for theming
      */
     void Show(HWND hWndParent, AppConfig* pConfig);
+
+    friend struct NetPulseTests::SpeedTestDialogTestFriend;
 
     /**
      * @brief Check if dialog is currently open

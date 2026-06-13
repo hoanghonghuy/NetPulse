@@ -190,6 +190,40 @@ std::vector<NetConnectionInfo> ConnectionMonitor::GetTcpConnections()
         }
     }
     
+    // Get IPv6 TCP table
+    size = 0;
+    GetExtendedTcpTable(nullptr, &size, FALSE, AF_INET6, TCP_TABLE_OWNER_PID_ALL, 0);
+    
+    if (size > 0)
+    {
+        std::vector<BYTE> buffer6(size);
+        if (GetExtendedTcpTable(buffer6.data(), &size, FALSE, AF_INET6, TCP_TABLE_OWNER_PID_ALL, 0) == NO_ERROR)
+        {
+            auto* table6 = reinterpret_cast<PMIB_TCP6TABLE_OWNER_PID>(buffer6.data());
+            for (DWORD i = 0; i < table6->dwNumEntries; i++)
+            {
+                const auto& row = table6->table[i];
+                
+                if (row.dwState == MIB_TCP_STATE_LISTEN)
+                {
+                    continue;
+                }
+                
+                NetConnectionInfo info;
+                info.processId = row.dwOwningPid;
+                info.processName = GetProcessName(row.dwOwningPid);
+                info.localAddress = Ip6ToString(row.ucLocalAddr);
+                info.localPort = ntohs(static_cast<USHORT>(row.dwLocalPort));
+                info.remoteAddress = Ip6ToString(row.ucRemoteAddr);
+                info.remotePort = ntohs(static_cast<USHORT>(row.dwRemotePort));
+                info.protocol = L"TCP6";
+                info.state = TcpStateToString(row.dwState);
+                
+                result.push_back(std::move(info));
+            }
+        }
+    }
+    
     return result;
 }
 
@@ -219,6 +253,35 @@ std::vector<NetConnectionInfo> ConnectionMonitor::GetUdpConnections()
                 info.remoteAddress = L"*";
                 info.remotePort = 0;
                 info.protocol = L"UDP";
+                info.state = L"";
+                
+                result.push_back(std::move(info));
+            }
+        }
+    }
+    
+    // Get IPv6 UDP table
+    size = 0;
+    GetExtendedUdpTable(nullptr, &size, FALSE, AF_INET6, UDP_TABLE_OWNER_PID, 0);
+    
+    if (size > 0)
+    {
+        std::vector<BYTE> buffer6(size);
+        if (GetExtendedUdpTable(buffer6.data(), &size, FALSE, AF_INET6, UDP_TABLE_OWNER_PID, 0) == NO_ERROR)
+        {
+            auto* table6 = reinterpret_cast<PMIB_UDP6TABLE_OWNER_PID>(buffer6.data());
+            for (DWORD i = 0; i < table6->dwNumEntries; i++)
+            {
+                const auto& row = table6->table[i];
+                
+                NetConnectionInfo info;
+                info.processId = row.dwOwningPid;
+                info.processName = GetProcessName(row.dwOwningPid);
+                info.localAddress = Ip6ToString(row.ucLocalAddr);
+                info.localPort = ntohs(static_cast<USHORT>(row.dwLocalPort));
+                info.remoteAddress = L"*";
+                info.remotePort = 0;
+                info.protocol = L"UDP6";
                 info.state = L"";
                 
                 result.push_back(std::move(info));
@@ -278,6 +341,10 @@ std::wstring ConnectionMonitor::GetProcessName(DWORD pid)
     // Cache it
     {
         std::lock_guard<std::mutex> lock(m_cacheMutex);
+        if (m_processNameCache.size() >= MAX_CACHE_SIZE)
+        {
+            m_processNameCache.clear();
+        }
         m_processNameCache[pid] = name;
     }
     
@@ -290,6 +357,15 @@ std::wstring ConnectionMonitor::IpToString(DWORD ip)
     IN_ADDR addr;
     addr.S_un.S_addr = ip;
     InetNtopW(AF_INET, &addr, buffer, INET_ADDRSTRLEN);
+    return buffer;
+}
+
+std::wstring ConnectionMonitor::Ip6ToString(const UCHAR addr[16])
+{
+    wchar_t buffer[INET6_ADDRSTRLEN] = {0};
+    IN6_ADDR in6;
+    memcpy(&in6, addr, 16);
+    InetNtopW(AF_INET6, &in6, buffer, INET6_ADDRSTRLEN);
     return buffer;
 }
 

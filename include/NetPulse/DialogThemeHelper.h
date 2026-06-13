@@ -15,9 +15,6 @@ class DialogThemeHelper
 public:
     /**
      * Get or create the dark theme background brush (cached)
-
-    /**
-     * Get or create the dark theme background brush (cached)
      * @return Handle to dark background brush
      */
     static HBRUSH GetDarkBackgroundBrush();

@@ -1,4 +1,4 @@
-﻿#ifndef NETWORK_MONITOR_THEMEHELPER_H
+#ifndef NETWORK_MONITOR_THEMEHELPER_H
 #define NETWORK_MONITOR_THEMEHELPER_H
 
 #include "NetPulse/ThemeColors.h"
@@ -6,7 +6,9 @@
 #include <windows.h>
 #include <dwmapi.h>
 
+#ifdef _MSC_VER
 #pragma comment(lib, "dwmapi.lib")
+#endif
 
 namespace NetPulse
 {

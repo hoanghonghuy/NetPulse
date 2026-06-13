@@ -4,8 +4,10 @@
 // ============================================================================
 
 #include "TestUtils.h"
+#include "test_fakes/FakeHttpClient.h"
 #include "NetPulse/SpeedTester.h"
 #include "NetPulse/SpeedTestHistory.h"
+#include <WinSock2.h>
 #include <memory>
 #include <thread>
 #include <chrono>
@@ -46,6 +48,125 @@ void TestSpeedTesterPingMeasurement()
         AssertTrue(ping >= 0, L"Ping should be non-negative if successful");
         AssertTrue(ping < 30000, L"Ping should be less than 30 seconds");
     }
+}
+
+static void WaitUntilNotRunning(SpeedTester& tester, std::chrono::milliseconds timeout)
+{
+    const auto deadline = std::chrono::steady_clock::now() + timeout;
+    while (tester.IsRunning() && std::chrono::steady_clock::now() < deadline)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    }
+}
+
+void TestSpeedTesterCancelBeforePing()
+{
+    LogTestMessage(L"  Running TestSpeedTesterCancelBeforePing...");
+
+    auto fake = std::make_shared<FakeHttpClient>();
+    SpeedTester tester(fake);
+
+    tester.CancelTest();
+    tester.RunTest(nullptr);
+
+    SpeedTestResult result = tester.GetLastResult();
+    AssertTrue(!result.success, L"Cancel before ping marks result unsuccessful");
+    AssertTrue(result.errorMessage == L"Test cancelled", L"Cancel before ping sets cancelled message");
+    AssertTrue(fake->m_downloadCallCount == 0, L"Cancel before ping skips download transport");
+}
+
+void TestSpeedTesterCancelDuringDownload()
+{
+    LogTestMessage(L"  Running TestSpeedTesterCancelDuringDownload...");
+
+    auto fake = std::make_shared<FakeHttpClient>();
+    fake->m_downloadBlockMs = std::chrono::milliseconds(800);
+    SpeedTester tester(fake);
+
+    tester.StartTest(nullptr);
+    std::this_thread::sleep_for(std::chrono::milliseconds(150));
+    tester.CancelTest();
+    WaitUntilNotRunning(tester, std::chrono::seconds(5));
+
+    SpeedTestResult result = tester.GetLastResult();
+    AssertTrue(fake->m_downloadCallCount >= 1, L"Cancel during download reaches download phase");
+    AssertTrue(!result.success, L"Cancel during download marks result unsuccessful");
+    AssertTrue(result.errorMessage == L"Test cancelled", L"Cancel during download sets cancelled message");
+}
+
+void TestSpeedTesterCancelDuringUpload()
+{
+    LogTestMessage(L"  Running TestSpeedTesterCancelDuringUpload...");
+
+    auto fake = std::make_shared<FakeHttpClient>();
+    fake->m_downloadBlockMs = std::chrono::milliseconds(50);
+    fake->m_uploadBlockMs = std::chrono::milliseconds(800);
+    SpeedTester tester(fake);
+
+    tester.StartTest(nullptr);
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    tester.CancelTest();
+    WaitUntilNotRunning(tester, std::chrono::seconds(5));
+
+    SpeedTestResult result = tester.GetLastResult();
+    AssertTrue(fake->m_uploadCallCount >= 1, L"Cancel during upload reaches upload phase");
+    AssertTrue(!result.success, L"Cancel during upload marks result unsuccessful");
+    AssertTrue(result.errorMessage == L"Test cancelled", L"Cancel during upload sets cancelled message");
+}
+
+void TestSpeedTesterResultCallbackOnce()
+{
+    LogTestMessage(L"  Running TestSpeedTesterResultCallbackOnce...");
+
+    auto fake = std::make_shared<FakeHttpClient>();
+    fake->m_downloadBlockMs = std::chrono::milliseconds(50);
+    fake->m_uploadBlockMs = std::chrono::milliseconds(50);
+    SpeedTester tester(fake);
+
+    int callbackCount = 0;
+    tester.SetResultCallback([&](const SpeedTestResult& /*result*/) {
+        ++callbackCount;
+    });
+
+    tester.StartTest(nullptr);
+    WaitUntilNotRunning(tester, std::chrono::seconds(5));
+
+    AssertTrue(callbackCount == 1, L"Speed test result callback fires exactly once");
+}
+
+void TestSpeedTesterHttpFailDoesNotHang()
+{
+    LogTestMessage(L"  Running TestSpeedTesterHttpFailDoesNotHang...");
+
+    auto fake = std::make_shared<FakeHttpClient>();
+    fake->m_downloadSuccess = false;
+    SpeedTester tester(fake);
+
+    tester.StartTest(nullptr);
+    WaitUntilNotRunning(tester, std::chrono::seconds(5));
+
+    AssertTrue(!tester.IsRunning(), L"HTTP fail path completes without hanging");
+    SpeedTestResult result = tester.GetLastResult();
+    AssertTrue(result.downloadMbps == 0.0, L"HTTP fail path leaves download speed at zero");
+}
+
+void TestSpeedTesterMeasurePingResolveFail()
+{
+    LogTestMessage(L"  Running TestSpeedTesterMeasurePingResolveFail...");
+
+    WSADATA wsaData{};
+    const bool wsaInit = (WSAStartup(MAKEWORD(2, 2), &wsaData) == 0);
+    AssertTrue(wsaInit, L"WSAStartup succeeds for ping resolve-fail test");
+
+    SpeedTester tester;
+    const int ping = tester.MeasurePing(L"invalid.invalid.invalid.example");
+
+    if (wsaInit)
+    {
+        WSACleanup();
+    }
+
+    AssertTrue(ping == -1, L"MeasurePing returns -1 when DNS resolve fails");
 }
 
 void TestSpeedTesterRunTestBasic()
@@ -235,11 +356,16 @@ void RunSpeedTestTests()
     TestSpeedTestHistoryGetLatest();
     TestSpeedTestHistoryClear();
     
-    // SpeedTester tests (require network, slower)
     TestSpeedTesterInitialization();
-    TestSpeedTesterPingMeasurement();
-    
-    // Note: The full RunTest is slow - can be uncommented for full integration testing
+    TestSpeedTesterCancelBeforePing();
+    TestSpeedTesterCancelDuringDownload();
+    TestSpeedTesterCancelDuringUpload();
+    TestSpeedTesterResultCallbackOnce();
+    TestSpeedTesterHttpFailDoesNotHang();
+    TestSpeedTesterMeasurePingResolveFail();
+
+    // Optional network smoke (not run in default PR suite)
+    // TestSpeedTesterPingMeasurement();
     // TestSpeedTesterRunTestBasic();
     
     LogTestMessage(L"SpeedTest Tests completed.");

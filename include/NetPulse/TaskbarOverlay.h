@@ -43,10 +43,14 @@ public:
     void Show(bool show);
 
     /**
-     * Check if overlay is visible
-     * @return true if visible, false otherwise
+     * Check if overlay window is currently shown on screen
      */
-    bool IsVisible() const { return m_isVisible; }
+    bool IsVisible() const;
+
+    /**
+     * Check if user has enabled the overlay (menu checkmark state)
+     */
+    bool IsUserWantsVisible() const { return m_userWantsVisible; }
 
     /**
      * Set callback for right-click event
@@ -122,7 +126,7 @@ private:
     HINSTANCE m_hInstance;                      // Application instance
     HWND m_hwnd;                                // Window handle
     HWND m_hTaskbar;                            // Taskbar window handle
-    bool m_isVisible;                           // Is window visible
+    bool m_userWantsVisible;                    // User preference: overlay enabled
     bool m_initialized;                         // Is initialized
     UINT_PTR m_timerId;                         // Timer ID for visibility check
 
