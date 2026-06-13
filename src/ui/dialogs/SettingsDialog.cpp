@@ -9,7 +9,9 @@
 #include <windowsx.h>
 #include <commctrl.h>
 #include <uxtheme.h>
+#include <ShlObj.h>
 #include <vector>
+
 
 namespace NetPulse
 {
@@ -597,14 +599,67 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                 HFONT hFont = reinterpret_cast<HFONT>(SendMessageW(hDlg, WM_GETFONT, 0, 0));
                 int baseY = rcConnNotify.bottom + 15;
                 
+                // Detect if running from Program Files
+                bool inProgramFiles = false;
+                wchar_t exePath[MAX_PATH] = {0};
+                if (GetModuleFileNameW(nullptr, exePath, MAX_PATH))
+                {
+                    wchar_t progFiles[MAX_PATH] = {0};
+                    wchar_t progFilesX86[MAX_PATH] = {0};
+                    
+                    SHGetFolderPathW(nullptr, CSIDL_PROGRAM_FILES, nullptr, 0, progFiles);
+                    SHGetFolderPathW(nullptr, CSIDL_PROGRAM_FILESX86, nullptr, 0, progFilesX86);
+                    
+                    auto isUnderFolder = [](const std::wstring& path, const std::wstring& folder) -> bool {
+                        if (folder.empty() || path.empty())
+                            return false;
+                        if (path.size() < folder.size())
+                            return false;
+                        if (_wcsnicmp(path.c_str(), folder.c_str(), folder.size()) != 0)
+                            return false;
+                        if (path.size() == folder.size())
+                            return true;
+                        wchar_t nextChar = path[folder.size()];
+                        return (nextChar == L'\\' || nextChar == L'/');
+                    };
+                    
+                    if (isUnderFolder(exePath, progFiles) || isUnderFolder(exePath, progFilesX86))
+                    {
+                        inProgramFiles = true;
+                    }
+                }
+
                 // Create checkbox for "Use Portable Mode"
                 std::wstring checkLabel = LoadStringResource(IDS_PORTABLE_MODE_CHECK);
                 if (checkLabel.empty()) checkLabel = L"Use Portable Mode";
                 
+                if (inProgramFiles)
+                {
+                    std::wstring suffix = L" (N/A in Program Files)";
+                    if (m_configCopy.language == AppLanguage::Vietnamese)
+                    {
+                        suffix = L" (Không khả dụng trong Program Files)";
+                    }
+                    else if (m_configCopy.language == AppLanguage::Japanese)
+                    {
+                        // L" (Program Files内では無効)" có nghĩa là "(Không khả dụng trong Program Files)" trong tiếng Nhật.
+                        suffix = L" (Program Files内では無効)";
+                    }
+                    else if (m_configCopy.language == AppLanguage::Korean)
+                    {
+                        suffix = L" (Program Files에서 사용 불가)";
+                    }
+                    else if (m_configCopy.language == AppLanguage::ChineseSimplified)
+                    {
+                        suffix = L" (在 Program Files 中不可用)";
+                    }
+                    checkLabel += suffix;
+                }
+                
                 HWND hPortableCheck = CreateWindowExW(
                     0, L"BUTTON", checkLabel.c_str(),
                     WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
-                    rcConnNotify.left, baseY, 160, 20,
+                    rcConnNotify.left, baseY, inProgramFiles ? 320 : 160, 20,
                     hDlg, reinterpret_cast<HMENU>(static_cast<INT_PTR>(IDC_PORTABLE_MODE_CHECK)),
                     GetModuleHandleW(nullptr), nullptr
                 );
@@ -640,15 +695,32 @@ INT_PTR CALLBACK SettingsDialog::InstanceDialogProc(HWND hDlg, UINT message, WPA
                     // Checkbox: enabled only if file exists, checked if portable mode active
                     if (hPortableCheck)
                     {
-                        EnableWindow(hPortableCheck, fileExists);
-                        Button_SetCheck(hPortableCheck, isPortable ? BST_CHECKED : BST_UNCHECKED);
-                        SetCheckboxState(IDC_PORTABLE_MODE_CHECK, isPortable);
+                        if (inProgramFiles)
+                        {
+                            EnableWindow(hPortableCheck, FALSE);
+                            Button_SetCheck(hPortableCheck, BST_UNCHECKED);
+                            SetCheckboxState(IDC_PORTABLE_MODE_CHECK, false);
+                        }
+                        else
+                        {
+                            EnableWindow(hPortableCheck, fileExists);
+                            Button_SetCheck(hPortableCheck, isPortable ? BST_CHECKED : BST_UNCHECKED);
+                            SetCheckboxState(IDC_PORTABLE_MODE_CHECK, isPortable);
+                        }
                     }
                     
-                    // Button: disabled if file already exists
+                    // Button: disabled if file already exists or running from Program Files
                     if (hPortableBtn)
                     {
-                        EnableWindow(hPortableBtn, !fileExists);
+                        if (inProgramFiles)
+                        {
+                            EnableWindow(hPortableBtn, FALSE);
+                            ShowWindow(hPortableBtn, SW_HIDE);
+                        }
+                        else
+                        {
+                            EnableWindow(hPortableBtn, !fileExists);
+                        }
                     }
                 }
             }
