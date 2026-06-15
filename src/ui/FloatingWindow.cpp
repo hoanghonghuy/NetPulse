@@ -47,6 +47,8 @@ FloatingWindow::FloatingWindow()
     , m_isProxyActive(false)
     , m_timerId(0)
     , m_wasHiddenByFullscreen(false)
+    , m_fontNormal(nullptr)
+    , m_fontMini(nullptr)
 {
 }
 
@@ -114,6 +116,17 @@ void FloatingWindow::Destroy()
         }
         DestroyWindow(m_hwnd);
         m_hwnd = nullptr;
+    }
+
+    if (m_fontNormal)
+    {
+        DeleteObject(m_fontNormal);
+        m_fontNormal = nullptr;
+    }
+    if (m_fontMini)
+    {
+        DeleteObject(m_fontMini);
+        m_fontMini = nullptr;
     }
 }
 
@@ -440,13 +453,16 @@ void FloatingWindow::PaintMiniMode(HDC hdc)
     SelectObject(hdc, hOldPen);
     DeleteObject(hBorderPen);
 
-    // Create smaller font for mini mode
-    HFONT hFont = CreateFontW(
-        12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
-        DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-        CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Segoe UI"
-    );
-    HFONT hOldFont = (HFONT)SelectObject(hdc, hFont);
+    // Use cached font for mini mode
+    if (!m_fontMini)
+    {
+        m_fontMini = CreateFontW(
+            12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+            DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+            CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Segoe UI"
+        );
+    }
+    HFONT hOldFont = (HFONT)SelectObject(hdc, m_fontMini);
     SetBkMode(hdc, TRANSPARENT);
 
     // Show primary metric: download speed (most relevant)
@@ -456,7 +472,6 @@ void FloatingWindow::PaintMiniMode(HDC hdc)
     TextOutW(hdc, 4, 4, text.c_str(), static_cast<int>(text.length()));
 
     SelectObject(hdc, hOldFont);
-    DeleteObject(hFont);
 }
 
 void FloatingWindow::PaintNormal(HDC hdc)
@@ -481,13 +496,16 @@ void FloatingWindow::PaintNormal(HDC hdc)
     SelectObject(hdc, hOldPen);
     DeleteObject(hBorderPen);
 
-    // Create font
-    HFONT hFont = CreateFontW(
-        14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
-        DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-        CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Segoe UI"
-    );
-    HFONT hOldFont = (HFONT)SelectObject(hdc, hFont);
+    // Use cached font
+    if (!m_fontNormal)
+    {
+        m_fontNormal = CreateFontW(
+            14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+            DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+            CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Segoe UI"
+        );
+    }
+    HFONT hOldFont = (HFONT)SelectObject(hdc, m_fontNormal);
     SetBkMode(hdc, TRANSPARENT);
 
     int y = PADDING;
@@ -662,7 +680,6 @@ void FloatingWindow::PaintNormal(HDC hdc)
     }
 
     SelectObject(hdc, hOldFont);
-    DeleteObject(hFont);
 }
 
 void FloatingWindow::RecalculateWindowSize()
@@ -970,56 +987,6 @@ void FloatingWindow::SetShowPublicIP(bool show)
         RecalculateWindowSize();
         Invalidate();
     }
-}
-
-// ========== TOPMOST ENFORCEMENT ==========
-
-bool FloatingWindow::IsForegroundWindowFullscreen()
-{
-    HWND hForeground = GetForegroundWindow();
-    if (!hForeground)
-    {
-        return false;
-    }
-
-    // Exclude desktop and shell windows - they cover the entire screen
-    // but are not actual fullscreen applications
-    wchar_t className[64] = {};
-    GetClassNameW(hForeground, className, _countof(className));
-    if (_wcsicmp(className, L"Progman") == 0 ||        // Desktop (Program Manager)
-        _wcsicmp(className, L"WorkerW") == 0 ||        // Desktop worker window
-        _wcsicmp(className, L"Shell_TrayWnd") == 0 ||  // Taskbar
-        _wcsicmp(className, L"Shell_SecondaryTrayWnd") == 0) // Secondary taskbar
-    {
-        return false;
-    }
-
-    // Get foreground window rect
-    RECT windowRect;
-    if (!GetWindowRect(hForeground, &windowRect))
-    {
-        return false;
-    }
-
-    // Get monitor info for the foreground window
-    HMONITOR hMonitor = MonitorFromWindow(hForeground, MONITOR_DEFAULTTONEAREST);
-    if (!hMonitor)
-    {
-        return false;
-    }
-
-    MONITORINFO monitorInfo = {};
-    monitorInfo.cbSize = sizeof(MONITORINFO);
-    if (!GetMonitorInfo(hMonitor, &monitorInfo))
-    {
-        return false;
-    }
-
-    // Check if window covers the entire monitor
-    return (windowRect.left <= monitorInfo.rcMonitor.left &&
-            windowRect.top <= monitorInfo.rcMonitor.top &&
-            windowRect.right >= monitorInfo.rcMonitor.right &&
-            windowRect.bottom >= monitorInfo.rcMonitor.bottom);
 }
 
 } // namespace NetPulse

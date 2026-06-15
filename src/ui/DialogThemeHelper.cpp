@@ -1,4 +1,4 @@
-﻿#include "NetPulse/DialogThemeHelper.h"
+#include "NetPulse/DialogThemeHelper.h"
 #include "NetPulse/ThemeHelper.h"
 #include <uxtheme.h>
 #include <dwmapi.h>
@@ -249,8 +249,8 @@ void DialogThemeHelper::SetThinWindowBorder(HWND hDlg)
     HRESULT hr = DwmSetWindowAttribute(hDlg, DWMWA_WINDOW_CORNER_PREFERENCE, &cornerPreference, sizeof(cornerPreference));
     
     // Set border color to match background for thinner appearance
-    // Use very dark gray that blends with dark theme or lighter for light theme
-    COLORREF borderColor = RGB(45, 45, 45); // Subtle dark border
+    // Use theme dialog border color
+    COLORREF borderColor = ThemeHelper::GetColors(ThemeHelper::GetCurrentTheme()).dialogBorder;
     DwmSetWindowAttribute(hDlg, DWMWA_BORDER_COLOR, &borderColor, sizeof(borderColor));
     
     // Fallback: Extend frame minimally (works on Win10 but less effective)

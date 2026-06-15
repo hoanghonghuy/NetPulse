@@ -1,6 +1,7 @@
 #include "NetPulse/ChartRenderer.h"
 #include "NetPulse/ThemeHelper.h"
 #include "NetPulse/Utils.h"
+#include "../../resources/resource.h"
 #include <algorithm>
 #include <cmath>
 
@@ -151,7 +152,9 @@ void ChartRenderer::DrawLegend(HDC hdc, const RECT& rect, const ChartOptions& op
     DeleteObject(hDownBrush);
 
     RECT downTextRect = { legendX + 16, legendY, legendX + 70, legendY + 14 };
-    DrawTextW(hdc, L"Down", -1, &downTextRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+    std::wstring downLabel = LoadStringResource(IDS_FLOATING_CHART_DOWNLOAD);
+    if (downLabel.empty()) downLabel = L"Down";
+    DrawTextW(hdc, downLabel.c_str(), -1, &downTextRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 
     // Upload legend
     legendX += 65;
@@ -161,7 +164,9 @@ void ChartRenderer::DrawLegend(HDC hdc, const RECT& rect, const ChartOptions& op
     DeleteObject(hUpBrush);
 
     RECT upTextRect = { legendX + 16, legendY, legendX + 60, legendY + 14 };
-    DrawTextW(hdc, L"Up", -1, &upTextRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+    std::wstring upLabel = LoadStringResource(IDS_FLOATING_CHART_UPLOAD);
+    if (upLabel.empty()) upLabel = L"Up";
+    DrawTextW(hdc, upLabel.c_str(), -1, &upTextRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 }
 
 void ChartRenderer::DrawBarChart(
@@ -176,7 +181,9 @@ void ChartRenderer::DrawBarChart(
         SetTextColor(hdc, GetTextColor(options.darkTheme));
         SetBkMode(hdc, TRANSPARENT);
         RECT msgRect = rect;
-        DrawTextW(hdc, L"No data available", -1, &msgRect, 
+        std::wstring noDataLabel = LoadStringResource(IDS_CHART_NO_DATA);
+        if (noDataLabel.empty()) noDataLabel = L"No data available";
+        DrawTextW(hdc, noDataLabel.c_str(), -1, &msgRect, 
                   DT_CENTER | DT_VCENTER | DT_SINGLELINE);
         return;
     }

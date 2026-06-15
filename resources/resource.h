@@ -402,6 +402,13 @@
 #define IDS_PORTABLE_MODE_ALREADY       2283
 #define IDS_PORTABLE_MODE_FAILED        2284
 
+#define IDS_CHART_NO_DATA               2290
+#define IDS_DASHBOARD_NO_CHART_DATA     2291
+#define IDS_DASHBOARD_BUTTON_DAILY      2292
+#define IDS_DASHBOARD_BUTTON_MONTHLY    2293
+#define IDS_CONNLOG_TITLE_SUFFIX        2294
+#define IDS_CONNLOG_CONNECTIONS_COUNT   2295
+
 // ============================================================================
 // STANDARD DIALOG IDS
 // ============================================================================

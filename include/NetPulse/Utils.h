@@ -76,6 +76,11 @@ BOOL ShowSaveFileDialog(LPOPENFILENAMEW lpofn);
 // ============================================================================
 
 /**
+ * Check if foreground window is fullscreen (game, video, etc.)
+ */
+bool IsForegroundWindowFullscreen();
+
+/**
  * Center a window/dialog on the screen
  * @param hWnd Handle to the window/dialog
  */

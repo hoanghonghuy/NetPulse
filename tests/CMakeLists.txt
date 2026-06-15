@@ -28,6 +28,7 @@ set(NETPULSE_TEST_SOURCES
     component_renderer_tests.cpp
     hotkey_manager_tests.cpp
     ../src/core/HistoryLogger.cpp
+    ../src/core/ApplicationRuntime.cpp
     ../src/core/NetworkMonitor.cpp
     ../src/core/NetworkCalculator.cpp
     ../src/core/ConfigManager.cpp

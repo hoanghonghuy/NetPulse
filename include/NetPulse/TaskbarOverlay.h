@@ -1,4 +1,4 @@
-﻿#ifndef NETWORK_MONITOR_TASKBAROVERLAY_H
+#ifndef NETWORK_MONITOR_TASKBAROVERLAY_H
 #define NETWORK_MONITOR_TASKBAROVERLAY_H
 
 #include "NetPulse/Common.h"
@@ -142,8 +142,7 @@ private:
     COLORREF m_downloadColor;                   // Configurable download color
     COLORREF m_uploadColor;                     // Configurable upload color
 
-    // Check if foreground window is fullscreen
-    static bool IsForegroundWindowFullscreen();
+
 
     // Callback
     std::function<void()> m_rightClickCallback; // Right-click callback

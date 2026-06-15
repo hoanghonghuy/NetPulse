@@ -745,7 +745,9 @@ void DashboardDialog::DrawDashboardChart(HDC hdc, const RECT& rc)
             SetTextColor(hdc, customTheme ? colors.chartText : RGB(30, 30, 30));
             SetBkMode(hdc, TRANSPARENT);
             RECT msgRect = rc;
-            DrawTextW(hdc, L"No chart data available", -1, &msgRect, 
+            std::wstring noChartDataLabel = LoadStringResource(IDS_DASHBOARD_NO_CHART_DATA);
+            if (noChartDataLabel.empty()) noChartDataLabel = L"No chart data available";
+            DrawTextW(hdc, noChartDataLabel.c_str(), -1, &msgRect, 
                       DT_CENTER | DT_VCENTER | DT_SINGLELINE);
             return;
         }
@@ -895,15 +897,20 @@ void DashboardDialog::CreateChartControls(HWND hDlg)
     int startX = chartRect.left;
     int topY = chartRect.top - btnHeight - 4;
 
+    std::wstring dailyBtnText = LoadStringResource(IDS_DASHBOARD_BUTTON_DAILY);
+    if (dailyBtnText.empty()) dailyBtnText = L"Daily";
+    std::wstring monthlyBtnText = LoadStringResource(IDS_DASHBOARD_BUTTON_MONTHLY);
+    if (monthlyBtnText.empty()) monthlyBtnText = L"Monthly";
+
     // "Daily" button
-    HWND hBtnDaily = CreateWindowExW(0, L"BUTTON", L"Daily",
+    HWND hBtnDaily = CreateWindowExW(0, L"BUTTON", dailyBtnText.c_str(),
         WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
         startX, topY, btnWidth, btnHeight,
         hDlg, reinterpret_cast<HMENU>(IDC_CHART_VIEW_DAILY), hInst, nullptr);
     if (hBtnDaily && hFont) SendMessageW(hBtnDaily, WM_SETFONT, reinterpret_cast<WPARAM>(hFont), TRUE);
 
     // "Monthly" button
-    HWND hBtnMonthly = CreateWindowExW(0, L"BUTTON", L"Monthly",
+    HWND hBtnMonthly = CreateWindowExW(0, L"BUTTON", monthlyBtnText.c_str(),
         WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
         startX + btnWidth + spacing, topY, btnWidth, btnHeight,
         hDlg, reinterpret_cast<HMENU>(IDC_CHART_VIEW_MONTHLY), hInst, nullptr);

@@ -213,7 +213,9 @@ void ConnectionLogDialog::InitializeDialog(HWND hDlg)
     // Set dialog title
     std::wstring title = LoadStringResource(IDS_APP_TITLE);
     if (title.empty()) title = L"NetPulse";
-    title += L" - Connection Log";
+    std::wstring titleSuffix = LoadStringResource(IDS_CONNLOG_TITLE_SUFFIX);
+    if (titleSuffix.empty()) titleSuffix = L" - Connection Log";
+    title += titleSuffix;
     SetWindowTextW(hDlg, title.c_str());
 
     // Determine theme from config (not system theme!)
@@ -395,7 +397,11 @@ void ConnectionLogDialog::PopulateList()
     {
         std::wstring title = LoadStringResource(IDS_APP_TITLE);
         if (title.empty()) title = L"NetPulse";
-        title += L" - Connection Log (" + std::to_wstring(m_connections.size()) + L" connections)";
+        std::wstring titleSuffix = LoadStringResource(IDS_CONNLOG_TITLE_SUFFIX);
+        if (titleSuffix.empty()) titleSuffix = L" - Connection Log";
+        std::wstring connCountSuffix = LoadStringResource(IDS_CONNLOG_CONNECTIONS_COUNT);
+        if (connCountSuffix.empty()) connCountSuffix = L" connections";
+        title += titleSuffix + L" (" + std::to_wstring(m_connections.size()) + connCountSuffix + L")";
         SetWindowTextW(m_hDialog, title.c_str());
     }
 }

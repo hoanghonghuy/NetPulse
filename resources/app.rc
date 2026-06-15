@@ -252,6 +252,12 @@ BEGIN
     IDS_PORTABLE_MODE_SUCCESS            "Portable configuration created successfully.\nSettings will now be saved to netpulse.ini"
     IDS_PORTABLE_MODE_ALREADY            "Already running in Portable Mode"
     IDS_PORTABLE_MODE_FAILED             "Failed to create portable configuration file."
+    IDS_CHART_NO_DATA                    "No data available"
+    IDS_DASHBOARD_NO_CHART_DATA          "No chart data available"
+    IDS_DASHBOARD_BUTTON_DAILY           "Daily"
+    IDS_DASHBOARD_BUTTON_MONTHLY         "Monthly"
+    IDS_CONNLOG_TITLE_SUFFIX             " - Connection Log"
+    IDS_CONNLOG_CONNECTIONS_COUNT        " connections"
 END
 
 // Vietnamese resources
@@ -437,6 +443,12 @@ BEGIN
     IDS_PORTABLE_MODE_SUCCESS            "Tạo cấu hình di động thành công.\nCài đặt sẽ được lưu vào netpulse.ini"
     IDS_PORTABLE_MODE_ALREADY            "Đã đang chạy ở chế độ di động"
     IDS_PORTABLE_MODE_FAILED             "Không thể tạo tập tin cấu hình di động."
+    IDS_CHART_NO_DATA                    "Không có dữ liệu"
+    IDS_DASHBOARD_NO_CHART_DATA          "Không có dữ liệu biểu đồ"
+    IDS_DASHBOARD_BUTTON_DAILY           "Theo ngày"
+    IDS_DASHBOARD_BUTTON_MONTHLY         "Theo tháng"
+    IDS_CONNLOG_TITLE_SUFFIX             " - Nhật ký kết nối"
+    IDS_CONNLOG_CONNECTIONS_COUNT        " kết nối"
 END
 
 // Japanese resources
@@ -617,6 +629,12 @@ BEGIN
     IDS_PORTABLE_MODE_SUCCESS            "ポータブル設定を作成しました。\n設定はnetpulse.iniに保存されます"
     IDS_PORTABLE_MODE_ALREADY            "すでにポータブルモードで実行中です"
     IDS_PORTABLE_MODE_FAILED             "ポータブル設定ファイルの作成に失敗しました"
+    IDS_CHART_NO_DATA                    "データなし"
+    IDS_DASHBOARD_NO_CHART_DATA          "チャートデータなし"
+    IDS_DASHBOARD_BUTTON_DAILY           "日別"
+    IDS_DASHBOARD_BUTTON_MONTHLY         "月別"
+    IDS_CONNLOG_TITLE_SUFFIX             " - 接続ログ"
+    IDS_CONNLOG_CONNECTIONS_COUNT        " 接続"
 END
 
 // Korean resources
@@ -797,6 +815,12 @@ BEGIN
     IDS_PORTABLE_MODE_SUCCESS            "포터블 설정이 생성되었습니다.\n설정이 netpulse.ini에 저장됩니다"
     IDS_PORTABLE_MODE_ALREADY            "이미 포터블 모드로 실행 중입니다"
     IDS_PORTABLE_MODE_FAILED             "포터블 설정 파일 생성에 실패했습니다"
+    IDS_CHART_NO_DATA                    "데이터 없음"
+    IDS_DASHBOARD_NO_CHART_DATA          "차트 데이터 없음"
+    IDS_DASHBOARD_BUTTON_DAILY           "일별"
+    IDS_DASHBOARD_BUTTON_MONTHLY         "월별"
+    IDS_CONNLOG_TITLE_SUFFIX             " - 연결 로그"
+    IDS_CONNLOG_CONNECTIONS_COUNT        " 연결"
 END
 
 // Chinese Simplified resources
@@ -977,6 +1001,12 @@ BEGIN
     IDS_PORTABLE_MODE_SUCCESS            "便携配置创建成功。\n设置将保存到netpulse.ini"
     IDS_PORTABLE_MODE_ALREADY            "已在便携模式下运行"
     IDS_PORTABLE_MODE_FAILED             "无法创建便携配置文件"
+    IDS_CHART_NO_DATA                    "没有可用数据"
+    IDS_DASHBOARD_NO_CHART_DATA          "没有可用的图表数据"
+    IDS_DASHBOARD_BUTTON_DAILY           "日视图"
+    IDS_DASHBOARD_BUTTON_MONTHLY         "月视图"
+    IDS_CONNLOG_TITLE_SUFFIX             " - 连接日志"
+    IDS_CONNLOG_CONNECTIONS_COUNT        " 个连接"
 END
 
 // Switch back to English for the rest of resources
