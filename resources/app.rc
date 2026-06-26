@@ -1017,8 +1017,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // ============================================================================
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,4,0,0
- PRODUCTVERSION 2,4,0,0
+ FILEVERSION 2,5,0,0
+ PRODUCTVERSION 2,5,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -1035,12 +1035,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "NetPulse Project"
             VALUE "FileDescription", "Network Usage Monitor"
-            VALUE "FileVersion", "2.4.2.0"
+            VALUE "FileVersion", "2.5.0.0"
             VALUE "InternalName", "NetPulse.exe"
             VALUE "LegalCopyright", "Copyright (C) 2025"
             VALUE "OriginalFilename", "NetPulse.exe"
             VALUE "ProductName", "NetPulse"
-            VALUE "ProductVersion", "2.4.2.0"
+            VALUE "ProductVersion", "2.5.0.0"
         END
     END
     BLOCK "VarFileInfo"
@@ -1069,7 +1069,7 @@ BEGIN
     // ICON COMMENTED OUT - IDI_APP_ICON not defined yet
     // ICON            IDI_APP_ICON,IDC_STATIC,7,7,21,20
     LTEXT           "NetPulse",IDC_STATIC,40,10,200,8,SS_NOPREFIX
-    LTEXT           "Version 2.4.2",IDC_VERSION_TEXT,40,25,200,8
+    LTEXT           "Version 2.5.0",IDC_VERSION_TEXT,40,25,200,8
     LTEXT           "A lightweight network traffic monitor for Windows.",IDC_STATIC,40,40,200,8
     LTEXT           "Copyright (C) 2025 - MIT License",IDC_COPYRIGHT_TEXT,40,55,200,8
     CONTROL         "<a href=""https://github.com/hoanghonghuy/NetPulse"">GitHub: hoanghonghuy/NetPulse</a>",IDC_GITHUB_LINK,"SysLink",WS_TABSTOP | WS_GROUP,40,70,200,10

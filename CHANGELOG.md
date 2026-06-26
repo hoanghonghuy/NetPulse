@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.5.0] - 2026-06-26
+
+### Added
+- **Lọc card mạng ảo khi Aggregate**: Thêm logic phân biệt và lọc các card mạng ảo (VPN, Hyper-V, Docker, v.v.) khi chọn "All Interfaces" (Tất cả giao diện) để tránh bị tính đè cộng dồn lưu lượng (double-counting). Tự động fallback sử dụng tất cả card mạng hoạt động nếu không phát hiện card vật lý nào (ví dụ khi chạy trong máy ảo).
+
 ## [2.4.2] - 2026-06-13
 
 ### Fixed
