@@ -81,6 +81,13 @@ private:
      */
     static bool ShouldMonitorInterface(const MIB_IF_ROW2* ifRow);
 
+    /**
+     * Check if interface is a physical hardware adapter
+     * @param ifRow Interface row data
+     * @return true if physical hardware, false otherwise
+     */
+    static bool IsPhysicalHardwareInterface(const MIB_IF_ROW2* ifRow);
+
 private:
     NetworkCalculator m_calculator;                    // Calculator for network statistics
     std::map<std::wstring, NetworkStats> m_statsMap;   // Map of interface name to stats

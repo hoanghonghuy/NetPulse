@@ -1,4 +1,4 @@
-﻿#include "NetPulse/NetworkCalculator.h"
+#include "NetPulse/NetworkCalculator.h"
 #include "NetPulse/Utils.h"
 #include "../../resources/resource.h"
 #include <algorithm>
@@ -113,10 +113,23 @@ NetworkStats NetworkCalculator::CalculateAggregate(const std::vector<NetworkStat
         return aggregate;
     }
 
-    // Sum up all statistics
+    // Pass 1: Try to aggregate only physical hardware interfaces
+    // This avoids double-counting when virtual adapters (VPN, Hyper-V) mirror physical traffic
+    bool hasPhysical = false;
     for (const auto& stats : statsList)
     {
-        if (!stats.isActive)
+        if (stats.isActive && stats.isPhysicalHardware)
+        {
+            hasPhysical = true;
+            break;
+        }
+    }
+
+    // Pass 2: Aggregate — use physical-only if available, else fallback to all active
+    for (const auto& stats : statsList)
+    {
+        bool shouldInclude = stats.isActive && (hasPhysical ? stats.isPhysicalHardware : true);
+        if (!shouldInclude)
             continue;
 
         aggregate.bytesReceived += stats.bytesReceived;

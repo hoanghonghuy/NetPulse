@@ -150,6 +150,7 @@ struct NetworkStats
     double peakUploadSpeed;          // Peak upload speed (bytes/sec)
     bool isActive;                   // Is interface active?
     DWORD lastUpdateTime;            // Last update timestamp (GetTickCount)
+    bool isPhysicalHardware;         // True if this is a physical hardware adapter (not virtual/filter)
 
     NetworkStats()
         : bytesReceived(0)
@@ -162,6 +163,7 @@ struct NetworkStats
         , peakUploadSpeed(0.0)
         , isActive(false)
         , lastUpdateTime(0)
+        , isPhysicalHardware(false)
     {
     }
 };
