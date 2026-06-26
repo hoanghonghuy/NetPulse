@@ -216,13 +216,15 @@ void ResetFailureCount()
 NetPulse::NetworkStats MakeNetworkStats(const std::wstring& name,
                                        unsigned long long bytesDown,
                                        unsigned long long bytesUp,
-                                       bool isActive)
+                                       bool isActive,
+                                       bool isPhysical)
 {
     NetPulse::NetworkStats stats;
     stats.interfaceName = name;
     stats.bytesReceived = bytesDown;
     stats.bytesSent = bytesUp;
     stats.isActive = isActive;
+    stats.isPhysicalHardware = isPhysical;
     return stats;
 }
 

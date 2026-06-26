@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "NetPulse"
-#define MyAppVersion "2.4.2"
+#define MyAppVersion "2.5.0"
 #define MyAppPublisher "Hoang Hong Huy"
 #define MyAppExeName "NetPulse.exe"
 

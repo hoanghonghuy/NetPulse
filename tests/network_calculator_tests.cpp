@@ -1,4 +1,4 @@
-﻿#include "NetPulse/Common.h"
+#include "NetPulse/Common.h"
 #include "NetPulse/NetworkCalculator.h"
 #include "TestUtils.h"
 
@@ -36,7 +36,9 @@ void RunNetworkCalculatorTests()
 
     // Aggregate calculation
     NetworkStats s1 = stats;
+    s1.isPhysicalHardware = true;
     NetworkStats s2 = stats;
+    s2.isPhysicalHardware = true;
     s2.currentDownloadSpeed *= 2.0;
     s2.currentUploadSpeed *= 2.0;
 
@@ -70,6 +72,45 @@ void RunNetworkCalculatorTests()
     NetworkStats mixedAgg = NetworkCalculator::CalculateAggregate(mixed);
     AssertTrue(mixedAgg.currentDownloadSpeed == 10.0 && mixedAgg.currentUploadSpeed == 5.0,
                L"NetworkCalculator aggregate ignores inactive interfaces");
+
+    // Physical-only aggregate: virtual interfaces are excluded when physical exist
+    NetworkStats physical;
+    physical.isActive = true;
+    physical.isPhysicalHardware = true;
+    physical.currentDownloadSpeed = 100.0;
+    physical.currentUploadSpeed = 50.0;
+
+    NetworkStats virtualIface = physical;
+    virtualIface.isPhysicalHardware = false;
+    virtualIface.currentDownloadSpeed = 200.0;
+    virtualIface.currentUploadSpeed = 100.0;
+
+    std::vector<NetworkStats> physVirtMixed;
+    physVirtMixed.push_back(physical);
+    physVirtMixed.push_back(virtualIface);
+
+    NetworkStats physOnlyAgg = NetworkCalculator::CalculateAggregate(physVirtMixed);
+    AssertTrue(physOnlyAgg.currentDownloadSpeed == 100.0 && physOnlyAgg.currentUploadSpeed == 50.0,
+               L"NetworkCalculator aggregate excludes virtual when physical present");
+
+    // Fallback: no physical -> aggregate all active
+    NetworkStats virtualOnly1;
+    virtualOnly1.isActive = true;
+    virtualOnly1.isPhysicalHardware = false;
+    virtualOnly1.currentDownloadSpeed = 30.0;
+    virtualOnly1.currentUploadSpeed = 15.0;
+
+    NetworkStats virtualOnly2 = virtualOnly1;
+    virtualOnly2.currentDownloadSpeed = 70.0;
+    virtualOnly2.currentUploadSpeed = 35.0;
+
+    std::vector<NetworkStats> allVirtual;
+    allVirtual.push_back(virtualOnly1);
+    allVirtual.push_back(virtualOnly2);
+
+    NetworkStats fallbackAgg = NetworkCalculator::CalculateAggregate(allVirtual);
+    AssertTrue(fallbackAgg.currentDownloadSpeed == 100.0 && fallbackAgg.currentUploadSpeed == 50.0,
+               L"NetworkCalculator aggregate falls back to all active when no physical present");
 
     NetworkStats rollover;
     NetworkCalculator::UpdateStats(rollover, 1000ULL, 500ULL);

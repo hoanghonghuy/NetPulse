@@ -187,8 +187,7 @@ private:
     void RecalculateWindowSize();
     void ApplySnapToEdge(RECT* pRect) const;
 
-    // Check if foreground window is fullscreen (game, video, etc.)
-    static bool IsForegroundWindowFullscreen();
+
 
 
     HWND m_hwnd;
@@ -235,6 +234,10 @@ private:
     // Topmost enforcement
     UINT_PTR m_timerId;                         // Timer ID for topmost check
     bool m_wasHiddenByFullscreen;               // Was hidden due to fullscreen app
+
+    // Font cache
+    HFONT m_fontNormal;
+    HFONT m_fontMini;
 
     // Window dimensions
     static constexpr int WINDOW_WIDTH = 190;

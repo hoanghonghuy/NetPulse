@@ -1,4 +1,4 @@
-﻿#include "NetPulse/NetworkMonitor.h"
+#include "NetPulse/NetworkMonitor.h"
 #include "NetPulse/Utils.h"
 
 namespace NetPulse
@@ -135,6 +135,9 @@ bool NetworkMonitorClass::QueryNetworkInterfaces()
 
             // Update statistics using calculator
             m_calculator.UpdateStats(stats, pIfRow->InOctets, pIfRow->OutOctets);
+
+            // Mark whether this is a physical hardware interface (for aggregate dedup)
+            stats.isPhysicalHardware = IsPhysicalHardwareInterface(pIfRow);
         }
 
         // Remove inactive interfaces (disconnected)
@@ -174,6 +177,12 @@ bool NetworkMonitorClass::ShouldMonitorInterface(const MIB_IF_ROW2* ifRow)
         return false;
     }
 
+    // Skip filter/intermediate driver adapters - not real traffic sources
+    if (ifRow->InterfaceAndOperStatusFlags.FilterInterface)
+    {
+        return false;
+    }
+
     // Skip loopback interfaces
     if (ifRow->Type == IF_TYPE_SOFTWARE_LOOPBACK)
     {
@@ -190,6 +199,17 @@ bool NetworkMonitorClass::ShouldMonitorInterface(const MIB_IF_ROW2* ifRow)
     }
 
     return true;
+}
+
+bool NetworkMonitorClass::IsPhysicalHardwareInterface(const MIB_IF_ROW2* ifRow)
+{
+    if (ifRow == nullptr)
+    {
+        return false;
+    }
+    // Must be a real hardware adapter with a physical connector
+    return ifRow->InterfaceAndOperStatusFlags.HardwareInterface &&
+           ifRow->InterfaceAndOperStatusFlags.ConnectorPresent;
 }
 
 } // namespace NetPulse

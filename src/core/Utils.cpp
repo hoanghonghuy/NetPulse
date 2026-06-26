@@ -1,4 +1,5 @@
 #include "NetPulse/Utils.h"
+#include "NetPulse/ApplicationRuntime.h"
 #include "NetPulse/DialogThemeHelper.h"
 #include "NetPulse/ThemeHelper.h"
 #include "../../resources/resource.h"
@@ -546,6 +547,59 @@ bool IsCustomThemeEnabled(const AppConfig& config)
     
     // All other themes (dark presets AND light presets) use custom painting
     return true;
+}
+
+bool IsForegroundWindowFullscreen()
+{
+    if (ApplicationRuntime::IsTestMode())
+    {
+        return false;
+    }
+
+    HWND hForeground = GetForegroundWindow();
+    if (!hForeground)
+    {
+        return false;
+    }
+
+    // Exclude desktop and shell windows - they cover the entire screen
+    // but are not actual fullscreen applications
+    wchar_t className[64] = {};
+    GetClassNameW(hForeground, className, _countof(className));
+    if (_wcsicmp(className, L"Progman") == 0 ||        // Desktop (Program Manager)
+        _wcsicmp(className, L"WorkerW") == 0 ||        // Desktop worker window
+        _wcsicmp(className, L"Shell_TrayWnd") == 0 ||  // Taskbar
+        _wcsicmp(className, L"Shell_SecondaryTrayWnd") == 0) // Secondary taskbar
+    {
+        return false;
+    }
+
+    // Get foreground window rect
+    RECT windowRect;
+    if (!GetWindowRect(hForeground, &windowRect))
+    {
+        return false;
+    }
+
+    // Get monitor info for the foreground window
+    HMONITOR hMonitor = MonitorFromWindow(hForeground, MONITOR_DEFAULTTONEAREST);
+    if (!hMonitor)
+    {
+        return false;
+    }
+
+    MONITORINFO monitorInfo = {};
+    monitorInfo.cbSize = sizeof(MONITORINFO);
+    if (!GetMonitorInfo(hMonitor, &monitorInfo))
+    {
+        return false;
+    }
+
+    // Check if window covers the entire monitor
+    return (windowRect.left <= monitorInfo.rcMonitor.left &&
+            windowRect.top <= monitorInfo.rcMonitor.top &&
+            windowRect.right >= monitorInfo.rcMonitor.right &&
+            windowRect.bottom >= monitorInfo.rcMonitor.bottom);
 }
 
 } // namespace NetPulse

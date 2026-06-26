@@ -1,4 +1,4 @@
-﻿#include "NetPulse/TrayIcon.h"
+#include "NetPulse/TrayIcon.h"
 #include "NetPulse/Utils.h"
 #include "NetPulse/ThemeHelper.h"
 #include "../../resources/resource.h"
@@ -230,7 +230,6 @@ void TrayIcon::UpdateTooltip(const NetworkStats& stats, SpeedUnit unit)
     // Update tooltip
     wcscpy_s(m_notifyIconData.szTip, tooltip.c_str());
     m_notifyIconData.uFlags = NIF_TIP;
-    Shell_NotifyIconW(NIM_MODIFY, &m_notifyIconData); // We ignore failure here as UpdateIcon will catch it soon, or we can add RestoreIcon here too
     if (!Shell_NotifyIconW(NIM_MODIFY, &m_notifyIconData))
     {
         RestoreIcon();

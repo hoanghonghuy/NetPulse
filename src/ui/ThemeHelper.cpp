@@ -1,4 +1,4 @@
-﻿#include "NetPulse/ThemeHelper.h"
+#include "NetPulse/ThemeHelper.h"
 #include <dwmapi.h>
 #include <uxtheme.h>
 #include <vssym32.h>
@@ -98,7 +98,7 @@ static const ThemeColors s_lightColors = {
 
     // Dialogs
     RGB(255, 255, 255),   // dialogBackground
-    RGB(255, 255, 255),   // dialogPanel
+    RGB(245, 245, 245),   // dialogPanel
     RGB(180, 180, 180),   // dialogBorder
     RGB(0, 0, 0),         // dialogText
     RGB(128, 128, 128),   // dialogTextDisabled
@@ -933,16 +933,10 @@ const ThemeColors& ThemeHelper::GetColors(ThemeMode mode)
         return s_lavenderColors;
     case ThemeMode::RosePink:
         return s_rosePinkColors;
-    case ThemeMode::Dark:
     case ThemeMode::SystemDefault:
+        return IsSystemInDarkMode() ? s_darkColors : s_lightColors;
+    case ThemeMode::Dark:
     default:
-        // For SystemDefault within this context, we usually rely on current state,
-        // but here we just return base dark if strictly asking for palette.
-        // However, caller usually resolves System -> Light/Dark before calling this
-        // if they care. But if we pass SystemDefault here, let's assume it resolved to Dark
-        // or check logic? Actually checking IsSystemInDarkMode() here might be better
-        // if we want true dynamic, but static return is safer.
-        // Let's just return Dark as default.
         return s_darkColors;
     }
 }

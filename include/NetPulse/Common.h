@@ -38,7 +38,7 @@
 
 // Application Information
 #define APP_NAME L"NetPulse"
-#define APP_VERSION L"2.4.2"
+#define APP_VERSION L"2.5.0"
 #define APP_WINDOW_CLASS L"NetPulseWindowClass"
 #define APP_MUTEX_NAME L"NetPulse_SingleInstance"
 #define APP_MUTEX_NAME_TEST L"NetPulse_SingleInstance_Test"
@@ -150,6 +150,7 @@ struct NetworkStats
     double peakUploadSpeed;          // Peak upload speed (bytes/sec)
     bool isActive;                   // Is interface active?
     DWORD lastUpdateTime;            // Last update timestamp (GetTickCount)
+    bool isPhysicalHardware;         // True if this is a physical hardware adapter (not virtual/filter)
 
     NetworkStats()
         : bytesReceived(0)
@@ -162,6 +163,7 @@ struct NetworkStats
         , peakUploadSpeed(0.0)
         , isActive(false)
         , lastUpdateTime(0)
+        , isPhysicalHardware(false)
     {
     }
 };
